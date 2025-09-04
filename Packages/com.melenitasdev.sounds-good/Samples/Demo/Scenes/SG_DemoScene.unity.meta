@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6c00dd58667de8c4e991f8c1a524396d
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266130
+  packageName: Sounds Good 2.0 - Easy & Optimized Audio Manager
+  packageVersion: 2.0.2
+  assetPath: Packages/com.melenitasdev.sounds-good/Samples/Demo/Scenes/SG_DemoScene.unity
+  uploadId: 767541

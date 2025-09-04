@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: df6fa8b736c31b847813f76bc399fae1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266130
+  packageName: Sounds Good 2.0 - Easy & Optimized Audio Manager
+  packageVersion: 2.0.2
+  assetPath: Packages/com.melenitasdev.sounds-good/Runtime/Prefabs/SG_Music Zone.prefab
+  uploadId: 767541
