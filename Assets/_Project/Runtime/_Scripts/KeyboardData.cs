@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct Keys
+public struct KeyboardData
 {
 	public struct Layouts
 	{

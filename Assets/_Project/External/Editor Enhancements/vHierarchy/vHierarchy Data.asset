@@ -14,15 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: VHierarchy::VHierarchy.VHierarchyData
   sceneDatasByGuid:
     keys:
+    - 
     - 8c9cfa26abfee488c85f1582747f6a02
     values:
     - goDatasByGlobalId:
+        keys: []
+        values: []
+      goDatasByInstanceId:
+        keys: 
+        values: []
+    - goDatasByGlobalId:
         keys:
+        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-244901402-0
+        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-1761268032-0
+        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-1171200206-0
         - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-755607928-0
         - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-363270067-0
-        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-244901402-0
-        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-1171200206-0
-        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-1761268032-0
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -35,7 +42,7 @@ MonoBehaviour:
         - iColor: 1
           icon: d_eyeDropper.sml
       goDatasByInstanceId:
-        keys: a0bd000078bd00006ebd0000a4bd0000a8bd0000
+        keys: 3ac3000074c3000070c300006cc3000044c30000
         values:
         - iColor: 1
           icon: d_eyeDropper.sml

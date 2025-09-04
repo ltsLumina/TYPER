@@ -4,20 +4,34 @@ using System.Linq;
 using Lumina.Essentials.Attributes;
 using TMPro;
 using UnityEngine;
+using VInspector;
 
-public class Key : MonoBehaviour
+public partial class Key : MonoBehaviour
 {
-    [SerializeField] bool isActive = true;
+    [Tab("Attributes")]
+    [Header("Attributes")]
     [SerializeField, ReadOnly] KeyCode keyboardLetter = KeyCode.Q;
     [SerializeField] int damage;
     [SerializeField] bool offGlobalCooldown;
     [SerializeField] bool combo;
     [SerializeField] bool mash;
     [SerializeField, ReadOnly] int comboIndex; 
+    
+    [Header("Cooldown")]
     [SerializeField] float cooldown = 2.5f;
-    [SerializeField, ReadOnly] float currentCooldown;
-    [Tooltip("The index of the row this key belongs to. 0-based. E.g. 0 = Q, T = 4, P = 9")]
-    [SerializeField, ReadOnly] int rowIndex;
+    [SerializeField, ReadOnly] float remainingCooldown;
+    [SerializeField, ReadOnly] float currentCooldown; 
+    
+    [Tab("Settings")]
+    [Header("Settings")]
+    [SerializeField] bool isActive = true;
+    [Header("Debug Info")]
+    [Tooltip("The index of the row this key is in. 1-based.")]
+    [SerializeField, ReadOnly] int row; 
+    [Tooltip("The index of this key within its row. 0-based.")]
+    [SerializeField, ReadOnly] int indexInRow;
+    [Tooltip("The index of this key in the entire keyboard. 0-based.")]
+    [SerializeField, ReadOnly] int indexGlobal; 
     
     Enemy currentEnemy;
     
@@ -37,40 +51,8 @@ public class Key : MonoBehaviour
     public TMP_Text DamageText { get; private set; }
 
     public bool IsActive => isActive;
-    public bool Disable() => isActive = false;
-    public bool Enable() => isActive = true;
-    
-    public KeyCode KeyboardLetter
-    {
-        get => keyboardLetter;
-        set => keyboardLetter = value;
-    }
-    public int RowIndex
-    {
-        get => rowIndex;
-        set => rowIndex = value;
-    }
-    public bool OffGlobalCooldown
-    {
-        get => offGlobalCooldown;
-        set => offGlobalCooldown = value;
-    }
-    public bool Combo
-    {
-        get => combo;
-        set => combo = value;
-    }
-    public bool Mash
-    {
-        get => mash;
-        set => mash = value;
-    }
-
-    public float CurrentCooldown
-    {
-        get => currentCooldown;
-        set => currentCooldown = value;
-    }
+    public void Disable() => isActive = false;
+    public void Enable() => isActive = true;
 
     void Awake()
     {
@@ -99,14 +81,27 @@ public class Key : MonoBehaviour
 
     void Start()
     {
-        damage = Mathf.Max(1, Mathf.RoundToInt(rowIndex / 2f));
+        damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
         DamageText.text = GameManager.Instance.ShowDamageNumbers ? damage.ToString() : string.Empty;
         
         oGCDIndicator.SetActive(offGlobalCooldown);
         ComboIndicator.SetActive(combo);
         
         // reset all fills (hide)
-        DrawCooldownFill(this, 1f);
+        DrawCooldownFill();
+    }
+    
+    public void InitKey(KeyCode keycode, int row, int indexInRow, int indexGlobal)
+    {
+        keyboardLetter = keycode;
+        this.row = row;
+        this.indexInRow = indexInRow;
+        this.indexGlobal = indexGlobal;
+        
+        Letter.text = keycode.ToString();
+        Letter.text = Letter.text.Replace("Alpha", ""); // remove "Alpha" from numeric keys
+
+        HomingBar.SetActive(keycode is KeyCode.F or KeyCode.J);
     }
     
     void Update()
@@ -114,25 +109,24 @@ public class Key : MonoBehaviour
         if (!isActive) return;
         
         // Handle per-key cooldown timer
-        if (CurrentCooldown > 0f)
+        if (CooldownTime > 0f)
         {
-            CurrentCooldown -= Time.deltaTime;
-            if (CurrentCooldown <= 0f)
+            CooldownTime -= Time.deltaTime;
+            if (CooldownTime <= 0f)
             {
-                CurrentCooldown = 0f;
+                CooldownTime = 0f;
                 SetColour(Color.white);
             }
             else // not finished cooldown yet
             {
                 SetColour(Color.grey);
-                DrawCooldownFill(this, offGlobalCooldown ? cooldown : KeyController.Instance.GlobalCooldown);
+                DrawCooldownFill();
             }
         }
     }
 
     readonly static int Arc2 = Shader.PropertyToID("_Arc2");
-
-    void DrawCooldownFill(Key key, float cooldownType) => key.CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, CurrentCooldown / cooldownType));
+    void DrawCooldownFill() => CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, CooldownTime / currentCooldown));
 
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -164,11 +158,11 @@ public class Key : MonoBehaviour
         if (!isActive) return false;
         
         // If this key is on cooldown, do nothing.
-        if (CurrentCooldown > 0f) return false;
+        if (CooldownTime > 0f) return false;
 
         if (Combo)
         {
-            //TODO: psuedo-code. NOT FINAL!!!!
+            //TODO: pseudo-code. NOT FINAL!!!!
             
             StartLocalCooldown(0.25f);
             comboIndex++;
@@ -179,7 +173,7 @@ public class Key : MonoBehaviour
                 {
                     // get the 8 surrounding keys
                     var surroundingKeys = KeyController.Instance.AllKeys.Where(k =>
-                        Math.Abs(k.RowIndex - this.RowIndex) <= 1 &&
+                        Math.Abs(k.indexInRow - indexInRow) <= 1 &&
                         Math.Abs(Array.IndexOf(KeyController.Instance.AllKeys.ToArray(), k) - Array.IndexOf(KeyController.Instance.AllKeys.ToArray(), this)) <= 1 && k != this).ToList();
                     
                     Debug.Log($"Combo finished! Dealing 3 damage to all enemies in surrounding keys: {string.Join(", ", surroundingKeys.Select(k => k.name))}");
@@ -191,6 +185,8 @@ public class Key : MonoBehaviour
                     }
                 });
             }
+
+            return false;
         }
 
         // TODO: ALSO NOT FINAL!!!!! JUST TESTING
@@ -215,7 +211,7 @@ public class Key : MonoBehaviour
         if (OffGlobalCooldown) StartLocalCooldown(cooldown);
         else KeyController.Instance.StartGlobalCooldown();
 
-        if (currentEnemy != null)
+        if (currentEnemy)
         {
             currentEnemy.TakeDamage(damage);
             Debug.Log($"Dealt 1 damage to {currentEnemy}!");
@@ -234,7 +230,11 @@ public class Key : MonoBehaviour
         return false;
     }
 
-    public void StartLocalCooldown(float cooldown) => CurrentCooldown = cooldown;
+    public void StartLocalCooldown(float cooldown)
+    {
+        CooldownTime = cooldown;
+        currentCooldown = cooldown;
+    }
 
     void SetColour(Color color)
     {
