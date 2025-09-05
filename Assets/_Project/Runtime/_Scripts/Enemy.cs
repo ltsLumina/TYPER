@@ -114,6 +114,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
 
     int consecutiveHits;
+    Coroutine hitStopCoroutine;
     
     public void TakeDamage(int damage, bool isCritical = false)
     {
@@ -160,7 +161,7 @@ public class Enemy : MonoBehaviour, IDamageable
                 if (consecutiveHits >= 3) StartCoroutine(Stun(3f));
 
                 // add a bit of time slowdown for juiciness
-                StartCoroutine(HitStop(0.05f, 0.05f));
+                hitStopCoroutine ??= StartCoroutine(HitStop(0.05f, 0.05f));
 
                 // VFX
                 HitVFX();

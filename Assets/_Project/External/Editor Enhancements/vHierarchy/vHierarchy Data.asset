@@ -30,6 +30,8 @@ MonoBehaviour:
         - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-1171200206-0
         - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-755607928-0
         - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-363270067-0
+        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-2045267230-0
+        - GlobalObjectId_V1-2-8c9cfa26abfee488c85f1582747f6a02-247653345-0
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -41,8 +43,12 @@ MonoBehaviour:
           icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: 
+        - iColor: 0
+          icon: 
       goDatasByInstanceId:
-        keys: 3ac3000074c3000070c300006cc3000044c30000
+        keys: beb90000f8b90000f4b90000f0b90000c8b9000002ba0000c2b90000
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -54,3 +60,7 @@ MonoBehaviour:
           icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: 
+        - iColor: 0
+          icon: 

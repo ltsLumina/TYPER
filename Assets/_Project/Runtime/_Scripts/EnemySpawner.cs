@@ -1,5 +1,6 @@
 #region
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 #endregion
 
@@ -14,7 +15,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] float initialDelay;
 
     GameObject parent;
-    List<float> lanes;
+    float[] lanes;
     
     void Start()
     {
@@ -26,7 +27,7 @@ public class EnemySpawner : MonoBehaviour
 
     void SpawnEnemy()
     {
-        int laneIndex = Random.Range(0, lanes.Count);
+        int laneIndex = Random.Range(0, lanes.Length);
         float lanePos = lanes[laneIndex];
         var spawnPosition = new Vector3(8f, lanePos, 0f);
         Enemy enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity, parent.transform);

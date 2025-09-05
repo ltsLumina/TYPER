@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Lumina.Essentials.Attributes;
 using TMPro;
@@ -15,12 +16,24 @@ public partial class Key : MonoBehaviour
     [SerializeField] bool offGlobalCooldown;
     [SerializeField] bool combo;
     [SerializeField] bool mash;
-    [SerializeField, ReadOnly] int comboIndex; 
+    [SerializeField, ReadOnly] int comboIndex;
+    [SerializeField, ReadOnly] int mashCount; 
     
     [Header("Cooldown")]
     [SerializeField] float cooldown = 2.5f;
     [SerializeField, ReadOnly] float remainingCooldown;
     [SerializeField, ReadOnly] float currentCooldown; 
+    
+    [Tab("References")]
+    [SerializeField] GameObject comboIndicator;
+    [SerializeField] SpriteRenderer spriteRenderer;
+    [SerializeField] TMP_Text letter;
+    [SerializeField] SpriteRenderer cooldownSprite;
+    [SerializeField] GameObject homingBar;
+    [SerializeField] GameObject oGCDMarker;
+    [SerializeField] GameObject comboMarker;
+    [SerializeField] GameObject mashMarker;
+    [SerializeField] TMP_Text damageText;
     
     [Tab("Settings")]
     [Header("Settings")]
@@ -34,61 +47,79 @@ public partial class Key : MonoBehaviour
     [SerializeField, ReadOnly] int indexGlobal; 
     
     Enemy currentEnemy;
-    
-    /// <summary>
-    /// Action invoked when the key is pressed.
-    /// The bool indicates whether an enemy was hit.
-    /// The Enemy parameter is the enemy that was hit (null if none).
-    /// </summary>
-    public event Action<bool, Enemy> OnPressed;
+    ComboController comboController;
 
-    public SpriteRenderer SpriteRenderer { get; private set; }
-    public TMP_Text Letter { get; private set; }
-    public SpriteRenderer CooldownSprite { get; private set; }
-    public GameObject HomingBar { get; private set; }
-    public GameObject oGCDIndicator { get; private set; }
-    public GameObject ComboIndicator { get; private set; }
-    public TMP_Text DamageText { get; private set; }
+    public GameObject ComboIndicator => comboIndicator;
+    public SpriteRenderer SpriteRenderer => spriteRenderer;
+    public TMP_Text Letter => letter;
+    public SpriteRenderer CooldownSprite => cooldownSprite;
+    public GameObject HomingBar => homingBar;
+    public GameObject offGCDMarker => oGCDMarker;
+    public GameObject ComboMarker => comboMarker;
+    public GameObject MashMarker => mashMarker;
+    public TMP_Text DamageText => damageText;
 
     public bool IsActive => isActive;
-    public void Disable() => isActive = false;
-    public void Enable() => isActive = true;
+    public void Disable()
+    {
+        isActive = false;
+        SetColour(Color.grey);
+    }
+
+    public void Enable()
+    {
+        isActive = true;
+        SetColour(Color.white);
+    }
+
+    public int ComboIndex
+    {
+        get => comboIndex;
+        set => comboIndex = value;
+    }
 
     void Awake()
     {
-        SpriteRenderer = transform.Find("Sprite").GetComponent<SpriteRenderer>();
-        Letter = SpriteRenderer.GetComponentInChildren<TMP_Text>();
-        CooldownSprite = transform.Find("Cooldown").GetComponent<SpriteRenderer>();
-        HomingBar = transform.Find("Homing Bar").gameObject;
-        oGCDIndicator = transform.Find("oGCD Indicator").gameObject;
-        ComboIndicator = transform.Find("Combo Indicator").gameObject;
-        DamageText = transform.Find("Text (Damage)").GetComponent<TMP_Text>();
-        
         // Ensure the cooldown sprite is fully opaque at start. In the prefab view the alpha is 0.5f;
         Color color = CooldownSprite.color;
         color.a = 1f;
         CooldownSprite.color = color;
         
-        // Hide the homing bar at start.
-        HomingBar.SetActive(false);
-        
-        // Hide the oGCD indicator at start.
-        oGCDIndicator.SetActive(false);
-        
-        // Hide the combo indicator at start.
         ComboIndicator.SetActive(false);
+        HomingBar.SetActive(false);
+        offGCDMarker.SetActive(false);
+        ComboMarker.SetActive(false);
+        MashMarker.SetActive(false);
     }
 
     void Start()
     {
-        damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
-        DamageText.text = GameManager.Instance.ShowDamageNumbers ? damage.ToString() : string.Empty;
+        comboController = ComboController.Instance;
         
-        oGCDIndicator.SetActive(offGlobalCooldown);
-        ComboIndicator.SetActive(combo);
+        damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
+        
+        oGCDMarker.SetActive(offGlobalCooldown);
+        ComboMarker.SetActive(combo);
+        MashMarker.SetActive(mash);
+        DamageText.text = Mash ? mashCount.ToString() : string.Empty;
         
         // reset all fills (hide)
         DrawCooldownFill();
+        
+        Assert();
+    }
+    
+    void Assert()
+    {
+        Debug.Assert(ComboIndicator != null, $"{name} is missing a reference to its ComboIndicator!");
+        Debug.Assert(SpriteRenderer != null, $"{name} is missing a reference to its SpriteRenderer!");
+        Debug.Assert(Letter != null, $"{name} is missing a reference to its Letter TMP_Text!");
+        Debug.Assert(CooldownSprite != null, $"{name} is missing a reference to its CooldownSprite!");
+        Debug.Assert(HomingBar != null, $"{name} is missing a reference to its HomingBar!");
+        Debug.Assert(offGCDMarker != null, $"{name} is missing a reference to its offGCDMarker!");
+        Debug.Assert(ComboMarker != null, $"{name} is missing a reference to its ComboMarker!");
+        Debug.Assert(MashMarker != null, $"{name} is missing a reference to its MashMarker!");
+        Debug.Assert(DamageText != null, $"{name} is missing a reference to its DamageText!");
     }
     
     public void InitKey(KeyCode keycode, int row, int indexInRow, int indexGlobal)
@@ -107,7 +138,7 @@ public partial class Key : MonoBehaviour
     void Update()
     {
         if (!isActive) return;
-        
+
         // Handle per-key cooldown timer
         if (CooldownTime > 0f)
         {
@@ -146,78 +177,135 @@ public partial class Key : MonoBehaviour
         }
     }
 
-    int mashCount;
+    Coroutine mashTimerCoroutine;
 
     /// <summary>
     /// Activates the key, dealing damage to the current enemy if one is present.
     /// </summary>
+    /// <param name="overrideGlobalCooldown"> If true, the key will not trigger the global cooldown when pressed. (Overrides the OffGlobalCooldown property) </param>
     /// <returns> True if an enemy was hit, false otherwise. </returns>
-    public bool Activate()
+    public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f)
     {
         // If this key is inactive, do nothing.
-        if (!isActive) return false;
-        
+        if (!isActive) return;
+
         // If this key is on cooldown, do nothing.
-        if (CooldownTime > 0f) return false;
-
-        if (Combo)
+        // if this key is called again with a cooldown override, ignore the cooldown check.
+        if (CooldownTime > 0f && !overrideGlobalCooldown) return;
+        
+        if (!comboController.CurrentComboKeys.Contains(this) && comboController.CurrentComboKeys.Count > 0)
         {
-            //TODO: pseudo-code. NOT FINAL!!!!
-            
-            StartLocalCooldown(0.25f);
-            comboIndex++;
+            // If the key pressed is not part of the current combo, break the combo.
+            comboController.ResetCombo();
+        }
 
-            if (comboIndex >= 3)
-            {
-                FindObjectsByType<Enemy>(FindObjectsSortMode.None).ToList().ForEach(e =>
+        switch (Combo)
+        {
+            case false:
+                // If this key is not part of a combo, but a combo is active, break the combo.
+                comboController.ResetCombo();
+                break;
+
+            case true: {
+                int nextKeyIndex = comboController.NextComboIndex;
+
+                // When a combo is started, the nextKeyIndex is set to 1 (the second key in the combo).
+                if (comboIndex == 0)
                 {
-                    // get the 8 surrounding keys
-                    var surroundingKeys = KeyController.Instance.AllKeys.Where(k =>
-                        Math.Abs(k.indexInRow - indexInRow) <= 1 &&
-                        Math.Abs(Array.IndexOf(KeyController.Instance.AllKeys.ToArray(), k) - Array.IndexOf(KeyController.Instance.AllKeys.ToArray(), this)) <= 1 && k != this).ToList();
+                    comboController.BeginCombo(keyboardLetter);
+                    Debug.Log($"Hit combo key {keyboardLetter} correctly!");
                     
-                    Debug.Log($"Combo finished! Dealing 3 damage to all enemies in surrounding keys: {string.Join(", ", surroundingKeys.Select(k => k.name))}");
+                    StartLocalCooldown(cooldown);
+                    ComboIndicator.gameObject.SetActive(false);
+                    return;
+                }
 
-                    if (surroundingKeys.Any(k => k.currentEnemy == e))
+                // Combo Progression
+                if (comboIndex == nextKeyIndex)
+                {
+                    // Combo Progressed
+                    comboController.AdvanceCombo(keyboardLetter);
+                    
+                    // Combo Completed
+                    if (comboIndex == comboController.ComboLength - 1)
                     {
-                        e.TakeDamage(3);
-                        Debug.Log($"Dealt 3 damage to {e}!");
-                    }
-                });
-            }
+                        var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
 
-            return false;
+                        List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter, true);
+
+                        foreach (var key in surroundingKeys)
+                        {
+                            var instantiate = Instantiate(vfx, key.transform.position, Quaternion.identity);
+                            ParticleSystem.MainModule instantiateMain = instantiate.main;
+                            instantiateMain.startColor = Color.cyan;
+
+                            key.Activate(true, 0.5f);
+                        }
+                        return;
+                    }
+
+                    StartLocalCooldown(cooldown);
+                    ComboIndicator.gameObject.SetActive(false);
+                    return;
+                }
+                
+                // Non-sequential key in current combo pressed, break the combo.
+                comboController.ResetCombo();
+                break;
+            }
         }
 
         // TODO: ALSO NOT FINAL!!!!! JUST TESTING
         if (Mash)
         {
-            // does nothing until its been mashed 5 times
+            if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
+            mashTimerCoroutine = StartCoroutine(MashTimer());
+
+            SetColour(Color.orange, 0.25f);
             mashCount++;
+            DamageText.text = mashCount > 0 ? mashCount.ToString() : string.Empty;
+
+            // if divisible by 5 (5, 10, 15, etc), activate all adjacent keys
+            if (mashCount % 5 == 0)
+            {
+                KeyController.Instance.GetAdjacentKey(keyboardLetter, KeyController.Direction.All, out List<Key> adjacentKeys);
+                foreach (Key key in adjacentKeys)
+                {
+                    key.Activate(true, 0.5f);
+                }
+                
+                StartLocalCooldown(5f);
+                return;
+            }
             
-            if (mashCount < 5)
-            {
-                SetColour(Color.yellow, 0.25f);
-                return false;
-            }
-            else
-            {
-                mashCount = 0;
-                Debug.Log("Mash action activated!");
-            }
+            DealDamage();
+            
+            // Flash the key orange to indicate a successful mash.
+            SetColour(Color.orange, 0.25f);
+            StartLocalCooldown(0.25f);
+            return;
         }
-        
+
+        DealDamage();
+
         // If this key is off the global cooldown, start its own cooldown rather than letting the KeyController put it on global cooldown.
+        if (overrideGlobalCooldown)
+        {
+            // If a cooldown override is provided, use it instead of the default cooldown.
+            StartLocalCooldown(cooldownOverride > 0 ? cooldownOverride : cooldown);
+            return;
+        }
+
         if (OffGlobalCooldown) StartLocalCooldown(cooldown);
         else KeyController.Instance.StartGlobalCooldown();
+    }
 
+    bool DealDamage()
+    {
         if (currentEnemy)
         {
             currentEnemy.TakeDamage(damage);
             Debug.Log($"Dealt 1 damage to {currentEnemy}!");
-
-            // If this is a combo action, do not invoke the OnPressed event yet. (don't invoke the global cooldown)
-            if (!offGlobalCooldown) OnPressed?.Invoke(true, currentEnemy);
 
             // Flash the key green to indicate it was pressed.
             SetColour(Color.green, 0.75f);
@@ -226,12 +314,22 @@ public partial class Key : MonoBehaviour
 
         // Flash the key red to indicate a miss.
         SetColour(Color.crimson, 0.5f);
-        if (!offGlobalCooldown) OnPressed?.Invoke(false, null);
         return false;
+    }
+
+    IEnumerator MashTimer()
+    {
+        // if 3 seconds pass without a mash, reset the mash count
+        yield return new WaitForSeconds(3f);
+        mashCount = 0;
+        DamageText.text = mashCount.ToString();
     }
 
     public void StartLocalCooldown(float cooldown)
     {
+        // dont start a new cooldown if the current cooldown is longer than the new one
+        if (CooldownTime > cooldown) return;
+        
         CooldownTime = cooldown;
         currentCooldown = cooldown;
     }
@@ -242,15 +340,12 @@ public partial class Key : MonoBehaviour
         SpriteRenderer.color = color;
     }
 
-    void SetColour(Color color, float duration)
-    {
-        StartCoroutine(SwitchColour(color, duration));
-    }
+    void SetColour(Color color, float duration) => StartCoroutine(SwitchColour(color, duration));
 
     IEnumerator SwitchColour(Color colour, float duration)
     {
         SpriteRenderer.color = colour;
         yield return new WaitForSeconds(duration);
-        SpriteRenderer.color = Color.clear;
+        SpriteRenderer.color = Color.white;
     }
 }
