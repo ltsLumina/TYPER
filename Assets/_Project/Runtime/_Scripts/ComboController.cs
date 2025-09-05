@@ -83,10 +83,6 @@ public class ComboController : MonoBehaviour
 			}
 			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyboardLetter))}");
 		}
-		else
-		{
-			Debug.LogWarning("Combo not found for removal.");
-		}
 	}
 
 	public void BeginCombo(KeyCode key)

@@ -213,7 +213,6 @@ public partial class Key : MonoBehaviour
                 if (comboIndex == 0)
                 {
                     comboController.BeginCombo(keyboardLetter);
-                    Debug.Log($"Hit combo key {keyboardLetter} correctly!");
                     
                     StartLocalCooldown(cooldown);
                     ComboIndicator.gameObject.SetActive(false);

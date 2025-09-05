@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 
 public class KeyController : MonoBehaviour
@@ -43,7 +45,7 @@ public class KeyController : MonoBehaviour
     [SerializeField, ReadOnly] float currentCooldown;
 
     readonly List<List<Key>> keys = new ();
-    
+
     public static KeyController Instance { get; private set; }
 
     public KeyCode KeyPressed { get; private set; }
@@ -253,8 +255,12 @@ public class KeyController : MonoBehaviour
         else Instance = this;
     }
 
+    ComboController comboController;
+    
     void Start()
     {
+        comboController = ComboController.Instance;
+        
         GameObject parent = GameObject.Find("Keyboard") ?? new GameObject("Keyboard");
         currentlyValidKeys.Clear();
 
@@ -289,45 +295,21 @@ public class KeyController : MonoBehaviour
         }
 
         FlatKeys = keys.SelectMany(row => row).ToList();
-
+        
         // Set parent position to center the keyboard on screen after all keys are instantiated.
         parent.transform.position = new (3.5f, 8f);
+        gameKeyboardParentPosition = parent.transform.position; // store gameplay position
 
         // get the first item in each row to determine lane positions
-        for (int row = 0; row < keys.Count; row++)
-        {
-            if (keys[row].Count > 0)
-            {
-                float lane = keys[row][0].transform.position.y;
-                Lanes[row] = lane;
-                Debug.DrawLine(new Vector3(-10f, lane, 0f), new Vector3(10f, lane, 0f), Color.green, 300f);
-            }
-        }
-
-        #region Modifiers
-        ComboController comboController = ComboController.Instance;
-        var qweCombo = new List<KeyCode> { KeyCode.Q, KeyCode.W, KeyCode.E };
-        comboController.CreateCombo(qweCombo);
-
-        // asdf combo
-        var asdfCombo = new List<KeyCode> { KeyCode.A, KeyCode.S, KeyCode.D, KeyCode.F };
-        comboController.CreateCombo(asdfCombo, true);
-
-        // select three random keys to be oGCD actions
-        List<Key> oGCD_Keys = FlatKeys
-                             .Where
-                              (x => x.KeyboardLetter != KeyCode.Q && x.KeyboardLetter != KeyCode.W && x.KeyboardLetter != KeyCode.E && x.KeyboardLetter != KeyCode.A && x.KeyboardLetter != KeyCode.S && x.KeyboardLetter != KeyCode.D && x.KeyboardLetter != KeyCode.F &&
-                                    x.KeyboardLetter != KeyCode.G) // exclude combo keys and mash key
-                             .OrderBy(x => Guid.NewGuid())
-                             .Take(3)
-                             .ToList();
-
-        foreach (Key key in oGCD_Keys) key.OffGlobalCooldown = true;
-
-        // set G key to be a mash key
-        Key mashKey = GetKey(KeyCode.G);
-        if (mashKey != null) mashKey.Mash = true;
-        #endregion
+        // for (int row = 0; row < keys.Count; row++)
+        // {
+        //     if (keys[row].Count > 0)
+        //     {
+        //         float lane = keys[row][0].transform.position.y;
+        //         Lanes[row] = lane;
+        //         Debug.DrawLine(new Vector3(-10f, lane, 0f), new Vector3(10f, lane, 0f), Color.green, 300f);
+        //     }
+        // }
 
         // Start intro animation sequence after all setup
         StartCoroutine(IntroSequence());
@@ -392,65 +374,25 @@ public class KeyController : MonoBehaviour
             // Wait one frame to ensure all keys are initialized
             yield return null;
             
-            // Temporarily disable all key markers during intro animation
-            foreach (Key key in FlatKeys)
-            {
-                key.offGCDMarker.SetActive(false);
-                key.ComboMarker.SetActive(false);
-                key.MashMarker.SetActive(false);
-            }
-            
             // Center the title "TYPER" in the middle of the middle row
             string title = GameManager.Instance.GameName;
-            const int middleRow = 1;
-            List<Key> middleRowKeys = keys[middleRow];
-            int startIdx = (middleRowKeys.Count - title.Length) / 2;
             List<KeyCode> titleKeyCodes = title.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
             List<Key> titleKeys = titleKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
             
-            parent.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic);
-
+            parent.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic).OnComplete(() => {
+                gameKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
+                gameKeyboardParentPosition = parent.transform.position; // update gameplay position after animation
+            });
             yield return new WaitForSeconds(1.5f);
 
-            List<Key> keysMinusTitle = FlatKeys.Except(titleKeys).ToList();
-            List<Key> shuffledKeys = keysMinusTitle.OrderBy(x => Guid.NewGuid()).ToList();
-
-            // save positions of all keys
-            Dictionary<Key, Vector3> originalPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
-
             #region Swap positions of title keys with random keys
-            for (int i = 0; i < titleKeyCodes.Count && startIdx + i < middleRowKeys.Count; i++)
-            {
-                Key targetKey = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == titleKeyCodes[i]);
-
-                if (targetKey != null)
-                {
-                    int targetRow, targetCol;
-                    bool found;
-                    (found, targetRow, targetCol) = FindKey(targetKey.KeyboardLetter);
-
-                    if (found)
-                    {
-                        Key temp = keys[middleRow][startIdx + i];
-                        keys[middleRow][startIdx + i] = targetKey;
-                        keys[targetRow][targetCol] = temp;
-                        temp.transform.DOMove(targetKey.transform.position, 0.75f);
-                        targetKey.transform.DOMove(temp.transform.position, 0.75f);
-
-                        float random = Random.Range(0.02f, 0.05f);
-                        yield return new WaitForSeconds(random);
-                    }
-                }
-            }
+            // Create combo for title keys
+            comboController.CreateCombo(titleKeys);
+            // Doesn't use the 'interactable' parameter since we want to animate the markers separately
+            HighlightKeys(title, true, false);
+            #endregion
 
             yield return new WaitForSeconds(0.75f);
-
-            foreach (Key key in shuffledKeys)
-            {
-                key.Disable();
-                yield return new WaitForSeconds(Random.Range(0.02f, 0.05f));
-            }
-            #endregion
 
             #region Wait for Player to Start
             // Animate combo markers on title keys
@@ -459,60 +401,26 @@ public class KeyController : MonoBehaviour
                 titleKey.ComboMarker.SetActive(titleKey.Combo = true);
                 yield return new WaitForSeconds(0.1f);
             }
-
-            comboController.CreateCombo(titleKeys);
+            
             yield return new WaitUntil(() => GameManager.Instance.TyperEntered);
-
-            // Remove combo markers from title keys
-            foreach (Key titleKey in titleKeys)
-            {
-                titleKey.ComboMarker.SetActive(titleKey.Combo = false);
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            // Remove the combo from the system after the markers have been removed for visual flair
-            comboController.RemoveCombo(titleKeys);
             #endregion
 
             #region Return to Original Positions
-            foreach (Key key in FlatKeys)
-            {
-                key.transform.DOMove(originalPositions[key], 0.5f);
-                yield return new WaitForSeconds(Random.Range(0.01f, 0.03f));
-            }
-            
-            foreach (Key key in FlatKeys)
-            {
-                key.Enable();
-                yield return new WaitForSeconds(Random.Range(0.02f, 0.05f));
-            }
+            // Removes combo for title keys as well
+            HighlightKeys(title, false, false);
+
+            foreach (var key in FlatKeys) 
+                key.ComboMarker.SetActive(key.Combo = false);
             #endregion
 
-            foreach (Key key in FlatKeys)
-            {
-                key.offGCDMarker.SetActive(key.OffGlobalCooldown);
-                key.ComboMarker.SetActive(key.Combo);
-                key.MashMarker.SetActive(key.Mash);
-            }
-            
             parent.transform.DOMove(new (0.85f, -5f), 1.5f).SetEase(Ease.InOutCubic).OnComplete(() =>
             {
-                GameObject canvas = GameObject.Find("Canvas").gameObject;
-                canvas.SetActive(true);
+                var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+                canvas.gameObject.SetActive(true);
+
+                menuKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
+                menuKeyboardParentPosition = parent.transform.position; // store menu position
             });
-        }
-    }
-
-    // TODO: Add a stop highlighting function, and reorder the keys to put PLAY in the center when highlighting.
-    public void HighlightPlay()
-    {
-        List<KeyCode> playKeyCodes = new () { KeyCode.P, KeyCode.L, KeyCode.A, KeyCode.Y };
-        List<Key> playKeys = playKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-        var keysExceptPlay = FlatKeys.Except(playKeys).ToList();
-
-        foreach (Key key in keysExceptPlay)
-        {
-            key.Disable();
         }
     }
 
@@ -538,5 +446,107 @@ public class KeyController : MonoBehaviour
             keyObj.Activate();
         }
         #endregion
+    }
+
+    Dictionary<Key, Vector3> gameKeyPositions = new ();
+    Dictionary<Key, Vector3> menuKeyPositions = new ();
+    Vector3 gameKeyboardParentPosition; // stores gameplay position of parent
+    Vector3 menuKeyboardParentPosition; // stores menu position of parent
+
+    /// <summary>
+    /// Moves the specified word to the center of the middle row, swapping with existing keys.
+    /// </summary>
+    /// <param name="word">The word to move (e.g., "PLAY", "MENU", "EXIT").</param>
+    public void MoveWordToCenterRow(string word)
+    {
+        const int middleRow = 1;
+        List<Key> middleRowKeys = keys[middleRow];
+        int startIdx = (middleRowKeys.Count - word.Length) / 2;
+        List<KeyCode> wordKeyCodes = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
+        
+        // The keys corresponding to the letters in the word
+        List<Key> wordKeys = wordKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
+        // The keys that are not part of the word (to be disabled if highlight is true)
+        List<Key> unavailableKeys = FlatKeys.Except(wordKeys).ToList();
+
+        if (wordKeys.Count != word.Length)
+        {
+            Debug.LogWarning($"Not all letters in the word '{word}' are present on the keyboard.");
+            return;
+        }
+
+        // save original positions of all keys
+        menuKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
+
+        for (int i = 0; i < wordKeys.Count; i++)
+        {
+            Key targetKey = middleRowKeys[startIdx + i];
+            Key wordKey = wordKeys[i];
+
+            if (wordKey == targetKey) continue; // skip if the key is already in the correct position
+
+            Vector3 targetPosition = targetKey.transform.position;
+            Vector3 wordPosition = wordKey.transform.position;
+
+            // Swap positions
+            wordKey.transform.DOMove(targetPosition, 0.5f).SetEase(Ease.InOutCubic);
+            targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic);
+        }
+    }
+
+    public void HighlightKeys(string word, bool enable, bool interactable)
+    {
+        foreach (Key key in FlatKeys)
+        {
+            if (menuKeyPositions.TryGetValue(key, out Vector3 position)) 
+                key.transform.position = position;
+        }
+        
+        List<Key> keysToHighlight = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
+
+        // List of keys to disable (all keys except the ones to highlight)
+        List<Key> keysToDisable = FlatKeys.Except(keysToHighlight).ToList();
+
+        foreach (Key key in keysToDisable)
+        {
+            if (enable)
+            {
+                key.Disable();
+                MoveWordToCenterRow(word);
+
+                if (interactable) comboController.CreateCombo(keysToHighlight);
+            }
+            else
+            {
+                key.Enable();
+                ResetKeyPositions();
+
+                if (!interactable) comboController.RemoveCombo(keysToHighlight);
+            }
+        }
+    }
+
+    public void ResetKeyPositions()
+    {
+        GameObject parent = GameObject.Find("Keyboard");
+        if (parent != null && menuKeyboardParentPosition != Vector3.zero)
+            parent.transform.DOMove(menuKeyboardParentPosition, 0.5f);
+        foreach (Key key in FlatKeys)
+        {
+            if (menuKeyPositions.TryGetValue(key, out Vector3 position)) 
+                key.transform.DOMove(position, 0.5f);
+        }
+    }
+    
+    public void ResetToGamePositions()
+    {
+        GameObject parent = GameObject.Find("Keyboard");
+        if (parent != null && gameKeyboardParentPosition != Vector3.zero)
+            parent.transform.DOMove(gameKeyboardParentPosition, 0.5f);
+        foreach (Key key in FlatKeys)
+        {
+            if (gameKeyPositions.TryGetValue(key, out Vector3 position)) 
+                key.transform.DOMove(position, 0.5f);
+        }
     }
 }
