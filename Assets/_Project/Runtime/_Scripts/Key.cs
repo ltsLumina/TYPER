@@ -155,6 +155,11 @@ public partial class Key : MonoBehaviour
         MashMarker.SetActive(false);
     }
 
+    void OnEnable()
+    {
+        //OnActivated += ((hit, key) => Debug.Log($"{name} activated. Hit enemy: {hit}. Triggered by key: {(key != null ? key.name : "Player Input")}"));
+    }
+
     void Start()
     {
         comboController = ComboController.Instance;
@@ -273,13 +278,19 @@ public partial class Key : MonoBehaviour
                   });
     }
 
+    int timesActivatedByKey;
     IEnumerator StackOverflowProtection()
     {
         yield return new WaitForEndOfFrame();
         timesActivatedByKey = 0;
     }
     
-    int timesActivatedByKey;
+    /// <summary>
+    /// Event triggered when the key is activated.
+    /// The first parameter indicates whether an enemy was hit (true) or not (false).
+    /// The second parameter indicates whether the key was triggered by another key (Key != null) or by player input (null).
+    /// </summary>
+    public event Action<bool, Key> OnActivated;
     
     /// <summary>
     /// Activates the key, dealing damage to the current enemy if one is present.
@@ -347,6 +358,8 @@ public partial class Key : MonoBehaviour
                 comboController.BeginCombo(keyboardLetter);
                 StartLocalCooldown(cooldown);
                 SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                OnActivated?.Invoke(hitEnemy, triggerKey);
+                
                 ComboHighlight.gameObject.SetActive(false);
                 return;
             }
@@ -359,24 +372,28 @@ public partial class Key : MonoBehaviour
                 if (comboIndex == comboController.ComboLength - 1)
                 {
                     var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
-                    List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter, true);
-                    var middleKey = KeyController.Instance.GetAdjacentKey(this.ToKeyCode(), KeyController.Direction.All, out List<Key> adjacentKeys);
-                    foreach (var key in adjacentKeys)
+                    List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter, false);
+                    var self = KeyController.Instance.GetAdjacentKey(this.ToKeyCode(), KeyController.Direction.All, out List<Key> adjacentKeys);
+                    foreach (var key in surroundingKeys)
                     {
                         var instantiate = Instantiate(vfx, key.transform.position, Quaternion.identity);
                         ParticleSystem.MainModule instantiateMain = instantiate.main;
                         instantiateMain.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
                         key.Activate(true, 0.5f, this);
                         key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                        OnActivated?.Invoke(hitEnemy, this);
                     }
 
                     StartLocalCooldown(cooldown);
                     SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                    OnActivated?.Invoke(hitEnemy, triggerKey);
                     return;
                 }
                 
                 StartLocalCooldown(cooldown);
                 SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                OnActivated?.Invoke(hitEnemy, triggerKey);
+                
                 ComboHighlight.gameObject.SetActive(false);
                 return;
             }
@@ -395,11 +412,13 @@ public partial class Key : MonoBehaviour
                 KeyController.Instance.Wave(0.2f);
                 StartLocalCooldown(5f);
                 SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
+                OnActivated?.Invoke(hitEnemy, triggerKey);
                 return;
             }
             
             StartLocalCooldown(0.25f);
             SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
+            OnActivated?.Invoke(hitEnemy, triggerKey);
             return;
         }
 
@@ -411,17 +430,21 @@ public partial class Key : MonoBehaviour
         {
             StartLocalCooldown(cooldown + 2.5f);
             SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
+            OnActivated?.Invoke(hitEnemy, triggerKey);
             return;
         }
         if (overrideGlobalCooldown)
         {
             StartLocalCooldown(cooldownOverride > 0 ? cooldownOverride : cooldown);
             SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
+            OnActivated?.Invoke(hitEnemy, triggerKey);
+            //Debug.Log($"{name} activated by {(triggerKey != null ? triggerKey.name : "Player Input")}.");
         }
         else
         {
             KeyController.Instance.StartGlobalCooldown();
             SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
+            OnActivated?.Invoke(hitEnemy, triggerKey);
         }
     }
 

@@ -55,14 +55,15 @@ public partial class KeyController
 			case Direction.All: // return the first adjacent key found in every direction
 				var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
 				adjacentKeys = directions.Select(dir => GetAdjacentKey(keycode, dir, out _)).Where(adjacent => adjacent != null).ToList();
-				break;
+				
+				// return self to indicate multiple keys found
+				return keys[row][col];
 
 			default:
 				throw new ArgumentOutOfRangeException(nameof(direction));
 		}
-
-		return null;
 	}
+	
 	/// <param name="includeSelf"> Whether to include the specified key in the returned list. </param>
 	/// <returns> Returns a list of all keys surrounding the specified key (up to 8 keys). </returns>
 	public List<Key> GetSurroundingKeys(KeyCode keycode, bool includeSelf = false)

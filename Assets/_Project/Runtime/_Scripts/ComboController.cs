@@ -65,7 +65,7 @@ public class ComboController : MonoBehaviour
 		nextComboIndex = -1;
 		
 		string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
-		Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
+		//Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
 	}
 
 	public void CreateCombo(List<KeyCode> keycodes, bool loops = false)
@@ -194,9 +194,15 @@ public class ComboController : MonoBehaviour
 		string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
 		Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
 		OnCompleteCombo?.Invoke();
+		foreach (var key in currentComboKeys)
+		{
+			CompletedCombo.Enqueue(key);
+		}
 		
 		ResetCombo();
 	}
+
+	public Queue<Key> CompletedCombo => new ();
 	
 	public void ResetCombo()
 	{

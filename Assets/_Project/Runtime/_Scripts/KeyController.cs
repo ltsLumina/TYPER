@@ -58,7 +58,7 @@ public partial class KeyController : MonoBehaviour
     public KeyCode KeyPressed { get; private set; }
     public float GlobalCooldown => globalCooldown;
     public float CurrentCooldown => currentCooldown;
-    public bool OnCooldown => Instance.currentCooldown > 0;
+    public bool OnCooldown => currentCooldown > 0;
 
     public List<List<Key>> Keys => keys;
     public List<Key> FlatKeys { get; private set; } = new ();
@@ -185,6 +185,11 @@ public partial class KeyController : MonoBehaviour
                 }
             }
         }
+        
+        foreach (var key in FlatKeys)
+        {
+            key.OnActivated += CreateWordHighwayObject;
+        }
 
         // Start intro animation sequence after all setup
         StartCoroutine(IntroSequence());
@@ -193,19 +198,22 @@ public partial class KeyController : MonoBehaviour
         if (SceneManagerExtended.ActiveSceneName == "Game")
         {
             List<KeyCode> qweCombo = "QWE".ToKeyCodes();
-            comboController.CreateCombo(qweCombo);
+            //comboController.CreateCombo(qweCombo);
             
             List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
-            //comboController.CreateCombo(asdfCombo);
+            comboController.CreateCombo(asdfCombo);
 
             List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
             //comboController.CreateCombo(rtyCombo);
+
+            List<KeyCode> cvbCombo = "CVB".ToKeyCodes();
+            comboController.CreateCombo(cvbCombo);
             
             List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
             oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
 
             const float cooldown = 10f;
-            KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
+            //KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
 
             // set G key to be a mash key
             Key mashKey = GetKey(KeyCode.G);
@@ -214,11 +222,11 @@ public partial class KeyController : MonoBehaviour
             // make H shake
             Key shakeKey = Instance.GetKey(KeyCode.H);
             shakeKey.SetModifier(Key.Modifiers.Loose);
+
+            // chain J key
+            Key chainKey = GetKey(KeyCode.J);
+            chainKey.SetModifier(Key.Modifiers.Chained);
         }
-        
-        // chain J key
-        Key chainKey = GetKey(KeyCode.J);
-        chainKey.SetModifier(Key.Modifiers.Chained);
         #endregion
         
         return;
@@ -391,46 +399,10 @@ public partial class KeyController : MonoBehaviour
         }
     }
 
-    GameObject wordHighway;
-    
-    void InitializeWordHighway() // Highlights the current keys pressed in the "Word Highway" area
+    void CreateWordHighwayObject(bool hitEnemy, Key triggeredByKey)
     {
-        wordHighway = GameObject.Find("Word Highway");
-        if (wordHighway != null) Destroy(wordHighway);
-        wordHighway = new ("Word Highway");
-
-        wordHighway.transform.position = new (0, 3.5f);
-        wordHighway.transform.localScale = Vector3.one * 0.75f;
-    }
-
-    public void StartGlobalCooldown()
-    {
-        foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) 
-            key.StartLocalCooldown(globalCooldown);
-    }
-
-    Key highwayKey;
-    List<Key> comboHighwayKeys = new(); // Track combo keys in wordHighway
-
-    bool correctKey;
-    
-    void Update()
-    {
-        #region Input Handling
-        if (!Input.anyKeyDown) return;
-
-        var pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
-        if (pressedKey == KeyCode.None) return;
-
-        KeyPressed = pressedKey;
-
-        Key keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
-        if (keyObj != null) keyObj.Activate();
-
-        #endregion
+        if (triggeredByKey) return;
         
-        if (OnCooldown) return;
-
         #region Word Highway
         var prefab = Resources.Load<Key>("PREFABS/Highway Key");
         
@@ -444,8 +416,11 @@ public partial class KeyController : MonoBehaviour
 
             if (!isComboKey)
             {
-                foreach (Key k in comboHighwayKeys.Where(k => k)) Destroy(k.gameObject);
-                comboHighwayKeys.Clear();
+                if (!DOTween.IsTweening("punch"))
+                {
+                    foreach (Key k in comboHighwayKeys.Where(k => k)) Destroy(k.gameObject);
+                    comboHighwayKeys.Clear();
+                }
                 
                 Debug.Log("Key not part of any combo");
                 if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
@@ -455,7 +430,7 @@ public partial class KeyController : MonoBehaviour
             }
             else
             {
-                if (!correctKey)
+                if (!correctKey && triggeredByKey)
                 {
                     Debug.Log("Key is part of a combo, but not the correct key in the sequence");
                     
@@ -468,17 +443,17 @@ public partial class KeyController : MonoBehaviour
                     highwayKey.gameObject.SetActive(true);
                     return;
                 }
-
+                
                 Debug.Log("Key is part of a combo");
-
-                if (comboHighwayKeys.Count >= 0)
+                
+                if (comboHighwayKeys.Count >= 0 && highwayKey)
                 {
-                    if (highwayKey) Destroy(highwayKey.gameObject);
+                    Destroy(highwayKey.gameObject);
                 }
 
                 // Instantiate and position combo key in wordHighway
                 int comboIndex = comboHighwayKeys.Count;
-                Vector3 comboPos = new((comboIndex * keyOffset) - 1.5f, 0f, 0f);
+                Vector3 comboPos = new (comboIndex * keyOffset - 1.5f, 0f, 0f);
                 Key comboKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
                 comboKey.transform.localPosition = comboPos;
                 comboKey.name = keyObj.KeyboardLetter.ToString();
@@ -501,11 +476,11 @@ public partial class KeyController : MonoBehaviour
                             highwayKey.gameObject.SetActive(true);
                             break;
                         }
-                        
-                        Debug.Log(comboHighwayKeys.Count);
 
                         key.transform.DOPunchPosition(new Vector3(0, 1f, 0), 0.3f, 10, 1f)
                            .SetDelay(0.5f)
+                           .SetLink(key.gameObject)
+                           .SetId("punch")
                            .OnComplete
                             (() =>
                             {
@@ -519,12 +494,51 @@ public partial class KeyController : MonoBehaviour
                                 Destroy(key.gameObject, 0.5f);
 
                                 comboHighwayKeys.Clear();
-                                if (highwayKey) Destroy(highwayKey.gameObject);
+                                //if (highwayKey) Destroy(highwayKey.gameObject);
                             });
                     }
                 }
             }
         }
+        #endregion
+    }
+
+    GameObject wordHighway;
+    
+    void InitializeWordHighway() // Highlights the current keys pressed in the "Word Highway" area
+    {
+        wordHighway = GameObject.Find("Word Highway");
+        if (wordHighway != null) Destroy(wordHighway);
+        wordHighway = new ("Word Highway");
+
+        wordHighway.transform.position = new (0, 3.5f);
+        wordHighway.transform.localScale = Vector3.one * 0.75f;
+    }
+
+    public void StartGlobalCooldown()
+    {
+        foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) 
+            key.StartLocalCooldown(globalCooldown);
+    }
+
+    Key highwayKey;
+    List<Key> comboHighwayKeys = new(); // Track combo keys in wordHighway
+
+    bool correctKey;
+    Key keyObj;
+    
+    void Update()
+    {
+        #region Input Handling
+        if (!Input.anyKeyDown) return;
+
+        var pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
+        if (pressedKey == KeyCode.None) return;
+
+        KeyPressed = pressedKey;
+        
+        keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
+        if (keyObj != null) keyObj.Activate();
         #endregion
     }
 
