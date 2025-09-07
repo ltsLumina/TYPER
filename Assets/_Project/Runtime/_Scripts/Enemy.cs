@@ -33,10 +33,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public override string ToString() => name = $"Enemy (on Lane {Lane + 1} | Health: {Health})";
 
-    void Awake()
-    {
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-    }
+    void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
     void Start()
     {
@@ -44,11 +41,10 @@ public class Enemy : MonoBehaviour, IDamageable
         Health += WeightedRandomHealth();
         Health = Mathf.Max(1, Health);
         if (Random.value < 0.1f) // 10% chance to be a tank enemy
-        {
             Health = 10;
-            spriteRenderer.color = Color.red;
-        }
         
+        if (Health >= 10) spriteRenderer.color = Color.red;
+
         scoreValue = Health * 10;
         
         // random size and speed based on health
@@ -114,14 +110,26 @@ public class Enemy : MonoBehaviour, IDamageable
     }
 
     int consecutiveHits;
-    Coroutine hitStopCoroutine;
-    
+    int pendingDamage;
+
+    void LateUpdate()
+    {
+        // Store the amount of damage taken this frame and apply it at the end of the frame.
+        // This is due to each key applying damage once each, so the enemy takes damage multiple times per frame from different keys.
+        if (pendingDamage > 0)
+        {
+            Health = Mathf.Max(0, Health - pendingDamage);
+            Debug.Log($"{name} took {pendingDamage} damage. Remaining health: {Health}");
+            pendingDamage = 0;
+        }
+    }
+
     public void TakeDamage(int damage, bool isCritical = false)
     {
-        Health = Mathf.Max(0, Health - damage);
+        pendingDamage += damage;
         name = ToString();
         
-        switch (Health)
+        switch (Health - pendingDamage)
         {
             // death
             case <= 0: {
@@ -148,20 +156,26 @@ public class Enemy : MonoBehaviour, IDamageable
             case > 0: {
                 consecutiveHits++;
                 
-                // shrink a bit based on remaining health
-                Vector3 size = transform.localScale;
-                size.x = 0.5f + Health * 0.1f;
-                size.y = 0.5f + Health * 0.1f;
-                transform.localScale = size;
+                // shrink a bit based on remaining health using DOTween
+                int newHealth = Health - pendingDamage;
+                var targetSize = new Vector3(0.5f + newHealth * 0.1f, 0.5f + newHealth * 0.1f, transform.localScale.z);
+                transform.DOScale(targetSize, 0.2f).SetEase(Ease.OutFlash, 1f, 0f).SetLink(gameObject);
                 
                 // reduce speed temporarily
                 StartCoroutine(Slow(0.5f, 2f));
 
                 // if 3 or more consecutive hits, stun for 3 seconds
-                if (consecutiveHits >= 3) StartCoroutine(Stun(3f));
+                if (consecutiveHits % 3 == 0) StartCoroutine(Stun(1f));
+
+                // ensure at least the current damage is applied if pendingDamage is zero
+                pendingDamage = pendingDamage > 0 ? pendingDamage : damage;
+                
+                // scale with damage taken. Special case for high damage hits (8 or more)
+                float slowdownTime = pendingDamage >= 8 ? 1f : 0.05f;
+                float slowdownAmount = pendingDamage >= 8 ? 0.02f : 0.05f;
 
                 // add a bit of time slowdown for juiciness
-                hitStopCoroutine ??= StartCoroutine(HitStop(0.05f, 0.05f));
+                GameManager.Instance.TriggerHitStop(slowdownTime, slowdownAmount);
 
                 // VFX
                 HitVFX();
@@ -188,22 +202,15 @@ public class Enemy : MonoBehaviour, IDamageable
         
         IEnumerator Stun(float duration)
         {
-            enabled = false;
-        
+            float originalSpeed = speed;
+            speed = 0f;
+            
             yield return new WaitForSeconds(duration);
-        
-            enabled = true;
-        }              
-
-        IEnumerator HitStop(float duration, float slowdownFactor = 0f)
-        {
-            Time.timeScale = slowdownFactor;
-            Time.fixedDeltaTime = 0.02f * Time.timeScale;
-            yield return new WaitForSecondsRealtime(duration);
-            Time.timeScale = 1f;
-            Time.fixedDeltaTime = 0.02f;
+            
+            speed = originalSpeed;
+            
+            consecutiveHits = 0;
         }
-
         
         void HitVFX()
         {

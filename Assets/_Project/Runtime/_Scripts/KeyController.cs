@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 
-public class KeyController : MonoBehaviour
+public partial class KeyController : MonoBehaviour
 {
     enum KeyboardLayout
     {
@@ -44,9 +44,16 @@ public class KeyController : MonoBehaviour
     [SerializeField] float globalCooldown = 1f;
     [SerializeField, ReadOnly] float currentCooldown;
 
+    ComboController comboController;
+    
     readonly List<List<Key>> keys = new ();
 
     public static KeyController Instance { get; private set; }
+
+    /// <summary>
+    /// The parent object containing all key objects.
+    /// </summary>
+    public GameObject Keyboard { get; private set; }
 
     public KeyCode KeyPressed { get; private set; }
     public float GlobalCooldown => globalCooldown;
@@ -77,6 +84,7 @@ public class KeyController : MonoBehaviour
         }
     }
 
+    #region Get Key Functions
     List<KeyCode> GetKeySetByLayout()
     {
         switch (keySet)
@@ -129,10 +137,6 @@ public class KeyController : MonoBehaviour
 
         return null;
     }
-    
-    /// <param name="row"> 0-based index of the row to retrieve. </param>
-    /// <returns> List of keys in the specified row. </returns>
-    public List<Key> GetRow(int row) => keys[row]; 
 
     public (bool found, int row, int col) FindKey(KeyCode keycode)
     {
@@ -152,237 +156,88 @@ public class KeyController : MonoBehaviour
         (bool found, int row, int col) = FindKey(keycode);
         return found ? keys[row][col] : null;
     }
-
-    public enum Direction
-    {
-        Up,
-        Down,
-        Left,
-        Right,
-        All
-    }
-
-    /// <param name="direction"> Direction to look for an adjacent key. </param>
-    /// <param name="adjacentKeys">
-    ///     If direction is All, this will be populated with all adjacent keys found. Otherwise, it
-    ///     will be null.
-    /// </param>
-    /// <returns>
-    ///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns null and
-    ///     populates adjacentKeys with all found adjacent keys.
-    /// </returns>
-    public Key GetAdjacentKey(KeyCode keycode, Direction direction, out List<Key> adjacentKeys)
-    {
-        (bool found, int row, int col) = FindKey(keycode);
-        if (!found)
-        {
-            adjacentKeys = null;
-            return null;
-        }
-
-        switch (direction) // super fancy math or something
-        {
-            case Direction.Up:
-                adjacentKeys = null;
-                return row > 0 ? keys[row - 1][Mathf.Min(col, keys[row - 1].Count - 1)] : null;
-
-            case Direction.Down:
-                adjacentKeys = null;
-                return row < keys.Count - 1 ? keys[row + 1][Mathf.Min(col, keys[row + 1].Count - 1)] : null;
-
-            case Direction.Left:
-                adjacentKeys = null;
-                return col > 0 ? keys[row][col - 1] : null;
-
-            case Direction.Right:
-                adjacentKeys = null;
-                return col < keys[row].Count - 1 ? keys[row][col + 1] : null;
-
-            case Direction.All: // return the first adjacent key found in every direction
-                var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
-                adjacentKeys = directions.Select(dir => GetAdjacentKey(keycode, dir, out _)).Where(adjacent => adjacent != null).ToList();
-                break;
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(direction));
-        }
-        
-        return null;
-    }
-    
-    /// <param name="includeSelf"> Whether to include the specified key in the returned list. </param>
-    /// <returns> Returns a list of all keys surrounding the specified key (up to 8 keys). </returns>
-    public List<Key> GetSurroundingKeys(KeyCode keycode, bool includeSelf = false)
-    {
-        (bool found, int row, int col) = FindKey(keycode);
-        if (!found) return null;
-
-        List<Key> surroundingKeys = new ();
-        
-        for (int r = row - 1; r <= row + 1; r++)
-        {
-            for (int c = col - 1; c <= col + 1; c++)
-            {
-                if (r >= 0 && r < keys.Count && c >= 0 && c < keys[r].Count && (r != row || c != col))
-                {
-                    surroundingKeys.Add(keys[r][c]);
-                }
-            }
-        }
-        
-        if (includeSelf) surroundingKeys.Add(keys[row][col]);
-
-        return surroundingKeys;
-    }
-    
-    public List<List<Key>> Wave()
-    {
-        List<List<Key>> wave = new ();
-        int maxCols = keys.Max(row => row.Count);
-
-        for (int col = 0; col < maxCols; col++)
-        {
-            List<Key> waveRow = (from t in keys where col < t.Count select t[col]).ToList();
-            wave.Add(waveRow);
-        }
-
-        return wave;
-    }
+    #endregion
 
     void Awake()
     {
         if (Instance != null && Instance != this) Destroy(this);
         else Instance = this;
     }
-
-    ComboController comboController;
     
     void Start()
     {
         comboController = ComboController.Instance;
         
-        GameObject parent = GameObject.Find("Keyboard") ?? new GameObject("Keyboard");
-        currentlyValidKeys.Clear();
-
-        // create rows' parent objects
-        RowParents();
-
-        for (int i = 0; i < CurrentlyValidKeys.Count; i++)
-        {
-            KeyCode keycode = CurrentlyValidKeys[i];
-
-            // Declare start positions for each row
-            Vector2 firstRow = new (-8.5f, 3.5f);
-            Vector2 secondRow = new (-8f, 2.5f);
-            Vector2 thirdRow = new (-7.5f, 1.5f);
-
-            int row = Row(i);
-            Vector2 pos = KeyPosition(i, row, firstRow, secondRow, thirdRow);
-            Transform rowParent = parent.transform.GetChild(row);
-            Key key = Instantiate(keyPrefab, pos, Quaternion.identity, rowParent);
-
-            // initialize key
-            key.InitKey(keycode, Row(i), IndexInRow(i), i);
-
-            // object setup
-            key.name = keycode.ToString();
-            key.gameObject.SetActive(true);
-
-            // populate keys 2D list
-            // ReSharper disable once ArrangeObjectCreationWhenTypeNotEvident
-            if (keys.Count <= row) keys.Add(new List<Key>());
-            keys[row].Add(key);
-        }
-
-        FlatKeys = keys.SelectMany(row => row).ToList();
+        InitializeKeyboard();
         
-        // Set parent position to center the keyboard on screen after all keys are instantiated.
-        parent.transform.position = new (3.5f, 8f);
-        gameKeyboardParentPosition = parent.transform.position; // store gameplay position
+        InitializeWordHighway();
 
         // get the first item in each row to determine lane positions
-        // for (int row = 0; row < keys.Count; row++)
-        // {
-        //     if (keys[row].Count > 0)
-        //     {
-        //         float lane = keys[row][0].transform.position.y;
-        //         Lanes[row] = lane;
-        //         Debug.DrawLine(new Vector3(-10f, lane, 0f), new Vector3(10f, lane, 0f), Color.green, 300f);
-        //     }
-        // }
-
-        // Start intro animation sequence after all setup
-        StartCoroutine(IntroSequence());
-        
-        return;
-        void RowParents()
+        if (SceneManagerExtended.ActiveSceneName == "Game")
         {
-            for (int i = 0; i < 3; i++)
+            for (int row = 0; row < keys.Count; row++)
             {
-                string rowName = i switch
-                { 0 => "QWERTY Row (Q-P)",
-                  1 => "ASDFG Row (A-L)",
-                  2 => "ZXCVB Row (Z-M)",
-                  _ => "Row name failed to initialize." };
-
-                GameObject row = new (rowName);
-                row.transform.parent = parent.transform;
+                if (keys[row].Count > 0)
+                {
+                    float lane = keys[row][0].transform.position.y;
+                    Lanes[row] = lane;
+                    Debug.DrawLine(new Vector3(-10f, lane, 0f), new Vector3(10f, lane, 0f), Color.green, 300f);
+                }
             }
         }
 
-        int IndexInRow(int index)
+        // Start intro animation sequence after all setup
+        StartCoroutine(IntroSequence());
+
+        #region Modifiers
+        if (SceneManagerExtended.ActiveSceneName == "Game")
         {
-            int i = index switch
-            { >= 0 and < 10  => index,      // QWERTY row
-              >= 10 and < 19 => index - 10, // ASDFG row
-              >= 19 and < 26 => index - 19, // ZXCVB row
-              _              => -1 };
+            List<KeyCode> qweCombo = "QWE".ToKeyCodes();
+            comboController.CreateCombo(qweCombo);
+            
+            List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
+            //comboController.CreateCombo(asdfCombo);
 
-            return i;
+            List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
+            //comboController.CreateCombo(rtyCombo);
+            
+            List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
+            oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
+
+            const float cooldown = 10f;
+            KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
+
+            // set G key to be a mash key
+            Key mashKey = GetKey(KeyCode.G);
+            mashKey.SetModifier(Key.Modifiers.Mash);
+            
+            // make H shake
+            Key shakeKey = Instance.GetKey(KeyCode.H);
+            shakeKey.SetModifier(Key.Modifiers.Loose);
         }
-
-        int Row(int i)
-        {
-            int row = i switch
-            { >= 0 and < 10 => 0 // QWERTY row
-             ,
-              >= 10 and < 19 => 1 // ASDFG row
-             ,
-              >= 19 and < 26 => 2 // ZXCVB row
-             ,
-              _ => -1 };
-
-            return row;
-        }
-
-        Vector2 KeyPosition(int i, int row, Vector2 firstRowPos, Vector2 secondRowPos, Vector2 thirdRowPos)
-        {
-            Vector2 pos = i switch
-            { >= 0 and < 10 => firstRowPos + new Vector2(i * keyOffset, rowOffsets[row]) // QWERTY row
-             ,
-              >= 10 and < 19 => secondRowPos + new Vector2((i - 10) * keyOffset, rowOffsets[row]) // ASDFG row
-             ,
-              >= 19 and < 26 => thirdRowPos + new Vector2((i - 19) * keyOffset, rowOffsets[row]) // ZXCVB row
-             ,
-              _ => Vector2.zero };
-
-            return pos;
-        }
-
+        
+        // chain J key
+        Key chainKey = GetKey(KeyCode.J);
+        chainKey.SetModifier(Key.Modifiers.Chained);
+        #endregion
+        
+        return;
         IEnumerator IntroSequence()
         {
+            // TODO: change this to a better solution
+            if (SceneManagerExtended.ActiveSceneName != "Menu") yield break;
+            
+            GameManager.Instance.EnterTransition.gameObject.SetActive(true);
+            
             // Wait one frame to ensure all keys are initialized
-            yield return null;
+            yield return new WaitForSeconds(1f);
             
             // Center the title "TYPER" in the middle of the middle row
             string title = GameManager.Instance.GameName;
             List<KeyCode> titleKeyCodes = title.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
             List<Key> titleKeys = titleKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-            
-            parent.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic).OnComplete(() => {
-                gameKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
-                gameKeyboardParentPosition = parent.transform.position; // update gameplay position after animation
-            });
+
+            Keyboard.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic);
             yield return new WaitForSeconds(1.5f);
 
             #region Swap positions of title keys with random keys
@@ -413,15 +268,139 @@ public class KeyController : MonoBehaviour
                 key.ComboMarker.SetActive(key.Combo = false);
             #endregion
 
-            parent.transform.DOMove(new (0.85f, -5f), 1.5f).SetEase(Ease.InOutCubic).OnComplete(() =>
+            Keyboard.transform.DOMove(new (0.85f, -5f), 1.5f).SetEase(Ease.InOutCubic).OnComplete(() =>
             {
-                var canvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+                var canvas = FindFirstObjectByType<MenuManager>(FindObjectsInactive.Include);
                 canvas.gameObject.SetActive(true);
+                
+                var child = canvas.transform.GetChild(0);
+                var rectTransform = child.GetComponent<RectTransform>();
+                rectTransform.anchoredPosition = new (500, 0);
+                rectTransform.DOAnchorPosX(0, 1f).SetEase(Ease.OutCubic);
 
                 menuKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
-                menuKeyboardParentPosition = parent.transform.position; // store menu position
+                menuKeyboardParentPosition = Keyboard.transform.position; // store menu position
             });
         }
+    }
+    
+    void InitializeKeyboard()
+    {
+        Keyboard = GameObject.Find("Keyboard");
+        if (Keyboard != null) Destroy(Keyboard);
+        Keyboard = new ("Keyboard");
+
+        currentlyValidKeys.Clear();
+
+        // create rows' parent objects
+        GenerateRows();
+
+        FlatKeys = GenerateKeys();
+
+        // Set initial position for intro animation off-screen, unless in Game scene
+        if (SceneManagerExtended.ActiveSceneName == "Game") 
+            Keyboard.transform.position = new (3.5f, -2f);
+        else 
+            Keyboard.transform.position = new (3.5f, 8f);
+
+        return;
+        void GenerateRows()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                string rowName = i switch
+                { 0 => "QWERTY Row (Q-P)",
+                  1 => "ASDFG Row (A-L)",
+                  2 => "ZXCVB Row (Z-M)",
+                  _ => "Row name failed to initialize." };
+
+                GameObject row = new (rowName);
+                row.transform.parent = Keyboard.transform;
+            }
+        }
+        
+        List<Key> GenerateKeys()
+        {
+            for (int i = 0; i < CurrentlyValidKeys.Count; i++)
+            {
+                KeyCode keycode = CurrentlyValidKeys[i];
+
+                // Declare start positions for each row
+                Vector2 firstRow = new (-8.5f, 3.5f);
+                Vector2 secondRow = new (-8f, 2.5f);
+                Vector2 thirdRow = new (-7.5f, 1.5f);
+
+                int row = Row(i);
+                Vector2 pos = KeyPosition(i, row, firstRow, secondRow, thirdRow);
+                Transform rowParent = Keyboard.transform.GetChild(row);
+                Key key = Instantiate(keyPrefab, pos, Quaternion.identity, rowParent);
+
+                // initialize key
+                key.InitKey(keycode, Row(i), IndexInRow(i), i);
+
+                // object setup
+                key.name = keycode.ToString();
+                key.gameObject.SetActive(true);
+
+                // populate keys 2D list
+                // ReSharper disable once ArrangeObjectCreationWhenTypeNotEvident
+                if (keys.Count <= row) keys.Add(new List<Key>());
+                keys[row].Add(key);
+            }
+            
+            return keys.SelectMany(row => row).ToList();
+        }
+
+        int Row(int i)
+        {
+            int row = i switch
+            { >= 0 and < 10 => 0 // QWERTY row
+             ,
+              >= 10 and < 19 => 1 // ASDFG row
+             ,
+              >= 19 and < 26 => 2 // ZXCVB row
+             ,
+              _ => -1 };
+
+            return row;
+        }
+
+        Vector2 KeyPosition(int i, int row, Vector2 firstRowPos, Vector2 secondRowPos, Vector2 thirdRowPos)
+        {
+            Vector2 pos = i switch
+            { >= 0 and < 10 => firstRowPos + new Vector2(i * keyOffset, rowOffsets[row]) // QWERTY row
+             ,
+              >= 10 and < 19 => secondRowPos + new Vector2((i - 10) * keyOffset, rowOffsets[row]) // ASDFG row
+             ,
+              >= 19 and < 26 => thirdRowPos + new Vector2((i - 19) * keyOffset, rowOffsets[row]) // ZXCVB row
+             ,
+              _ => Vector2.zero };
+
+            return pos;
+        }
+
+        int IndexInRow(int index)
+        {
+            int i = index switch
+            { >= 0 and < 10  => index,      // QWERTY row
+              >= 10 and < 19 => index - 10, // ASDFG row
+              >= 19 and < 26 => index - 19, // ZXCVB row
+              _              => -1 };
+
+            return i;
+        }
+    }
+
+    GameObject wordHighway;
+    
+    void InitializeWordHighway() // Highlights the current keys pressed in the "Word Highway" area
+    {
+        wordHighway = GameObject.Find("Word Highway");
+        if (wordHighway != null) Destroy(wordHighway);
+        wordHighway = new ("Word Highway");
+
+        wordHighway.transform.position = new (0, 3.5f);
+        wordHighway.transform.localScale = Vector3.one * 0.75f;
     }
 
     public void StartGlobalCooldown()
@@ -429,6 +408,11 @@ public class KeyController : MonoBehaviour
         foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) 
             key.StartLocalCooldown(globalCooldown);
     }
+
+    Key highwayKey;
+    List<Key> comboHighwayKeys = new(); // Track combo keys in wordHighway
+
+    bool correctKey;
     
     void Update()
     {
@@ -437,27 +421,140 @@ public class KeyController : MonoBehaviour
 
         var pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
         if (pressedKey == KeyCode.None) return;
-    
+
         KeyPressed = pressedKey;
-    
-        var keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
-        if (keyObj != null)
+
+        Key keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
+        if (keyObj != null) keyObj.Activate();
+
+        #endregion
+        
+        if (OnCooldown) return;
+
+        #region Word Highway
+        var prefab = Resources.Load<Key>("PREFABS/Highway Key");
+        
+        // Create a new Key object to pass to WordHighway
+        if (wordHighway != null && keyObj != null)
         {
-            keyObj.Activate();
+            // Check if key is part of any active combo
+            bool isComboKey = comboController.Combos.Any(c => c.ContainsKey(keyObj));
+            if (comboController.RecentKey != null) 
+                correctKey = comboController.RecentKey.ToKeyCode() == keyObj.ToKeyCode();
+
+            if (!isComboKey)
+            {
+                foreach (Key k in comboHighwayKeys.Where(k => k)) Destroy(k.gameObject);
+                comboHighwayKeys.Clear();
+                
+                Debug.Log("Key not part of any combo");
+                if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
+                highwayKey.name = keyObj.KeyboardLetter.ToString();
+                highwayKey.Letter.text = keyObj.KeyboardLetter.ToString();
+                highwayKey.gameObject.SetActive(true);
+            }
+            else
+            {
+                if (!correctKey)
+                {
+                    Debug.Log("Key is part of a combo, but not the correct key in the sequence");
+                    
+                    foreach (Key k in comboHighwayKeys.Where(k => k)) Destroy(k.gameObject);
+                    comboHighwayKeys.Clear();
+
+                    if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
+                    highwayKey.name = keyObj.KeyboardLetter.ToString();
+                    highwayKey.Letter.text = keyObj.KeyboardLetter.ToString();
+                    highwayKey.gameObject.SetActive(true);
+                    return;
+                }
+
+                Debug.Log("Key is part of a combo");
+
+                if (comboHighwayKeys.Count >= 0)
+                {
+                    if (highwayKey) Destroy(highwayKey.gameObject);
+                }
+
+                // Instantiate and position combo key in wordHighway
+                int comboIndex = comboHighwayKeys.Count;
+                Vector3 comboPos = new((comboIndex * keyOffset) - 1.5f, 0f, 0f);
+                Key comboKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
+                comboKey.transform.localPosition = comboPos;
+                comboKey.name = keyObj.KeyboardLetter.ToString();
+                comboKey.Letter.text = keyObj.KeyboardLetter.ToString();
+                comboKey.gameObject.SetActive(true);
+                comboHighwayKeys.Add(comboKey);
+
+                if (!comboController.InProgress) // runs when the last key in the combo is pressed
+                {
+                    foreach (var key in comboHighwayKeys)
+                    {
+                        if (comboHighwayKeys.Count <= 1)
+                        {
+                            foreach (Key k in comboHighwayKeys.Where(k => k)) Destroy(k.gameObject);
+                            comboHighwayKeys.Clear();
+
+                            if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
+                            highwayKey.name = keyObj.KeyboardLetter.ToString();
+                            highwayKey.Letter.text = keyObj.KeyboardLetter.ToString();
+                            highwayKey.gameObject.SetActive(true);
+                            break;
+                        }
+                        
+                        Debug.Log(comboHighwayKeys.Count);
+
+                        key.transform.DOPunchPosition(new Vector3(0, 1f, 0), 0.3f, 10, 1f)
+                           .SetDelay(0.5f)
+                           .OnComplete
+                            (() =>
+                            {
+                                var vfx = Instantiate(Resources.Load<ParticleSystem>("PREFABS/Combo Effect"), key.transform.position, Quaternion.identity);
+                                var main = vfx.main;
+                                main.maxParticles = 5;
+                                main.startColor = Random.ColorHSV(0, 1, 1, 1, 1, 1);
+                                vfx.Play();
+
+                                key.transform.DOMoveY(10f, 0.5f).SetEase(Ease.InBack).SetLink(key.gameObject);
+                                Destroy(key.gameObject, 0.5f);
+
+                                comboHighwayKeys.Clear();
+                                if (highwayKey) Destroy(highwayKey.gameObject);
+                            });
+                    }
+                }
+            }
         }
         #endregion
     }
 
-    Dictionary<Key, Vector3> gameKeyPositions = new ();
+    List<Key> GenerateKeys()
+    {
+        var rowKeys = new List<Key>();
+        List<KeyCode> highwayKeys = "Isogram".ToKeyCodes();
+
+        for (int i = 0; i < highwayKeys.Count; i++)
+        {
+            KeyCode keycode = highwayKeys[i];
+            Key key = Instantiate(keyPrefab, Vector3.zero, Quaternion.identity, wordHighway.transform);
+            Vector3 pos = new (i * keyOffset, 0f, 0f);
+            key.transform.localPosition = pos;
+
+            key.name = keycode.ToString();
+            key.gameObject.SetActive(true);
+        }
+
+        return rowKeys;
+    }
+    
     Dictionary<Key, Vector3> menuKeyPositions = new ();
-    Vector3 gameKeyboardParentPosition; // stores gameplay position of parent
     Vector3 menuKeyboardParentPosition; // stores menu position of parent
 
     /// <summary>
     /// Moves the specified word to the center of the middle row, swapping with existing keys.
     /// </summary>
     /// <param name="word">The word to move (e.g., "PLAY", "MENU", "EXIT").</param>
-    public void MoveWordToCenterRow(string word)
+    void MoveWordToCenterRow(string word)
     {
         const int middleRow = 1;
         List<Key> middleRowKeys = keys[middleRow];
@@ -466,8 +563,6 @@ public class KeyController : MonoBehaviour
         
         // The keys corresponding to the letters in the word
         List<Key> wordKeys = wordKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-        // The keys that are not part of the word (to be disabled if highlight is true)
-        List<Key> unavailableKeys = FlatKeys.Except(wordKeys).ToList();
 
         if (wordKeys.Count != word.Length)
         {
@@ -498,6 +593,7 @@ public class KeyController : MonoBehaviour
     {
         foreach (Key key in FlatKeys)
         {
+            if (!key) continue;
             if (menuKeyPositions.TryGetValue(key, out Vector3 position)) 
                 key.transform.position = position;
         }
@@ -514,14 +610,26 @@ public class KeyController : MonoBehaviour
                 key.Disable();
                 MoveWordToCenterRow(word);
 
-                if (interactable) comboController.CreateCombo(keysToHighlight);
+                if (interactable)
+                {
+                    comboController.CreateCombo(keysToHighlight);
+                    // combo markers on highlighted keys
+                    foreach (Key highlightKey in keysToHighlight) 
+                        highlightKey.ComboMarker.SetActive(highlightKey.Combo = true);
+                }
             }
             else
             {
                 key.Enable();
                 ResetKeyPositions();
 
-                if (!interactable) comboController.RemoveCombo(keysToHighlight);
+                if (!interactable)
+                {
+                    comboController.RemoveCombo(keysToHighlight);
+                    
+                    foreach (Key highlightKey in keysToHighlight) 
+                        highlightKey.ComboMarker.SetActive(highlightKey.Combo = false);
+                }
             }
         }
     }
@@ -529,23 +637,14 @@ public class KeyController : MonoBehaviour
     public void ResetKeyPositions()
     {
         GameObject parent = GameObject.Find("Keyboard");
+        if (!parent) return;
+        
         if (parent != null && menuKeyboardParentPosition != Vector3.zero)
             parent.transform.DOMove(menuKeyboardParentPosition, 0.5f);
+        
         foreach (Key key in FlatKeys)
         {
             if (menuKeyPositions.TryGetValue(key, out Vector3 position)) 
-                key.transform.DOMove(position, 0.5f);
-        }
-    }
-    
-    public void ResetToGamePositions()
-    {
-        GameObject parent = GameObject.Find("Keyboard");
-        if (parent != null && gameKeyboardParentPosition != Vector3.zero)
-            parent.transform.DOMove(gameKeyboardParentPosition, 0.5f);
-        foreach (Key key in FlatKeys)
-        {
-            if (gameKeyPositions.TryGetValue(key, out Vector3 position)) 
                 key.transform.DOMove(position, 0.5f);
         }
     }

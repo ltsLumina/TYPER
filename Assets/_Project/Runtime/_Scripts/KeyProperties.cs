@@ -19,8 +19,8 @@ public partial class Key
 	}
 	public int IndexGlobal
 	{
-		get => indexGlobal;
-		set => indexGlobal = value;
+		get => indexKey;
+		set => indexKey = value;
 	}
 	public bool OffGlobalCooldown
 	{
@@ -36,6 +36,21 @@ public partial class Key
 	{
 		get => mash;
 		set => mash = value;
+	}
+	public bool Chained
+	{
+		get => chained;
+		set => chained = value;
+	}
+	public bool Loose
+	{
+		get => loose;
+		set => loose = value;
+	}
+	public bool Thorned
+	{
+		get => thorned;
+		set => thorned = value;
 	}
 	public float CooldownTime
 	{

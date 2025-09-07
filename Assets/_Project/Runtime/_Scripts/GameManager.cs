@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
+using TransitionsPlus;
 using UnityEngine;
 using UnityEngine.Experimental.AI;
 
@@ -15,13 +16,17 @@ public class GameManager : MonoBehaviour
 	[SerializeField] string exit = "EXIT";
 	[SerializeField] int health = 10;
 	[SerializeField] int score;
+
+	[Header("Transitions")]
+	[SerializeField] TransitionAnimator enterTransition;
+	[SerializeField] TransitionAnimator exitTransition;
 	
 	[Header("Settings")]
 	[SerializeField] bool showDamageNumbers;
 	
 	public static GameManager Instance { get; private set; }
 
-	public bool TyperEntered { get; set; } = false;
+	public bool TyperEntered { get; private set; }
 	
 	public string GameName => gameName;
 	public bool ShowDamageNumbers => showDamageNumbers;
@@ -37,7 +42,10 @@ public class GameManager : MonoBehaviour
 		get => score;
 		private set => score = Mathf.Max(0, value);
 	}
-	
+
+	public TransitionAnimator EnterTransition => enterTransition;
+	public TransitionAnimator ExitTransition => exitTransition;
+
 	void Awake()
 	{
 		if (Instance != null && Instance != this) Destroy(this);
@@ -71,7 +79,8 @@ public class GameManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.Alpha1))
 		{
-			StartCoroutine(Wave());
+			Debug.LogWarning("Debug: Triggering Wave Effect");
+			KeyController.Instance.GetWaveKeys();
 		}
 
 		List<KeyCode> typerKeycodes = gameName.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
@@ -133,86 +142,10 @@ public class GameManager : MonoBehaviour
 								TyperEntered = true;
 								break;
 							
-							case CommandType.Play: // TODO just load new scene -- so much easier than this mess
+							case CommandType.Play:
 								Debug.Log("Play command entered!");
 								
-								var playKeys = "play".Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => KeyController.Instance.FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-								ComboController.Instance.RemoveCombo(playKeys);
-								
-								var canvas = FindAnyObjectByType<Canvas>(FindObjectsInactive.Include);
-								var canvasGroup = canvas.GetComponent<CanvasGroup>();
-
-								Sequence playSequence = DOTween.Sequence();
-
-								playSequence.Append
-								(canvasGroup.DOFade(0, 0.5f)
-								            .OnComplete
-								             (() =>
-								             {
-									             canvas.gameObject.SetActive(false);
-									             canvasGroup.alpha = 1f;
-								             }));
-
-								GameObject keyboard = GameObject.Find("Keyboard");
-
-								playSequence.Append
-								             (keyboard.transform.DOMove(new (3.5f, -2), 1.5f)
-								                      .SetEase(Ease.InOutSine)
-								                      .OnComplete
-								                       (() =>
-								                       {
-									                       KeyController.Instance.ResetToGamePositions();
-
-									                       // Init lanes
-									                       for (int r = 0; r < KeyController.Instance.Keys.Count; r++)
-									                       {
-										                       float lane = KeyController.Instance.Keys[r][0].transform.position.y;
-										                       KeyController.Instance.Lanes[r] = KeyController.Instance.Keys[r][0].transform.position.y;
-										                       Debug.DrawLine(new (-10f, lane, 0f), new (10f, lane, 0f), Color.green, 300f);
-									                       }
-								                       }))
-								            .OnComplete(() => playSequence.AppendInterval(1f))
-								            .OnComplete
-								             (() =>
-								             {
-									             var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
-									             spawner.gameObject.SetActive(true);
-								             });
-								
-								// enables all keys
-								foreach (Key key in KeyController.Instance.FlatKeys) key.Enable();
-
-								#region Modifiers
-								var comboController = ComboController.Instance;
-								
-								var qweCombo = new List<KeyCode> { KeyCode.Q, KeyCode.W, KeyCode.E };
-								comboController.CreateCombo(qweCombo);
-
-								// asdf combo
-								var asdfCombo = new List<KeyCode> { KeyCode.A, KeyCode.S, KeyCode.D, KeyCode.F };
-								comboController.CreateCombo(asdfCombo, true);
-
-								// select three random keys to be oGCD actions
-								List<Key> oGCD_Keys = KeyController.Instance.FlatKeys.Where
-								                               (x => x.KeyboardLetter != KeyCode.Q && x.KeyboardLetter != KeyCode.W && x.KeyboardLetter != KeyCode.E && x.KeyboardLetter != KeyCode.A && x.KeyboardLetter != KeyCode.S && x.KeyboardLetter != KeyCode.D &&
-								                                     x.KeyboardLetter != KeyCode.F && x.KeyboardLetter != KeyCode.G) // exclude combo keys and mash key
-								                              .OrderBy(x => Guid.NewGuid())
-								                              .Take(3)
-								                              .ToList();
-
-								foreach (Key key in oGCD_Keys) key.OffGlobalCooldown = true;
-
-								// set G key to be a mash key
-								Key mashKey = KeyController.Instance.GetKey(KeyCode.G);
-								if (mashKey != null) mashKey.Mash = true;
-
-								foreach (Key key in KeyController.Instance.FlatKeys)
-								{
-									key.offGCDMarker.SetActive(key.OffGlobalCooldown);
-									key.ComboMarker.SetActive(key.Combo);
-									key.MashMarker.SetActive(key.Mash);
-								}
-								#endregion
+								exitTransition.gameObject.SetActive(true);
 								break;
 
 							case CommandType.Menu:
@@ -246,22 +179,7 @@ public class GameManager : MonoBehaviour
 			}
 		}
 	}
-
-	public IEnumerator Wave()
-	{
-		var wave = KeyController.Instance.Wave();
-
-		foreach (List<Key> col in wave)
-		{
-			foreach (var key in col)
-			{
-				key.Activate(true, 1f);
-			}
-
-			yield return new WaitForSeconds(0.2f);
-		}
-	}
-
+	
 	public void TakeDamage(int damage)
 	{
 		Health -= damage;
@@ -278,6 +196,36 @@ public class GameManager : MonoBehaviour
 		{
 			Debug.Log($"Player took {damage} damage. Remaining health: {Health}");
 		}
+	}
+
+	Coroutine hitStopCoroutine;
+
+	public void TriggerHitStop(float duration, float slowdownFactor = 0f)
+	{
+		// if already active, restart hit stop
+		if (hitStopCoroutine != null)
+		{
+		    StopCoroutine(hitStopCoroutine);
+		    hitStopCoroutine = null;
+		}
+		
+		hitStopCoroutine = StartCoroutine(HitStop(duration, slowdownFactor));
+	}
+
+	IEnumerator HitStop(float duration, float slowdownFactor = 0f)
+	{
+		// Clamp the values to avoid extreme cases
+		duration = Mathf.Max(0.01f, duration);
+		slowdownFactor = Mathf.Clamp01(slowdownFactor);
+
+		Time.timeScale = slowdownFactor;
+		Time.fixedDeltaTime = 0.02f * Time.timeScale;
+
+		yield return new WaitForSecondsRealtime(duration);
+
+		Time.timeScale = 1f;
+		Time.fixedDeltaTime = 0.02f;
+		hitStopCoroutine = null;
 	}
 	
 	public void AddScore(int points)

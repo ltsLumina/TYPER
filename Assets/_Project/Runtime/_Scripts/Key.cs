@@ -1,11 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using DG.Tweening;
 using Lumina.Essentials.Attributes;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Experimental.AI;
 using VInspector;
+using Random = UnityEngine.Random;
 
 public partial class Key : MonoBehaviour
 {
@@ -13,6 +17,9 @@ public partial class Key : MonoBehaviour
     [Header("Attributes")]
     [SerializeField, ReadOnly] KeyCode keyboardLetter = KeyCode.Q;
     [SerializeField] int damage;
+    [SerializeField] bool chained;
+    [SerializeField] bool loose;
+    [SerializeField] bool thorned;
     [SerializeField] bool offGlobalCooldown;
     [SerializeField] bool combo;
     [SerializeField] bool mash;
@@ -25,7 +32,8 @@ public partial class Key : MonoBehaviour
     [SerializeField, ReadOnly] float currentCooldown; 
     
     [Tab("References")]
-    [SerializeField] GameObject comboIndicator;
+    [SerializeField] GameObject chainedMarker;
+    [SerializeField] GameObject comboHighlight;
     [SerializeField] SpriteRenderer spriteRenderer;
     [SerializeField] TMP_Text letter;
     [SerializeField] SpriteRenderer cooldownSprite;
@@ -44,12 +52,14 @@ public partial class Key : MonoBehaviour
     [Tooltip("The index of this key within its row. 0-based.")]
     [SerializeField, ReadOnly] int indexInRow;
     [Tooltip("The index of this key in the entire keyboard. 0-based.")]
-    [SerializeField, ReadOnly] int indexGlobal; 
+    [SerializeField, ReadOnly] int indexKey; 
     
     Enemy currentEnemy;
     ComboController comboController;
 
-    public GameObject ComboIndicator => comboIndicator;
+    #region Components/Children
+    public GameObject ChainedMarker => chainedMarker;
+    public GameObject ComboHighlight => comboHighlight;
     public SpriteRenderer SpriteRenderer => spriteRenderer;
     public TMP_Text Letter => letter;
     public SpriteRenderer CooldownSprite => cooldownSprite;
@@ -58,6 +68,7 @@ public partial class Key : MonoBehaviour
     public GameObject ComboMarker => comboMarker;
     public GameObject MashMarker => mashMarker;
     public TMP_Text DamageText => damageText;
+    #endregion
 
     public bool IsActive => isActive;
     public void Disable()
@@ -78,6 +89,57 @@ public partial class Key : MonoBehaviour
         set => comboIndex = value;
     }
 
+    public enum Modifiers
+    {
+        OffGlobalCooldown, // key can be pressed without triggering the global cooldown. Typically, has a longer cooldown.
+        Combo,   // key is part of a combo sequence, which must be pressed in order. If pressed out of order, the combo resets
+        Mash,    // key can be pressed rapidly to build up a counter, which triggers an effect when it reaches a certain threshold
+        Chained, // key is locked and cannot be pressed manually. Can be unlocked by having a different key activate it (e.g., through a combo that activates an adjacent key)
+        Loose,   // key is loose and will fall off the keyboard when pressed
+        Thorned, // "rooted"? - take self-damage when key is pressed
+    }
+    
+    /// <summary>
+    /// Sets the specified modifier for this key.
+    /// </summary>
+    /// <param name="modifier"> The modifier to set. </param>
+    /// <param name="value"> The value to set the modifier to. </param>
+    /// <param name="args"> Additional arguments for specific modifiers. For example, OffGlobalCooldown can take a float argument to set a new cooldown time. </param>
+    public void SetModifier(Modifiers modifier, bool value = true, params object[] args)
+    {
+        switch (modifier)
+        {
+            case Modifiers.OffGlobalCooldown:
+                OffGlobalCooldown = value;
+                offGCDMarker.SetActive(OffGlobalCooldown);
+                if (args.Length > 0 && args[0] is float newCooldown and > 0f) cooldown = newCooldown;
+                break;
+            case Modifiers.Combo:
+                Combo = value;
+                ComboMarker.SetActive(Combo);
+                break;
+            case Modifiers.Mash:
+                Mash = value;
+                MashMarker.SetActive(Mash);
+                break;
+            case Modifiers.Chained:
+                Chained = value;
+                ChainedMarker.SetActive(Chained);
+                Disable();
+                break;
+            case Modifiers.Loose:
+                Loose = value;
+                transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
+                break;
+            case Modifiers.Thorned:
+                Thorned = value;
+                break;
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(modifier), modifier, null);
+        }
+    }
+
     void Awake()
     {
         // Ensure the cooldown sprite is fully opaque at start. In the prefab view the alpha is 0.5f;
@@ -85,7 +147,8 @@ public partial class Key : MonoBehaviour
         color.a = 1f;
         CooldownSprite.color = color;
         
-        ComboIndicator.SetActive(false);
+        ChainedMarker.SetActive(false);
+        ComboHighlight.SetActive(false);
         HomingBar.SetActive(false);
         offGCDMarker.SetActive(false);
         ComboMarker.SetActive(false);
@@ -96,9 +159,10 @@ public partial class Key : MonoBehaviour
     {
         comboController = ComboController.Instance;
         
+        // Calculate damage based on indexInRow (more damage for keys further to the right)
         damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
         
-        oGCDMarker.SetActive(offGlobalCooldown);
+        offGCDMarker.SetActive(offGlobalCooldown);
         ComboMarker.SetActive(combo);
         MashMarker.SetActive(mash);
         DamageText.text = Mash ? mashCount.ToString() : string.Empty;
@@ -111,7 +175,8 @@ public partial class Key : MonoBehaviour
     
     void Assert()
     {
-        Debug.Assert(ComboIndicator != null, $"{name} is missing a reference to its ComboIndicator!");
+        Debug.Assert(ChainedMarker != null, $"{name} is missing a reference to its ChainedSprite!");
+        Debug.Assert(ComboHighlight != null, $"{name} is missing a reference to its ComboHighlight!");
         Debug.Assert(SpriteRenderer != null, $"{name} is missing a reference to its SpriteRenderer!");
         Debug.Assert(Letter != null, $"{name} is missing a reference to its Letter TMP_Text!");
         Debug.Assert(CooldownSprite != null, $"{name} is missing a reference to its CooldownSprite!");
@@ -122,12 +187,12 @@ public partial class Key : MonoBehaviour
         Debug.Assert(DamageText != null, $"{name} is missing a reference to its DamageText!");
     }
     
-    public void InitKey(KeyCode keycode, int row, int indexInRow, int indexGlobal)
+    public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKey)
     {
         keyboardLetter = keycode;
         this.row = row;
         this.indexInRow = indexInRow;
-        this.indexGlobal = indexGlobal;
+        this.indexKey = indexKey;
         
         Letter.text = keycode.ToString();
         Letter.text = Letter.text.Replace("Alpha", ""); // remove "Alpha" from numeric keys
@@ -137,7 +202,7 @@ public partial class Key : MonoBehaviour
     
     void Update()
     {
-        if (!isActive) return;
+        if (!isActive || Chained) return;
 
         // Handle per-key cooldown timer
         if (CooldownTime > 0f)
@@ -150,7 +215,6 @@ public partial class Key : MonoBehaviour
             }
             else // not finished cooldown yet
             {
-                SetColour(Color.grey);
                 DrawCooldownFill();
             }
         }
@@ -179,124 +243,186 @@ public partial class Key : MonoBehaviour
 
     Coroutine mashTimerCoroutine;
 
+    void ActivatedWhileLoose()
+    {
+        DOTween.Kill("Loose"); // Stop the infinite shaking tween.
+        
+        isActive = false; // Disables the key while falling but doesn't change the colour.
+        Loose = false;
+        Vector3 originalPos = transform.position;
+
+        var rb = gameObject.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        const float FORCE = 1.5f;
+        rb.AddForce(new Vector3(1f, 3f) * FORCE, ForceMode2D.Impulse);
+        rb.AddTorque(5, ForceMode2D.Impulse);
+
+        // Falling off animation
+        transform.DOScale(Vector3.zero, 1.5f)
+                 .SetDelay(1f)
+                 .SetEase(Ease.InBack)
+                 .OnComplete
+                  (() =>
+                  {
+                      Disable();
+                      SpriteRenderer.gameObject.SetActive(false);
+                      transform.position = originalPos;
+                      transform.rotation = Quaternion.identity;
+                      transform.localScale = Vector3.one;
+                      Destroy(rb);
+                  });
+    }
+
+    IEnumerator StackOverflowProtection()
+    {
+        yield return new WaitForEndOfFrame();
+        timesActivatedByKey = 0;
+    }
+    
+    int timesActivatedByKey;
+    
     /// <summary>
     /// Activates the key, dealing damage to the current enemy if one is present.
     /// </summary>
     /// <param name="overrideGlobalCooldown"> If true, the key will not trigger the global cooldown when pressed. (Overrides the OffGlobalCooldown property) </param>
+    /// <param name="cooldownOverride"> If greater than 0, this value will be used as the cooldown instead of the key's default cooldown. </param>
+    /// <param name="triggerKey"> The key that triggered this key, if any. Null if triggered by player input. (false) </param>
     /// <returns> True if an enemy was hit, false otherwise. </returns>
-    public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f)
+    public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f, Key triggerKey = null) // false by default
     {
-        // If this key is inactive, do nothing.
+        bool triggeredByKey = triggerKey != null;
+        #region Infnite Loop Protection - only allow 1 activation per frame per key
+        if (triggeredByKey)
+        {
+            timesActivatedByKey++;
+            if (timesActivatedByKey > 1)
+            {
+                Debug.LogError($"Potential infinite activation loop detected on key {name}. Activation aborted.");
+                timesActivatedByKey = 0;
+                return;
+            }
+            StartCoroutine(StackOverflowProtection());
+        }
+        #endregion
+
+        if (Chained)
+        {
+            if (triggeredByKey)
+            {
+                Chained = false;
+                ChainedMarker.SetActive(false);
+                Enable();
+            }
+            else
+            {
+                // shake the key left and right quickly to indicate it is chained
+                transform.DOPunchPosition(new (0.1f, 0f, 0f), duration: 0.2f, vibrato: 20);
+                return;
+            }
+        }
+        
         if (!isActive) return;
 
-        // If this key is on cooldown, do nothing.
-        // if this key is called again with a cooldown override, ignore the cooldown check.
+        // Prevent activation if the key is still on cooldown and global cooldown override is not requested.
         if (CooldownTime > 0f && !overrideGlobalCooldown) return;
-        
-        if (!comboController.CurrentComboKeys.Contains(this) && comboController.CurrentComboKeys.Count > 0)
+
+        // Reset combo if:
+        // (1) combo in progress and this key is not part of the combo, or...
+        // (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
+        if (comboController.InProgress && !triggeredByKey &&
+            (!comboController.CurrentComboKeys.Contains(this) ||
+             (comboController.CurrentComboKeys.Contains(this) && comboIndex != comboController.NextComboIndex)))
         {
-            // If the key pressed is not part of the current combo, break the combo.
             comboController.ResetCombo();
         }
 
-        switch (Combo)
+        bool hitEnemy = DealDamage();
+
+        // Combo key logic
+        if (Combo)
         {
-            case false:
-                // If this key is not part of a combo, but a combo is active, break the combo.
-                comboController.ResetCombo();
-                break;
-
-            case true: {
-                int nextKeyIndex = comboController.NextComboIndex;
-
-                // When a combo is started, the nextKeyIndex is set to 1 (the second key in the combo).
-                if (comboIndex == 0)
+            int nextKeyIndex = comboController.NextComboIndex;
+            if (comboIndex == 0)
+            {
+                comboController.BeginCombo(keyboardLetter);
+                StartLocalCooldown(cooldown);
+                SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                ComboHighlight.gameObject.SetActive(false);
+                return;
+            }
+            
+            if (comboIndex == nextKeyIndex)
+            {
+                comboController.AdvanceCombo(keyboardLetter);
+                
+                // Combo completed
+                if (comboIndex == comboController.ComboLength - 1)
                 {
-                    comboController.BeginCombo(keyboardLetter);
-                    
-                    StartLocalCooldown(cooldown);
-                    ComboIndicator.gameObject.SetActive(false);
-                    return;
-                }
-
-                // Combo Progression
-                if (comboIndex == nextKeyIndex)
-                {
-                    // Combo Progressed
-                    comboController.AdvanceCombo(keyboardLetter);
-                    
-                    // Combo Completed
-                    if (comboIndex == comboController.ComboLength - 1)
+                    var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
+                    List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter, true);
+                    var middleKey = KeyController.Instance.GetAdjacentKey(this.ToKeyCode(), KeyController.Direction.All, out List<Key> adjacentKeys);
+                    foreach (var key in adjacentKeys)
                     {
-                        var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
-
-                        List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter, true);
-
-                        foreach (var key in surroundingKeys)
-                        {
-                            var instantiate = Instantiate(vfx, key.transform.position, Quaternion.identity);
-                            ParticleSystem.MainModule instantiateMain = instantiate.main;
-                            instantiateMain.startColor = Color.cyan;
-
-                            key.Activate(true, 0.5f);
-                        }
-                        return;
+                        var instantiate = Instantiate(vfx, key.transform.position, Quaternion.identity);
+                        ParticleSystem.MainModule instantiateMain = instantiate.main;
+                        instantiateMain.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+                        key.Activate(true, 0.5f, this);
+                        key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
                     }
 
                     StartLocalCooldown(cooldown);
-                    ComboIndicator.gameObject.SetActive(false);
+                    SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
                     return;
                 }
                 
-                // Non-sequential key in current combo pressed, break the combo.
-                comboController.ResetCombo();
-                break;
+                StartLocalCooldown(cooldown);
+                SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+                ComboHighlight.gameObject.SetActive(false);
+                return;
             }
         }
-
-        // TODO: ALSO NOT FINAL!!!!! JUST TESTING
+        
         if (Mash)
         {
             if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
             mashTimerCoroutine = StartCoroutine(MashTimer());
-
-            SetColour(Color.orange, 0.25f);
+            
             mashCount++;
             DamageText.text = mashCount > 0 ? mashCount.ToString() : string.Empty;
-
-            // if divisible by 5 (5, 10, 15, etc), activate all adjacent keys
+            
             if (mashCount % 5 == 0)
             {
-                KeyController.Instance.GetAdjacentKey(keyboardLetter, KeyController.Direction.All, out List<Key> adjacentKeys);
-                foreach (Key key in adjacentKeys)
-                {
-                    key.Activate(true, 0.5f);
-                }
-                
+                KeyController.Instance.Wave(0.2f);
                 StartLocalCooldown(5f);
+                SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
                 return;
             }
             
-            DealDamage();
-            
-            // Flash the key orange to indicate a successful mash.
-            SetColour(Color.orange, 0.25f);
             StartLocalCooldown(0.25f);
+            SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
             return;
         }
 
-        DealDamage();
+        // If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
+        if (Loose && !triggeredByKey) 
+            ActivatedWhileLoose();
 
-        // If this key is off the global cooldown, start its own cooldown rather than letting the KeyController put it on global cooldown.
+        if (OffGlobalCooldown)
+        {
+            StartLocalCooldown(cooldown + 2.5f);
+            SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
+            return;
+        }
         if (overrideGlobalCooldown)
         {
-            // If a cooldown override is provided, use it instead of the default cooldown.
             StartLocalCooldown(cooldownOverride > 0 ? cooldownOverride : cooldown);
-            return;
+            SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
         }
-
-        if (OffGlobalCooldown) StartLocalCooldown(cooldown);
-        else KeyController.Instance.StartGlobalCooldown();
+        else
+        {
+            KeyController.Instance.StartGlobalCooldown();
+            SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
+        }
     }
 
     bool DealDamage()
@@ -304,15 +430,8 @@ public partial class Key : MonoBehaviour
         if (currentEnemy)
         {
             currentEnemy.TakeDamage(damage);
-            Debug.Log($"Dealt 1 damage to {currentEnemy}!");
-
-            // Flash the key green to indicate it was pressed.
-            SetColour(Color.green, 0.75f);
             return true;
         }
-
-        // Flash the key red to indicate a miss.
-        SetColour(Color.crimson, 0.5f);
         return false;
     }
 
@@ -331,6 +450,8 @@ public partial class Key : MonoBehaviour
         
         CooldownTime = cooldown;
         currentCooldown = cooldown;
+
+        SetColour(Color.grey);
     }
 
     void SetColour(Color color)
@@ -345,6 +466,51 @@ public partial class Key : MonoBehaviour
     {
         SpriteRenderer.color = colour;
         yield return new WaitForSeconds(duration);
-        SpriteRenderer.color = Color.white;
+        SpriteRenderer.color = CooldownTime > 0f ? Color.grey : Color.white;
     }
+}
+
+public static class KeyExtensions
+{
+    /// <summary>
+    /// Sets the specified modifier for all keys in the list.
+    /// </summary>
+    /// <param name="keys"> The list of keys to modify. </param>
+    /// <param name="modifier"> The modifier to set. </param>
+    /// <param name="value"> The value to set the modifier to. </param>
+    public static void SetModifier(this List<Key> keys, Key.Modifiers modifier, bool value = true)
+    {
+        foreach (Key key in keys) key.SetModifier(modifier, value);
+    }
+    
+    // to keycode from single key
+    public static KeyCode ToKeyCode(this Key key) => key.KeyboardLetter;
+    
+    // to Key from single keycode
+    public static Key ToKey(this KeyCode keycode) => KeyController.Instance.GetKey(keycode);
+    
+    // convert list of keys to keycodes
+    public static List<KeyCode> ToKeyCodes(this List<Key> keys) => keys.Select(k => k.KeyboardLetter).ToList();
+    
+    // to keycodes from string
+    public static List<KeyCode> ToKeyCodes(this string str)
+    {
+        str = str.ToUpper();
+        
+        List<KeyCode> keycodes = new ();
+        try
+        {
+            keycodes = str.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
+        }
+        catch (ArgumentException e)
+        {
+            Debug.LogError($"Invalid character in string '{str}': {e.Message}. " +
+                           "\nThere may be duplicate or unsupported characters.");
+        }
+
+        return keycodes;
+    }
+
+    // get a list of keys from a list of keycodes
+    public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyController.Instance.GetKey(k)).Where(k => k != null).ToList();
 }

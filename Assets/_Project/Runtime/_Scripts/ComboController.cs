@@ -21,15 +21,18 @@ public class ComboController : MonoBehaviour
 	[Tooltip("The length of the combo. 1-based.")]
 	[SerializeField, ReadOnly] int comboLength = 3;
 	// ReSharper disable once NotAccessedField.Local
-	[SerializeField, ReadOnly] Key currentComboKey;
+	[SerializeField, ReadOnly] Key recentComboKey;
 	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] int recentComboIndex;
 	[SerializeField, ReadOnly] Key nextComboKey;
 	[SerializeField, ReadOnly] int nextComboIndex;
-	[SerializeField] bool loops;
+	[SerializeField] bool loops; // TODO: implement looping combos
 	[Space(10)]
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
-	
+
+	public List<Dictionary<Key, (int, bool)>> Combos => combos;
+
+	public bool InProgress => nextComboIndex != -1;
 	public int NextComboIndex => nextComboIndex;
 	public int ComboLength => comboLength;
 	public List<Key> CurrentComboKeys => currentComboKeys;
@@ -39,6 +42,9 @@ public class ComboController : MonoBehaviour
 		set => loops = value;
 	}
 	
+	public Key RecentKey => recentComboKey;
+	public Key NextKey => nextComboKey;
+	
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
@@ -46,26 +52,47 @@ public class ComboController : MonoBehaviour
 	/// <param name="loops"> Whether the combo should loop back to the start after completion.</param>
 	public void CreateCombo(List<Key> keys, bool loops = false)
 	{
-		foreach (var key in keys)
+		foreach (Key key in keys)
 		{
 			key.Combo = true;
 			key.ComboIndex = keys.IndexOf(key);
 		}
 		
 		combos.Add(keys.ToDictionary(k => k, k => (k.ComboIndex, loops)));
-		currentComboKey = null;
+		recentComboKey = null;
 		nextComboKey = null;
 		recentComboIndex = -1;
 		nextComboIndex = -1;
 		
-		// log the combo
 		string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
-		//Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
+		Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
 	}
 
-	public void CreateCombo(List<KeyCode> keys, bool loops = false)
+	public void CreateCombo(List<KeyCode> keycodes, bool loops = false)
 	{
-		List<Key> comboKeys = keys.Select(keyCode => KeyController.Instance.GetKey(keyCode)).Where(key => key != null).ToList();
+		// min length of 3 keys
+		if (keycodes.Count < 3)
+		{
+			Debug.LogError("Combo must be at least 3 keys long.");
+			return;
+		}
+		
+		List<Key> comboKeys = keycodes.ToKeys();
+		
+		// if the combo already exists, do not create the combo
+		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
+		{
+			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyboardLetter))}");
+			return;
+		}
+		
+		// if any key is already in a combo, do not create the combo
+		if (comboKeys.Any(k => k.Combo))
+		{
+			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.Combo).Select(k => k.KeyboardLetter))}");
+			return;
+		}
+		
 		CreateCombo(comboKeys, loops);
 	}
 	
@@ -79,11 +106,15 @@ public class ComboController : MonoBehaviour
 			{
 				key.Combo = false;
 				key.ComboIndex = -1;
-				key.ComboIndicator.gameObject.SetActive(false);
+				key.ComboHighlight.gameObject.SetActive(false);
 			}
 			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyboardLetter))}");
 		}
 	}
+
+	public event Action OnBeginCombo;
+	public event Action OnAdvanceCombo;
+	public event Action OnCompleteCombo;
 
 	public void BeginCombo(KeyCode key)
 	{
@@ -101,20 +132,22 @@ public class ComboController : MonoBehaviour
 			// Initialize combo state. E.g. if the combo is A, S, D and the player pressed A, set up to expect S next.
 			currentComboKeys = matchingCombo.Keys.ToList();
 			comboLength = currentComboKeys.Count;
+			recentComboKey = currentComboKeys[0];
+			recentComboIndex = 0;
+			nextComboKey = currentComboKeys[1];
 			nextComboIndex = 1; // Set to 1 since we've just matched the first key and now expect the second key
-			currentComboKey = currentComboKeys[nextComboIndex];
-			nextComboKey = currentComboKey;
-			recentComboIndex = -1;
 
 			// Show the indicator for the next key in the combo
-			ComboIndicator(currentComboKeys[nextComboIndex]);
+			ShowComboHighlight(currentComboKeys[nextComboIndex]);
+			
+			OnBeginCombo?.Invoke();
 		}
 	}
 
-	static void ComboIndicator(Key nextKey)
+	static void ShowComboHighlight(Key nextKey)
 	{
-		nextKey.ComboIndicator.gameObject.SetActive(true);
-		var anim = nextKey.ComboIndicator.GetComponent<Animation>();
+		nextKey.ComboHighlight.gameObject.SetActive(true);
+		var anim = nextKey.ComboHighlight.GetComponent<Animation>();
 		anim.Play();
 	}
 	
@@ -141,34 +174,41 @@ public class ComboController : MonoBehaviour
 		}
 
 		// Update current and next combo keys
+		recentComboKey = nextComboKey;
 		nextComboKey = currentComboKeys[nextComboIndex];
-		currentComboKey = nextComboKey;
 
 		// Only show the indicator if we're not at the start of the combo
 		if (nextComboIndex > 0)
 		{
 			var nextKey = currentComboKeys[nextComboIndex];
-			nextKey.ComboIndicator.gameObject.SetActive(true);
-			var anim = nextKey.ComboIndicator.GetComponent<Animation>();
+			nextKey.ComboHighlight.gameObject.SetActive(true);
+			var anim = nextKey.ComboHighlight.GetComponent<Animation>();
 			anim.Play();
 		}
+		
+		OnAdvanceCombo?.Invoke();
 	}
 	
 	void ComboCompleted()
 	{
-		Debug.Log("Combo completed!");
+		string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
+		Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
+		OnCompleteCombo?.Invoke();
+		
 		ResetCombo();
 	}
 	
 	public void ResetCombo()
 	{
+		//Debug.LogWarning("Combo reset!");
+		
 		// Hide all combo indicators before resetting
-		currentComboKeys.ForEach(k => k.ComboIndicator.SetActive(false));
+		currentComboKeys.ForEach(k => k.ComboHighlight.SetActive(false));
 		currentComboKeys.Clear();
 		
 		// Reset combo state. If loops is enabled, start from the beginning again, otherwise clear the combo.
 		nextComboIndex = loops ? 0 : -1;
-		currentComboKey = null;
+		recentComboKey = nextComboKey;
 		nextComboKey = null;
 	}
 }
