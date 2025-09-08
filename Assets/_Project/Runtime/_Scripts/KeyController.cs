@@ -6,6 +6,7 @@ using System.Linq;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
 using UnityEngine;
+using VHierarchy.Libs;
 using Random = UnityEngine.Random;
 #endregion
 
@@ -188,22 +189,16 @@ public partial class KeyController : MonoBehaviour
 			key.OnActivated += (hitEnemy, triggeredBy) =>
 			{
 				if (triggeredBy) return; // ignore if activated by another key (e.g., combo)
-
+				
 				if (comboController.InProgress) return;
-				HandleNonComboKey(key);
-				Debug.Log($"Non-combo key pressed: {key.KeyboardLetter}");
+				StartCoroutine(HandleNonComboKey(key));
 			};
 		}
 
 		comboController.OnBeginCombo += key => HandleComboKey(key, 0);
 		comboController.OnAdvanceCombo += (keys, indices) => HandleComboKey(keys.Item1, indices.Item1);
 		comboController.OnCompleteCombo += HandleComboCompleted;
-
-		comboController.OnComboReset += key =>
-		{
-			Debug.Log($"Combo reset on key: {key.KeyboardLetter}");
-			StartCoroutine(HandleComboReset(key));
-		};
+		comboController.OnComboReset += key => StartCoroutine(HandleComboReset(key));
 
 		// Start intro animation sequence after all setup
 		StartCoroutine(IntroSequence());
@@ -212,19 +207,16 @@ public partial class KeyController : MonoBehaviour
 		if (SceneManagerExtended.ActiveSceneName == "Game")
 		{
 			List<KeyCode> qweCombo = "QWE".ToKeyCodes();
-
 			//comboController.CreateCombo(qweCombo);
 
 			List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
 			comboController.CreateCombo(asdfCombo);
 
 			List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
-
-			//comboController.CreateCombo(rtyCombo);
+			comboController.CreateCombo(rtyCombo);
 
 			List<KeyCode> cvbCombo = "CVB".ToKeyCodes();
-
-			//comboController.CreateCombo(cvbCombo);
+			comboController.CreateCombo(cvbCombo);
 
 			List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
 			oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
@@ -419,35 +411,20 @@ public partial class KeyController : MonoBehaviour
 		}
 	}
 
-	void CreateWordHighwayObject(bool hitEnemy, Key triggeredByKey)
+	IEnumerator HandleNonComboKey(Key key)
 	{
-		if (triggeredByKey) return;
+		yield return null; // wait one frame (fixes it for some reason)
 
-		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
-
-		HandleNonComboKey(prefab);
-		Debug.Log("Non-combo key pressed.");
-	}
-
-	IEnumerator Wait(Key prefab)
-	{
-		Debug.Log("Waiting for highway animation to complete...");
-		yield return new WaitUntil(() => !DOTween.IsTweening("highwayCompleted"));
-		yield return new WaitForSeconds(0.75f);
-		Debug.Log("Highway animation complete.");
-
-		if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
-		highwayKey.name = keyObj.KeyboardLetter.ToString();
-		highwayKey.Letter.text = keyObj.KeyboardLetter.ToString();
-		highwayKey.gameObject.SetActive(true);
-	}
-
-	void HandleNonComboKey(Key key)
-	{
+		if (comboController.RecentKey?.KeyboardLetter == key.KeyboardLetter)
+		{
+			if (highwayKey) Destroy(highwayKey.gameObject);
+			yield break;
+		}
+		
 		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
 		if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
-		highwayKey.name = keyObj.KeyboardLetter.ToString();
-		highwayKey.Letter.text = keyObj.KeyboardLetter.ToString();
+		highwayKey.name = key.KeyboardLetter.ToString();
+		highwayKey.Letter.text = key.KeyboardLetter.ToString();
 		highwayKey.gameObject.SetActive(true);
 	}
 
@@ -459,7 +436,7 @@ public partial class KeyController : MonoBehaviour
 
 		if (highwayKey) Destroy(highwayKey.gameObject);
 
-		Vector3 comboPos = new (index * keyOffset - 1.5f, 0f, 0f);
+		Vector3 comboPos = new (index * keyOffset - 3f, 0f, 0f);
 		Key comboKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
 		comboKey.transform.localPosition = comboPos;
 		comboKey.name = recentKey.KeyboardLetter.ToString();
@@ -467,7 +444,7 @@ public partial class KeyController : MonoBehaviour
 		comboKey.gameObject.SetActive(true);
 		comboHighwayKeys.Add(comboKey);
 	}
-
+	
 	void HandleComboCompleted(List<Key> comboKeys)
 	{
 		foreach (Key key in comboHighwayKeys)

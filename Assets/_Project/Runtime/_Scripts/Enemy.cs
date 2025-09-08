@@ -145,7 +145,7 @@ public class Enemy : MonoBehaviour, IDamageable
                 // SFX
                 var deathSFX = new Sound(SFX.deathSFX);
                 deathSFX.SetOutput(Output.SFX);
-                deathSFX.SetRandomPitch(new (0.95f, 1.05f));
+                deathSFX.SetRandomPitch(new (0.9f, 1.05f));
                 deathSFX.Play();
 
                 Destroy(gameObject);

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lumina.Essentials.Attributes;
+using MelenitasDev.SoundsGood;
 using UnityEngine;
 #endregion
 
@@ -21,7 +22,7 @@ public class ComboController : MonoBehaviour
 
 	[Header("Combo Settings")]
 	[Tooltip("The length of the combo. 1-based.")]
-	[SerializeField, ReadOnly] int comboLength = 3;
+	[SerializeField, ReadOnly] int comboLength = -1;
 
 	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] Key recentComboKey;
@@ -207,8 +208,15 @@ public class ComboController : MonoBehaviour
 	{
 		//string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
 		//Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
-		OnCompleteCombo?.Invoke(currentComboKeys);
+
+		var sfx = new Sound(SFX.powerupSFX);
+		sfx.SetOutput(Output.SFX);
+		sfx.SetRandomPitch(new (0.95f, 1.05f));
+		sfx.SetVolume(0.5f);
+		sfx.Play();
+		
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
+		OnCompleteCombo?.Invoke(currentComboKeys);
 
 		ResetCombo();
 	}

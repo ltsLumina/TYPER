@@ -103,6 +103,26 @@ public partial class KeyController
 		return wave;
 	}
 
+	Coroutine waveCoroutine;
+
+	public void Wave(int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
+	{
+		if (waveCoroutine == null)
+		{
+			List<List<Key>> wave = GetWaveKeys();
+			waveCoroutine = StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, delayBetweenColumns));
+		}
+	}
+	
+	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
+	{
+		for (int i = 0; i < cycles; i++)
+		{
+			if (i >= maxCycles) break;
+			yield return PerformWaveEffect(wave, delayBetweenColumns);
+		}
+	}
+
 	IEnumerator PerformWaveEffect(List<List<Key>> wave, float delayBetweenColumns)
 	{
 		foreach (List<Key> column in wave)
@@ -110,12 +130,8 @@ public partial class KeyController
 			foreach (Key key in column) key.Activate(true, 2.5f, key);
 			yield return new WaitForSeconds(delayBetweenColumns);
 		}
-	}
 
-	public void Wave(float delayBetweenColumns = 0.1f)
-	{
-		var wave = GetWaveKeys();
-		StartCoroutine(PerformWaveEffect(wave, delayBetweenColumns));
+		waveCoroutine = null;
 	}
 	#endregion
 }

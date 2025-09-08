@@ -6,6 +6,7 @@ using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Experimental.AI;
 
 public class GameManager : MonoBehaviour
@@ -79,9 +80,9 @@ public class GameManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.Alpha1))
 		{
-			Debug.LogWarning("Debug: Triggering Wave Effect");
-			KeyController.Instance.GetWaveKeys();
+			// for testing
 		}
+
 
 		List<KeyCode> typerKeycodes = gameName.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
 		List<KeyCode> playKeycodes = play.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
@@ -225,6 +226,7 @@ public class GameManager : MonoBehaviour
 
 		Time.timeScale = 1f;
 		Time.fixedDeltaTime = 0.02f;
+		
 		hitStopCoroutine = null;
 	}
 	

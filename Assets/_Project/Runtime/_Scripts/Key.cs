@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
+using MelenitasDev.SoundsGood;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Audio;
 using VInspector;
 using Random = UnityEngine.Random;
 #endregion
@@ -152,7 +154,7 @@ public partial class Key : MonoBehaviour
 	{
 		// Ensure the cooldown sprite is fully opaque at start. In the prefab view the alpha is 0.5f;
 		Color color = CooldownSprite.color;
-		color.a = 1f;
+		color.a = 0.65f;
 		CooldownSprite.color = color;
 
 		ChainedMarker.SetActive(false);
@@ -166,6 +168,16 @@ public partial class Key : MonoBehaviour
 	void Start()
 	{
 		comboController = ComboController.Instance;
+
+		var sfx = new Sound(SFX.beep);
+		sfx.SetOutput(Output.SFX);
+		sfx.SetVolume(1f);
+		sfx.SetRandomPitch(new (0.95f, 1.05f));
+		
+		OnActivated += (hitEnemy, triggeredBy) =>
+		{
+			sfx.Play();
+		};
 
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
 		damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
@@ -413,9 +425,11 @@ public partial class Key : MonoBehaviour
 			mashCount++;
 			DamageText.text = mashCount > 0 ? mashCount.ToString() : string.Empty;
 
+			// every 5th mash triggers a special effect. Wave effect cycles multiple times based on how many multiples of 5 have been reached.
 			if (mashCount % 5 == 0)
 			{
-				KeyController.Instance.Wave(0.2f);
+				int cycles = mashCount / 5;
+				KeyController.Instance.Wave(cycles, 5); // mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
 				StartLocalCooldown(5f);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggeredBy);

@@ -24,7 +24,7 @@ namespace MelenitasDev.SoundsGood
 
     public partial class SoundsGoodManager : MonoBehaviour
     {
-        
+
     }
 
     public partial class SoundsGoodManager // Internal Static Methods
@@ -63,6 +63,10 @@ namespace MelenitasDev.SoundsGood
     
     public partial class SoundsGoodManager // Public Static Methods
     {
+        public static AudioMixer masterMixer => GetOutput(Output.Master).audioMixer;
+        public static AudioMixer musicMixer => GetOutput(Output.Music).audioMixer;
+        public static AudioMixer sfxMixer => GetOutput(Output.SFX).audioMixer;
+        
         /// <summary>
         /// Get last saved output volume.
         /// </summary>
