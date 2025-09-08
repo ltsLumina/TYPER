@@ -1,13 +1,15 @@
+#region
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lumina.Essentials.Attributes;
 using UnityEngine;
+#endregion
 
 public class ComboController : MonoBehaviour
 {
 	public static ComboController Instance { get; private set; }
-	
+
 	void Awake()
 	{
 		if (Instance != null && Instance != this) Destroy(this);
@@ -20,8 +22,10 @@ public class ComboController : MonoBehaviour
 	[Header("Combo Settings")]
 	[Tooltip("The length of the combo. 1-based.")]
 	[SerializeField, ReadOnly] int comboLength = 3;
+
 	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] Key recentComboKey;
+
 	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] int recentComboIndex;
 	[SerializeField, ReadOnly] Key nextComboKey;
@@ -41,10 +45,10 @@ public class ComboController : MonoBehaviour
 		get => loops;
 		set => loops = value;
 	}
-	
+
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
-	
+
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
@@ -57,14 +61,15 @@ public class ComboController : MonoBehaviour
 			key.Combo = true;
 			key.ComboIndex = keys.IndexOf(key);
 		}
-		
+
 		combos.Add(keys.ToDictionary(k => k, k => (k.ComboIndex, loops)));
 		recentComboKey = null;
 		nextComboKey = null;
 		recentComboIndex = -1;
 		nextComboIndex = -1;
-		
+
 		string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
+
 		//Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
 	}
 
@@ -76,45 +81,49 @@ public class ComboController : MonoBehaviour
 			Debug.LogError("Combo must be at least 3 keys long.");
 			return;
 		}
-		
+
 		List<Key> comboKeys = keycodes.ToKeys();
-		
+
 		// if the combo already exists, do not create the combo
 		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
 		{
 			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyboardLetter))}");
 			return;
 		}
-		
+
 		// if any key is already in a combo, do not create the combo
 		if (comboKeys.Any(k => k.Combo))
 		{
 			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.Combo).Select(k => k.KeyboardLetter))}");
 			return;
 		}
-		
+
 		CreateCombo(comboKeys, loops);
 	}
-	
+
 	public void RemoveCombo(List<Key> keys)
 	{
 		var comboToRemove = combos.FirstOrDefault(c => c.Keys.SequenceEqual(keys));
+
 		if (comboToRemove != null)
 		{
 			combos.Remove(comboToRemove);
+
 			foreach (var key in keys)
 			{
 				key.Combo = false;
 				key.ComboIndex = -1;
 				key.ComboHighlight.gameObject.SetActive(false);
 			}
+
 			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyboardLetter))}");
 		}
 	}
 
-	public event Action OnBeginCombo;
-	public event Action OnAdvanceCombo;
-	public event Action OnCompleteCombo;
+	public event Action<Key> OnBeginCombo;
+	public event Action<(Key, Key), (int, int)> OnAdvanceCombo;
+	public event Action<List<Key>> OnCompleteCombo;
+	public event Action<Key> OnComboReset;
 
 	public void BeginCombo(KeyCode key)
 	{
@@ -123,12 +132,13 @@ public class ComboController : MonoBehaviour
 		{
 			// Find a combo that starts with the given key
 			var matchingCombo = combos.FirstOrDefault(c => c.Keys.First().KeyboardLetter == key);
+
 			if (matchingCombo == null)
 			{
 				Debug.LogWarning($"No combo starts with key {key}");
 				return;
 			}
-			
+
 			// Initialize combo state. E.g. if the combo is A, S, D and the player pressed A, set up to expect S next.
 			currentComboKeys = matchingCombo.Keys.ToList();
 			comboLength = currentComboKeys.Count;
@@ -139,8 +149,8 @@ public class ComboController : MonoBehaviour
 
 			// Show the indicator for the next key in the combo
 			ShowComboHighlight(currentComboKeys[nextComboIndex]);
-			
-			OnBeginCombo?.Invoke();
+
+			OnBeginCombo?.Invoke(recentComboKey);
 		}
 	}
 
@@ -150,7 +160,7 @@ public class ComboController : MonoBehaviour
 		var anim = nextKey.ComboHighlight.GetComponent<Animation>();
 		anim.Play();
 	}
-	
+
 	public void AdvanceCombo(KeyCode key)
 	{
 		// Only advance if the key matches the expected key in the current combo
@@ -159,16 +169,20 @@ public class ComboController : MonoBehaviour
 			Debug.LogWarning($"Key {key} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
 			return;
 		}
-		
+
 		// Set to the previous combo index before advancing
 		recentComboIndex = nextComboIndex;
+
 		// Increment to the next index in the combo
 		nextComboIndex++;
 
 		// If we've reached the end of the combo, loop back to the start
 		if (nextComboIndex > comboLength - 1)
 		{
+			recentComboKey = nextComboKey;
 			nextComboIndex = loops ? 0 : -1;
+			OnAdvanceCombo?.Invoke((recentComboKey, nextComboKey), (recentComboIndex, nextComboIndex));
+
 			ComboCompleted();
 			return;
 		}
@@ -185,36 +199,35 @@ public class ComboController : MonoBehaviour
 			var anim = nextKey.ComboHighlight.GetComponent<Animation>();
 			anim.Play();
 		}
-		
-		OnAdvanceCombo?.Invoke();
+
+		OnAdvanceCombo?.Invoke((recentComboKey, nextComboKey), (recentComboIndex, nextComboIndex));
 	}
-	
+
 	void ComboCompleted()
 	{
-		string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
-		Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
-		OnCompleteCombo?.Invoke();
-		foreach (var key in currentComboKeys)
-		{
-			CompletedCombo.Enqueue(key);
-		}
-		
+		//string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
+		//Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
+		OnCompleteCombo?.Invoke(currentComboKeys);
+		CompletedCombos.Enqueue(currentComboKeys.ToList());
+
 		ResetCombo();
 	}
 
-	public Queue<Key> CompletedCombo => new ();
-	
+	public Queue<List<Key>> CompletedCombos => new ();
+
 	public void ResetCombo()
 	{
 		//Debug.LogWarning("Combo reset!");
-		
+
 		// Hide all combo indicators before resetting
 		currentComboKeys.ForEach(k => k.ComboHighlight.SetActive(false));
 		currentComboKeys.Clear();
-		
+
 		// Reset combo state. If loops is enabled, start from the beginning again, otherwise clear the combo.
 		nextComboIndex = loops ? 0 : -1;
 		recentComboKey = nextComboKey;
 		nextComboKey = null;
+
+		OnComboReset?.Invoke(recentComboKey);
 	}
 }
