@@ -1,5 +1,6 @@
 using System;
 using Lumina.Essentials.Attributes;
+using MelenitasDev.SoundsGood;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -35,7 +36,6 @@ public class FrenzyManager : MonoBehaviour
 		volume.profile.TryGet(out depthOfField);
 		volume.profile.TryGet(out vignette);
 		
-		// disable all effects at start
 		#region Bloom
 		bloom.threshold.value = 0f;
 		bloom.intensity.value = 0f;
@@ -89,6 +89,11 @@ public class FrenzyManager : MonoBehaviour
 		{
 			// enter freny
 			frenzied = true;
+			
+			var sfx = new Sound(SFX.frenzyWoosh);
+			sfx.SetOutput(Output.SFX);
+			sfx.SetVolume(0.5f);
+			sfx.Play();
 		}
 
 		if (frenzied)

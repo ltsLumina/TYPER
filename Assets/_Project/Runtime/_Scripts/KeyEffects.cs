@@ -3,10 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using UnityEngine;
 #endregion
 
-public partial class KeyController
+public partial class KeyManager
 {
 	public enum Direction
 	{
@@ -17,13 +18,15 @@ public partial class KeyController
 		All
 	}
 
+	#region Adjacent/Surrounding Keys
+	/// <param name="keycode"> The key to look from. </param>
 	/// <param name="direction"> Direction to look for an adjacent key. </param>
 	/// <param name="adjacentKeys">
 	///     If direction is All, this will be populated with all adjacent keys found. Otherwise, it
 	///     will be null.
 	/// </param>
 	/// <returns>
-	///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns null and
+	///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns 'self' (the provided keycode) and
 	///     populates adjacentKeys with all found adjacent keys.
 	/// </returns>
 	public Key GetAdjacentKey(KeyCode keycode, Direction direction, out List<Key> adjacentKeys)
@@ -55,17 +58,21 @@ public partial class KeyController
 				return col < Keys[row].Count - 1 ? Keys[row][col + 1] : null;
 
 			case Direction.All: // return the first adjacent key found in every direction
-				var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
-				adjacentKeys = directions.Select(dir => GetAdjacentKey(keycode, dir, out _)).Where(adjacent => adjacent != null).ToList();
-
-				// return self to indicate multiple keys found
-				return Keys[row][col];
+				adjacentKeys = AllAdjacentKeys(keycode);
+				return GetKey(keycode);
 
 			default:
 				throw new ArgumentOutOfRangeException(nameof(direction));
 		}
+		
+		List<Key> AllAdjacentKeys(KeyCode keyCode)
+		{
+			var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
+			return directions.Select(dir => GetAdjacentKey(keyCode, dir, out _)).Where(adjacent => adjacent != null).ToList();
+		}
 	}
 
+	/// <param name="keycode"></param>
 	/// <param name="includeSelf"> Whether to include the specified key in the returned list. </param>
 	/// <returns> Returns a list of all keys surrounding the specified key (up to 8 keys). </returns>
 	public List<Key> GetSurroundingKeys(KeyCode keycode, bool includeSelf = false)
@@ -87,6 +94,7 @@ public partial class KeyController
 
 		return surroundingKeys;
 	}
+	#endregion
 
 	#region Wave
 	public List<List<Key>> GetWaveKeys()

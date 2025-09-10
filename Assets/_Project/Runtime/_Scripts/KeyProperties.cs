@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public partial class Key
+public partial class Key // Properties
 {
 	public KeyCode KeyboardLetter
 	{

@@ -19,7 +19,7 @@ public class EnemySpawner : MonoBehaviour
     
     void Start()
     {
-        lanes = KeyController.Instance.Lanes;
+        lanes = KeyManager.Instance.Lanes;
         
         parent = new ("> Enemies <");
         InvokeRepeating(nameof(SpawnEnemy), initialDelay, repeatRate);

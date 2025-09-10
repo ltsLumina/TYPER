@@ -17,7 +17,7 @@ public partial class Key : MonoBehaviour
 {
 	[Tab("Attributes")]
 	[Header("Attributes")]
-	[SerializeField] [ReadOnly] KeyCode keyboardLetter = KeyCode.Q;
+	[SerializeField, ReadOnly] KeyCode keyboardLetter = KeyCode.Q;
 	[SerializeField] int damage;
 	[SerializeField] bool chained;
 	[SerializeField] bool loose;
@@ -25,13 +25,13 @@ public partial class Key : MonoBehaviour
 	[SerializeField] bool offGlobalCooldown;
 	[SerializeField] bool combo;
 	[SerializeField] bool mash;
-	[SerializeField] [ReadOnly] int comboIndex;
-	[SerializeField] [ReadOnly] int mashCount;
-
+	[SerializeField, ReadOnly] int comboIndex;
+	[SerializeField, ReadOnly] int mashCount;
+	
 	[Header("Cooldown")]
 	[SerializeField] float cooldown = 2.5f;
-	[SerializeField] [ReadOnly] float remainingCooldown;
-	[SerializeField] [ReadOnly] float currentCooldown;
+	[SerializeField, ReadOnly] float remainingCooldown;
+	[SerializeField, ReadOnly] float currentCooldown;
 
 	[Tab("References")]
 	[SerializeField] GameObject chainedMarker;
@@ -50,14 +50,14 @@ public partial class Key : MonoBehaviour
 	[SerializeField] bool isActive = true;
 	[Header("Debug Info")]
 	[Tooltip("The index of the row this key is in. 1-based.")]
-	[SerializeField] [ReadOnly] int row;
+	[SerializeField, ReadOnly] int row;
 	[Tooltip("The index of this key within its row. 0-based.")]
-	[SerializeField] [ReadOnly] int indexInRow;
+	[SerializeField, ReadOnly] int indexInRow;
 	[Tooltip("The index of this key in the entire keyboard. 0-based.")]
-	[SerializeField] [ReadOnly] int indexKey;
+	[SerializeField, ReadOnly] int indexKey;
 
 	Enemy currentEnemy;
-	ComboController comboController;
+	ComboManager comboManager;
 
 	#region Components/Children
 	public GameObject ChainedMarker => chainedMarker;
@@ -73,16 +73,16 @@ public partial class Key : MonoBehaviour
 	#endregion
 
 	public bool IsActive => isActive;
-	public void Disable()
+	public void Disable(bool setColour = true)
 	{
 		isActive = false;
-		SetColour(Color.grey);
+		if (setColour) SetColour(Color.grey);
 	}
 
-	public void Enable()
+	public void Enable(bool setColour = true)
 	{
 		isActive = true;
-		SetColour(Color.white);
+		if (setColour) SetColour(Color.white);
 	}
 
 	public int ComboIndex
@@ -90,8 +90,8 @@ public partial class Key : MonoBehaviour
 		get => comboIndex;
 		set => comboIndex = value;
 	}
-
-	public enum Modifiers
+	
+	public enum Modifier
 	{
 		OffGlobalCooldown, // key can be pressed without triggering the global cooldown. Typically, has a longer cooldown.
 		Combo,             // key is part of a combo sequence, which must be pressed in order. If pressed out of order, the combo resets
@@ -110,38 +110,38 @@ public partial class Key : MonoBehaviour
 	///     Additional arguments for specific modifiers. For example, OffGlobalCooldown can take a float
 	///     argument to set a new cooldown time.
 	/// </param>
-	public void SetModifier(Modifiers modifier, bool value = true, params object[] args)
+	public void SetModifier(Modifier modifier, bool value = true, params object[] args)
 	{
 		switch (modifier)
 		{
-			case Modifiers.OffGlobalCooldown:
+			case Modifier.OffGlobalCooldown:
 				OffGlobalCooldown = value;
 				offGCDMarker.SetActive(OffGlobalCooldown);
 				if (args.Length > 0 && args[0] is float newCooldown and > 0f) cooldown = newCooldown;
 				break;
 
-			case Modifiers.Combo:
+			case Modifier.Combo:
 				Combo = value;
 				ComboMarker.SetActive(Combo);
 				break;
 
-			case Modifiers.Mash:
+			case Modifier.Mash:
 				Mash = value;
 				MashMarker.SetActive(Mash);
 				break;
 
-			case Modifiers.Chained:
+			case Modifier.Chained:
 				Chained = value;
 				ChainedMarker.SetActive(Chained);
 				Disable();
 				break;
 
-			case Modifiers.Loose:
+			case Modifier.Loose:
 				Loose = value;
 				transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
 				break;
 
-			case Modifiers.Thorned:
+			case Modifier.Thorned:
 				Thorned = value;
 				break;
 
@@ -152,10 +152,15 @@ public partial class Key : MonoBehaviour
 
 	void Awake()
 	{
+		#region Cooldown Sprite
 		// Ensure the cooldown sprite is fully opaque at start. In the prefab view the alpha is 0.5f;
 		Color color = CooldownSprite.color;
 		color.a = 0.65f;
 		CooldownSprite.color = color;
+
+		// makes the cooldown fill animate the other way (looks better)
+		CooldownSprite.flipX = true;
+		#endregion
 
 		ChainedMarker.SetActive(false);
 		ComboHighlight.SetActive(false);
@@ -165,18 +170,34 @@ public partial class Key : MonoBehaviour
 		MashMarker.SetActive(false);
 	}
 
+
+	#region SFX
+	Sound sfx;
+	float lastSfxTime = -1f;
+	const float SfxCooldown = 0.5f;
+	
+	void InitSFX()
+	{
+		sfx = new (SFX.beep);
+		sfx.SetOutput(Output.SFX);
+		sfx.SetVolume(0.85f);
+		sfx.SetRandomPitch(new (0.95f, 1.05f));
+	}
+	#endregion
+	
 	void Start()
 	{
-		comboController = ComboController.Instance;
+		comboManager = ComboManager.Instance;
 
-		var sfx = new Sound(SFX.beep);
-		sfx.SetOutput(Output.SFX);
-		sfx.SetVolume(1f);
-		sfx.SetRandomPitch(new (0.95f, 1.05f));
+		InitSFX();
 		
 		OnActivated += (hitEnemy, triggeredBy) =>
 		{
-			sfx.Play();
+			if (Time.time - lastSfxTime > SfxCooldown)
+			{
+				sfx.Play();
+				lastSfxTime = Time.time;
+			}
 		};
 
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
@@ -361,18 +382,18 @@ public partial class Key : MonoBehaviour
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
 		// (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
-		if (comboController.InProgress && !triggeredByKey && (!comboController.CurrentComboKeys.Contains(this) || (comboController.CurrentComboKeys.Contains(this) && comboIndex != comboController.NextComboIndex))) comboController.ResetCombo();
+		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) comboManager.ResetCombo();
 
 		bool hitEnemy = DealDamage();
 
 		// Combo key logic
 		if (Combo)
 		{
-			int nextKeyIndex = comboController.NextComboIndex;
+			int nextKeyIndex = comboManager.NextComboIndex;
 
 			if (comboIndex == 0)
 			{
-				comboController.BeginCombo(keyboardLetter);
+				comboManager.BeginCombo(keyboardLetter);
 				StartLocalCooldown(cooldown);
 				SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggeredBy);
@@ -383,14 +404,14 @@ public partial class Key : MonoBehaviour
 
 			if (comboIndex == nextKeyIndex)
 			{
-				comboController.AdvanceCombo(keyboardLetter);
+				comboManager.AdvanceCombo(keyboardLetter);
 
 				// Combo completed
-				if (comboIndex == comboController.ComboLength - 1)
+				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
-					List<Key> surroundingKeys = KeyController.Instance.GetSurroundingKeys(keyboardLetter);
-					Key self = KeyController.Instance.GetAdjacentKey(this.ToKeyCode(), KeyController.Direction.All, out List<Key> adjacentKeys);
+					List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyboardLetter);
+					Key self = KeyManager.Instance.GetAdjacentKey(this.ToKeyCode(), KeyManager.Direction.All, out List<Key> adjacentKeys);
 
 					foreach (Key key in surroundingKeys)
 					{
@@ -429,7 +450,7 @@ public partial class Key : MonoBehaviour
 			if (mashCount % 5 == 0)
 			{
 				int cycles = mashCount / 5;
-				KeyController.Instance.Wave(cycles, 5); // mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
+				KeyManager.Instance.Wave(cycles, 5); // mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
 				StartLocalCooldown(5f);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggeredBy);
@@ -463,7 +484,7 @@ public partial class Key : MonoBehaviour
 		}
 		else
 		{
-			KeyController.Instance.StartGlobalCooldown();
+			KeyManager.Instance.StartGlobalCooldown();
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
 			OnActivated?.Invoke(hitEnemy, triggeredBy);
 		}
@@ -523,7 +544,7 @@ public static class KeyExtensions
 	/// <param name="keys"> The list of keys to modify. </param>
 	/// <param name="modifier"> The modifier to set. </param>
 	/// <param name="value"> The value to set the modifier to. </param>
-	public static void SetModifier(this List<Key> keys, Key.Modifiers modifier, bool value = true)
+	public static void SetModifier(this List<Key> keys, Key.Modifier modifier, bool value = true)
 	{
 		foreach (Key key in keys) key.SetModifier(modifier, value);
 	}
@@ -532,7 +553,7 @@ public static class KeyExtensions
 	public static KeyCode ToKeyCode(this Key key) => !key ? KeyCode.None : key.KeyboardLetter;
 
 	// to Key from single keycode
-	public static Key ToKey(this KeyCode keycode) => KeyController.Instance.GetKey(keycode);
+	public static Key ToKey(this KeyCode keycode) => KeyManager.Instance.GetKey(keycode);
 
 	// convert list of keys to keycodes
 	public static List<KeyCode> ToKeyCodes(this List<Key> keys) => keys.Select(k => k.KeyboardLetter).ToList();
@@ -549,5 +570,5 @@ public static class KeyExtensions
 	}
 
 	// get a list of keys from a list of keycodes
-	public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyController.Instance.GetKey(k)).Where(k => k != null).ToList();
+	public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyManager.Instance.GetKey(k)).Where(k => k != null).ToList();
 }

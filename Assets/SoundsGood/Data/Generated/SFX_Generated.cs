@@ -6,5 +6,7 @@ namespace MelenitasDev.SoundsGood
 		public static readonly SFX deathSFX = new SFX("deathSFX");
 		public static readonly SFX powerupSFX = new SFX("powerupSFX");
 		public static readonly SFX beep = new SFX("beep");
+		public static readonly SFX introWoosh = new SFX("introWoosh");
+		public static readonly SFX frenzyWoosh = new SFX("frenzyWoosh");
 	}
 }

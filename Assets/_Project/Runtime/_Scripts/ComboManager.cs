@@ -7,9 +7,9 @@ using MelenitasDev.SoundsGood;
 using UnityEngine;
 #endregion
 
-public class ComboController : MonoBehaviour
+public class ComboManager : MonoBehaviour
 {
-	public static ComboController Instance { get; private set; }
+	public static ComboManager Instance { get; private set; }
 
 	void Awake()
 	{
@@ -162,12 +162,12 @@ public class ComboController : MonoBehaviour
 		anim.Play();
 	}
 
-	public void AdvanceCombo(KeyCode key)
+	public void AdvanceCombo(KeyCode keycode)
 	{
 		// Only advance if the key matches the expected key in the current combo
-		if (currentComboKeys[nextComboIndex].KeyboardLetter != key)
+		if (currentComboKeys[nextComboIndex].KeyboardLetter != keycode)
 		{
-			Debug.LogWarning($"Key {key} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
+			Debug.LogWarning($"Key {keycode} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
 			return;
 		}
 
@@ -212,11 +212,11 @@ public class ComboController : MonoBehaviour
 		var sfx = new Sound(SFX.powerupSFX);
 		sfx.SetOutput(Output.SFX);
 		sfx.SetRandomPitch(new (0.95f, 1.05f));
-		sfx.SetVolume(0.5f);
+		sfx.SetVolume(0.15f);
 		sfx.Play();
-		
+
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
-		OnCompleteCombo?.Invoke(currentComboKeys);
+		OnCompleteCombo?.Invoke(currentComboKeys.ToList());
 
 		ResetCombo();
 	}

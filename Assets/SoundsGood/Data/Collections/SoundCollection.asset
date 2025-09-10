@@ -33,3 +33,13 @@ MonoBehaviour:
     - {fileID: 8300000, guid: f6241af91bc459a46a162c7990db662f, type: 3}
     compressionPreset: 1
     forceToMono: 1
+  - tag: introWoosh
+    clips:
+    - {fileID: 8300000, guid: 2f7b74e4ef9871541822043fc3003ddd, type: 3}
+    compressionPreset: 1
+    forceToMono: 0
+  - tag: frenzyWoosh
+    clips:
+    - {fileID: 8300000, guid: efd0a337cdbc22643919591b05ea8ad3, type: 3}
+    compressionPreset: 1
+    forceToMono: 0

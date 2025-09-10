@@ -83,7 +83,6 @@ public class GameManager : MonoBehaviour
 			// for testing
 		}
 
-
 		List<KeyCode> typerKeycodes = gameName.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
 		List<KeyCode> playKeycodes = play.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
 		List<KeyCode> menuKeycodes = menu.Select(c => (KeyCode)Enum.Parse(typeof(KeyCode), c.ToString())).ToList();
@@ -102,17 +101,17 @@ public class GameManager : MonoBehaviour
 					currentCommand = CommandType.TYPER;
 					currentCommandIndex = 1;
 				}
-				else if (KeyPressed(playKeycodes[0]))
+				else if (KeyPressed(playKeycodes[0]) && MenuManager.Instance.IntroSequenceCompleted)
 				{
 					currentCommand = CommandType.Play;
 					currentCommandIndex = 1;
 				}
-				else if (KeyPressed(menuKeycodes[0]))
+				else if (KeyPressed(menuKeycodes[0]) && MenuManager.Instance.IntroSequenceCompleted)
 				{
 					currentCommand = CommandType.Menu;
 					currentCommandIndex = 1;
 				}
-				else if (KeyPressed(exitKeycodes[0]))
+				else if (KeyPressed(exitKeycodes[0]) && MenuManager.Instance.IntroSequenceCompleted)
 				{
 					currentCommand = CommandType.Exit;
 					currentCommandIndex = 1;

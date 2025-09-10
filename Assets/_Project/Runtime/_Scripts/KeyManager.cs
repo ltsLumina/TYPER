@@ -10,7 +10,7 @@ using VHierarchy.Libs;
 using Random = UnityEngine.Random;
 #endregion
 
-public partial class KeyController : MonoBehaviour
+public partial class KeyManager : MonoBehaviour
 {
 	enum KeyboardLayout
 	{
@@ -45,9 +45,13 @@ public partial class KeyController : MonoBehaviour
 	[SerializeField] float globalCooldown = 1f;
 	[SerializeField] [ReadOnly] float currentCooldown;
 
-	ComboController comboController;
+	ComboManager comboManager;
+	
+	Key highwayKey;
+	GameObject wordHighway;
+	Key keyObj;
 
-	public static KeyController Instance { get; private set; }
+	public static KeyManager Instance { get; private set; }
 
 	/// <summary>
 	///     The parent object containing all key objects.
@@ -164,23 +168,24 @@ public partial class KeyController : MonoBehaviour
 
 	void Start()
 	{
-		comboController = ComboController.Instance;
+		comboManager = ComboManager.Instance;
 
 		InitializeKeyboard();
 
+		
+		// Anything below this point only runs in the main game scene
+		if (SceneManagerExtended.ActiveSceneName != "Game") return;
+		
 		InitializeWordHighway();
 
 		// get the first item in each row to determine lane positions
-		if (SceneManagerExtended.ActiveSceneName == "Game")
+		for (int row = 0; row < Keys.Count; row++)
 		{
-			for (int row = 0; row < Keys.Count; row++)
+			if (Keys[row].Count > 0)
 			{
-				if (Keys[row].Count > 0)
-				{
-					float lane = Keys[row][0].transform.position.y;
-					Lanes[row] = lane;
-					Debug.DrawLine(new (-10f, lane, 0f), new (10f, lane, 0f), Color.green, 300f);
-				}
+				float lane = Keys[row][0].transform.position.y;
+				Lanes[row] = lane;
+				Debug.DrawLine(new (-10f, lane, 0f), new (10f, lane, 0f), Color.green, 300f);
 			}
 		}
 
@@ -190,119 +195,62 @@ public partial class KeyController : MonoBehaviour
 			{
 				if (triggeredBy) return; // ignore if activated by another key (e.g., combo)
 				
-				if (comboController.InProgress) return;
+				if (comboManager.InProgress) return;
 				StartCoroutine(HandleNonComboKey(key));
 			};
 		}
 
-		comboController.OnBeginCombo += key => HandleComboKey(key, 0);
-		comboController.OnAdvanceCombo += (keys, indices) => HandleComboKey(keys.Item1, indices.Item1);
-		comboController.OnCompleteCombo += HandleComboCompleted;
-		comboController.OnComboReset += key => StartCoroutine(HandleComboReset(key));
-
-		// Start intro animation sequence after all setup
-		StartCoroutine(IntroSequence());
+		comboManager.OnBeginCombo += key => HandleComboKey(key, 0);
+		comboManager.OnAdvanceCombo += (keys, indices) => HandleComboKey(keys.Item1, indices.Item1);
+		comboManager.OnCompleteCombo += HandleComboCompleted;
+		comboManager.OnComboReset += key => StartCoroutine(HandleComboReset(key));
 
 		#region Modifiers
-		if (SceneManagerExtended.ActiveSceneName == "Game")
-		{
-			List<KeyCode> qweCombo = "QWE".ToKeyCodes();
-			//comboController.CreateCombo(qweCombo);
+		List<KeyCode> qweCombo = "QWE".ToKeyCodes();
+		comboManager.CreateCombo(qweCombo);
 
-			List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
-			comboController.CreateCombo(asdfCombo);
+		List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
+		comboManager.CreateCombo(asdfCombo);
 
-			List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
-			comboController.CreateCombo(rtyCombo);
+		List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
+		comboManager.CreateCombo(rtyCombo);
 
-			List<KeyCode> cvbCombo = "CVB".ToKeyCodes();
-			comboController.CreateCombo(cvbCombo);
+		List<KeyCode> cvbCombo = "CVB".ToKeyCodes();
+		comboManager.CreateCombo(cvbCombo);
 
-			List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
-			oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
+		List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
+		oGCD_Keys.SetModifier(Key.Modifier.OffGlobalCooldown);
 
-			const float cooldown = 10f;
-			KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
+		const float cooldown = 10f;
+		KeyCode.V.ToKey().SetModifier(Key.Modifier.OffGlobalCooldown, true, cooldown);
 
-			// set G key to be a mash key
-			Key mashKey = GetKey(KeyCode.G);
-			mashKey.SetModifier(Key.Modifiers.Mash);
+		// set G key to be a mash key
+		Key mashKey = GetKey(KeyCode.G);
+		mashKey.SetModifier(Key.Modifier.Mash);
 
-			// make H shake
-			Key shakeKey = Instance.GetKey(KeyCode.H);
-			shakeKey.SetModifier(Key.Modifiers.Loose);
+		// make H shake
+		Key shakeKey = Instance.GetKey(KeyCode.H);
+		shakeKey.SetModifier(Key.Modifier.Loose);
 
-			// chain J key
-			Key chainKey = GetKey(KeyCode.J);
-			chainKey.SetModifier(Key.Modifiers.Chained);
-		}
+		// chain J key
+		Key chainKey = GetKey(KeyCode.J);
+		chainKey.SetModifier(Key.Modifier.Chained);
 		#endregion
+	}
 
-		return;
+	void Update()
+	{
+		#region Input Handling
+		if (!Input.anyKeyDown) return;
 
-		IEnumerator IntroSequence()
-		{
-			// TODO: change this to a better solution
-			if (SceneManagerExtended.ActiveSceneName != "Menu") yield break;
+		KeyCode pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
+		if (pressedKey == KeyCode.None) return;
 
-			GameManager.Instance.EnterTransition.gameObject.SetActive(true);
+		KeyPressed = pressedKey;
 
-			// Wait one frame to ensure all keys are initialized
-			yield return new WaitForSeconds(1f);
-
-			// Center the title "TYPER" in the middle of the middle row
-			string title = GameManager.Instance.GameName;
-			List<KeyCode> titleKeyCodes = title.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
-			List<Key> titleKeys = titleKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-
-			Keyboard.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic);
-			yield return new WaitForSeconds(1.5f);
-
-			#region Swap positions of title keys with random keys
-			// Create combo for title keys
-			comboController.CreateCombo(titleKeys);
-
-			// Doesn't use the 'interactable' parameter since we want to animate the markers separately
-			HighlightKeys(title, true, false);
-			#endregion
-
-			yield return new WaitForSeconds(0.75f);
-
-			#region Wait for Player to Start
-			// Animate combo markers on title keys
-			foreach (Key titleKey in titleKeys)
-			{
-				titleKey.ComboMarker.SetActive(titleKey.Combo = true);
-				yield return new WaitForSeconds(0.1f);
-			}
-
-			yield return new WaitUntil(() => GameManager.Instance.TyperEntered);
-			#endregion
-
-			#region Return to Original Positions
-			// Removes combo for title keys as well
-			HighlightKeys(title, false, false);
-
-			foreach (Key key in FlatKeys) key.ComboMarker.SetActive(key.Combo = false);
-			#endregion
-
-			Keyboard.transform.DOMove(new (0.85f, -5f), 1.5f)
-			        .SetEase(Ease.InOutCubic)
-			        .OnComplete
-			         (() =>
-			         {
-				         var canvas = FindFirstObjectByType<MenuManager>(FindObjectsInactive.Include);
-				         canvas.gameObject.SetActive(true);
-
-				         Transform child = canvas.transform.GetChild(0);
-				         var rectTransform = child.GetComponent<RectTransform>();
-				         rectTransform.anchoredPosition = new (500, 0);
-				         rectTransform.DOAnchorPosX(0, 1f).SetEase(Ease.OutCubic);
-
-				         menuKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
-				         menuKeyboardParentPosition = Keyboard.transform.position; // store menu position
-			         });
-		}
+		keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
+		if (keyObj != null) keyObj.Activate();
+		#endregion
 	}
 
 	void InitializeKeyboard()
@@ -318,12 +266,12 @@ public partial class KeyController : MonoBehaviour
 
 		FlatKeys = GenerateKeys();
 
-		// Set initial position for intro animation off-screen, unless in Game scene
 		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (3.5f, -2f);
+		// Set initial position for intro animation off-screen
 		else Keyboard.transform.position = new (3.5f, 8f);
 
+		#region Utility
 		return;
-
 		void GenerateRows()
 		{
 			for (int i = 0; i < 3; i++)
@@ -409,13 +357,20 @@ public partial class KeyController : MonoBehaviour
 
 			return i;
 		}
+		#endregion
+	}
+
+	public void StartGlobalCooldown()
+	{
+		foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) 
+			key.StartLocalCooldown(globalCooldown);
 	}
 
 	IEnumerator HandleNonComboKey(Key key)
 	{
 		yield return null; // wait one frame (fixes it for some reason)
 
-		if (comboController.RecentKey?.KeyboardLetter == key.KeyboardLetter)
+		if (comboManager.RecentKey?.KeyboardLetter == key.KeyboardLetter)
 		{
 			if (highwayKey) Destroy(highwayKey.gameObject);
 			yield break;
@@ -428,8 +383,8 @@ public partial class KeyController : MonoBehaviour
 		highwayKey.gameObject.SetActive(true);
 	}
 
-	List<Key> comboHighwayKeys = new ();
-
+	readonly List<Key> comboHighwayKeys = new ();
+	
 	void HandleComboKey(Key recentKey, int index)
 	{
 		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
@@ -449,6 +404,7 @@ public partial class KeyController : MonoBehaviour
 	{
 		foreach (Key key in comboHighwayKeys)
 		{
+			if (!key) continue;
 			key.transform.DOPunchPosition(new (0, 1f, 0), 0.3f)
 			   .SetLink(key.gameObject)
 			   .SetId("highwayKeyPunch")
@@ -479,8 +435,6 @@ public partial class KeyController : MonoBehaviour
 		comboHighwayKeys.Clear();
 	}
 
-	GameObject wordHighway;
-
 	void InitializeWordHighway() // Highlights the current keys pressed in the "Word Highway" area
 	{
 		wordHighway = GameObject.Find("Word Highway");
@@ -489,146 +443,5 @@ public partial class KeyController : MonoBehaviour
 
 		wordHighway.transform.position = new (0, 3.5f);
 		wordHighway.transform.localScale = Vector3.one * 0.75f;
-	}
-
-	public void StartGlobalCooldown()
-	{
-		foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) key.StartLocalCooldown(globalCooldown);
-	}
-
-	Key highwayKey;
-	bool correctKey;
-	Key keyObj;
-
-	void Update()
-	{
-		#region Input Handling
-		if (!Input.anyKeyDown) return;
-
-		KeyCode pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
-		if (pressedKey == KeyCode.None) return;
-
-		KeyPressed = pressedKey;
-
-		keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
-		if (keyObj != null) keyObj.Activate();
-		#endregion
-	}
-
-	// Generates a static row of keys for the "Word Highway" area
-	List<Key> GenerateKeys()
-	{
-		var rowKeys = new List<Key>();
-		List<KeyCode> highwayKeys = "Isogram".ToKeyCodes();
-
-		for (int i = 0; i < highwayKeys.Count; i++)
-		{
-			KeyCode keycode = highwayKeys[i];
-			Key key = Instantiate(keyPrefab, Vector3.zero, Quaternion.identity, wordHighway.transform);
-			Vector3 pos = new (i * keyOffset, 0f, 0f);
-			key.transform.localPosition = pos;
-
-			key.name = keycode.ToString();
-			key.gameObject.SetActive(true);
-		}
-
-		return rowKeys;
-	}
-
-	Dictionary<Key, Vector3> menuKeyPositions = new ();
-	Vector3 menuKeyboardParentPosition; // stores menu position of parent
-
-	/// <summary>
-	///     Moves the specified word to the center of the middle row, swapping with existing keys.
-	/// </summary>
-	/// <param name="word">The word to move (e.g., "PLAY", "MENU", "EXIT").</param>
-	void MoveWordToCenterRow(string word)
-	{
-		const int middleRow = 1;
-		List<Key> middleRowKeys = Keys[middleRow];
-		int startIdx = (middleRowKeys.Count - word.Length) / 2;
-		List<KeyCode> wordKeyCodes = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
-
-		// The keys corresponding to the letters in the word
-		List<Key> wordKeys = wordKeyCodes.Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-
-		if (wordKeys.Count != word.Length)
-		{
-			Debug.LogWarning($"Not all letters in the word '{word}' are present on the keyboard.");
-			return;
-		}
-
-		// save original positions of all keys
-		menuKeyPositions = FlatKeys.ToDictionary(k => k, k => k.transform.position);
-
-		for (int i = 0; i < wordKeys.Count; i++)
-		{
-			Key targetKey = middleRowKeys[startIdx + i];
-			Key wordKey = wordKeys[i];
-
-			if (wordKey == targetKey) continue; // skip if the key is already in the correct position
-
-			Vector3 targetPosition = targetKey.transform.position;
-			Vector3 wordPosition = wordKey.transform.position;
-
-			// Swap positions
-			wordKey.transform.DOMove(targetPosition, 0.5f).SetEase(Ease.InOutCubic);
-			targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic);
-		}
-	}
-
-	public void HighlightKeys(string word, bool enable, bool interactable)
-	{
-		foreach (Key key in FlatKeys)
-		{
-			if (!key) continue;
-			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.position = position;
-		}
-
-		List<Key> keysToHighlight = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-
-		// List of keys to disable (all keys except the ones to highlight)
-		List<Key> keysToDisable = FlatKeys.Except(keysToHighlight).ToList();
-
-		foreach (Key key in keysToDisable)
-		{
-			if (enable)
-			{
-				key.Disable();
-				MoveWordToCenterRow(word);
-
-				if (interactable)
-				{
-					comboController.CreateCombo(keysToHighlight);
-
-					// combo markers on highlighted keys
-					foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = true);
-				}
-			}
-			else
-			{
-				key.Enable();
-				ResetKeyPositions();
-
-				if (!interactable)
-				{
-					comboController.RemoveCombo(keysToHighlight);
-
-					foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = false);
-				}
-			}
-		}
-	}
-
-	public void ResetKeyPositions()
-	{
-		GameObject parent = GameObject.Find("Keyboard");
-		if (!parent) return;
-
-		if (parent != null && menuKeyboardParentPosition != Vector3.zero) parent.transform.DOMove(menuKeyboardParentPosition, 0.5f);
-
-		foreach (Key key in FlatKeys)
-			if (menuKeyPositions.TryGetValue(key, out Vector3 position))
-				key.transform.DOMove(position, 0.5f);
 	}
 }
