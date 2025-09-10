@@ -167,7 +167,7 @@ public class ComboManager : MonoBehaviour
 		// Only advance if the key matches the expected key in the current combo
 		if (currentComboKeys[nextComboIndex].KeyboardLetter != keycode)
 		{
-			Debug.LogWarning($"Key {keycode} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
+			//Debug.LogWarning($"Key {keycode} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
 			return;
 		}
 

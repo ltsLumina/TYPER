@@ -1,12 +1,10 @@
 #region
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
 using UnityEngine;
-using VHierarchy.Libs;
 using Random = UnityEngine.Random;
 #endregion
 
@@ -46,7 +44,7 @@ public partial class KeyManager : MonoBehaviour
 	[SerializeField] [ReadOnly] float currentCooldown;
 
 	ComboManager comboManager;
-	
+
 	Key highwayKey;
 	GameObject wordHighway;
 	Key keyObj;
@@ -172,10 +170,9 @@ public partial class KeyManager : MonoBehaviour
 
 		InitializeKeyboard();
 
-		
 		// Anything below this point only runs in the main game scene
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
-		
+
 		InitializeWordHighway();
 
 		// get the first item in each row to determine lane positions
@@ -194,7 +191,7 @@ public partial class KeyManager : MonoBehaviour
 			key.OnActivated += (hitEnemy, triggeredBy) =>
 			{
 				if (triggeredBy) return; // ignore if activated by another key (e.g., combo)
-				
+
 				if (comboManager.InProgress) return;
 				StartCoroutine(HandleNonComboKey(key));
 			};
@@ -267,11 +264,13 @@ public partial class KeyManager : MonoBehaviour
 		FlatKeys = GenerateKeys();
 
 		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (3.5f, -2f);
+
 		// Set initial position for intro animation off-screen
 		else Keyboard.transform.position = new (3.5f, 8f);
 
 		#region Utility
 		return;
+
 		void GenerateRows()
 		{
 			for (int i = 0; i < 3; i++)
@@ -362,8 +361,7 @@ public partial class KeyManager : MonoBehaviour
 
 	public void StartGlobalCooldown()
 	{
-		foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) 
-			key.StartLocalCooldown(globalCooldown);
+		foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) key.StartLocalCooldown(globalCooldown);
 	}
 
 	IEnumerator HandleNonComboKey(Key key)
@@ -375,7 +373,7 @@ public partial class KeyManager : MonoBehaviour
 			if (highwayKey) Destroy(highwayKey.gameObject);
 			yield break;
 		}
-		
+
 		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
 		if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
 		highwayKey.name = key.KeyboardLetter.ToString();
@@ -384,34 +382,59 @@ public partial class KeyManager : MonoBehaviour
 	}
 
 	readonly List<Key> comboHighwayKeys = new ();
-	
+	readonly Queue<Key> queuedKeys = new ();
+
 	void HandleComboKey(Key recentKey, int index)
 	{
+		if (DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"))
+		{
+			queuedKeys.Enqueue(recentKey);
+			Debug.Log($"Queued {recentKey.KeyboardLetter} for combo highway! Queue length: {queuedKeys.Count}");
+			StartCoroutine(HandleComboKeyQueue());
+			return;
+		}
+
 		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
 
 		if (highwayKey) Destroy(highwayKey.gameObject);
 
 		Vector3 comboPos = new (index * keyOffset - 3f, 0f, 0f);
 		Key comboKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
+
+		comboKey.transform.DOPunchPosition(new (0, 0.5f, 0), 0.3f).SetLink(comboKey.gameObject);
 		comboKey.transform.localPosition = comboPos;
 		comboKey.name = recentKey.KeyboardLetter.ToString();
 		comboKey.Letter.text = recentKey.KeyboardLetter.ToString();
 		comboKey.gameObject.SetActive(true);
 		comboHighwayKeys.Add(comboKey);
 	}
-	
+
+	IEnumerator HandleComboKeyQueue()
+	{
+		yield return new WaitWhile(() => DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"));
+
+		if (queuedKeys.Count > 0) HandleComboKey(queuedKeys.Dequeue(), comboHighwayKeys.Count);
+	}
+
 	void HandleComboCompleted(List<Key> comboKeys)
 	{
+		var prefab = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
+		ObjectPool pool = ObjectPoolManager.FindObjectPool(prefab.gameObject);
+
+		GameManager.Instance.TriggerHitStop(0.1f, 0.1f);
+
 		foreach (Key key in comboHighwayKeys)
 		{
 			if (!key) continue;
+
 			key.transform.DOPunchPosition(new (0, 1f, 0), 0.3f)
+			   .SetDelay(0.3f) // waits for the instantiate punch to finish
 			   .SetLink(key.gameObject)
 			   .SetId("highwayKeyPunch")
 			   .OnComplete
 			    (() =>
 			    {
-				    ParticleSystem vfx = Instantiate(Resources.Load<ParticleSystem>("PREFABS/Combo Effect"), key.transform.position, Quaternion.identity);
+				    var vfx = pool.GetPooledObject<ParticleSystem>(true, key.transform.position);
 				    ParticleSystem.MainModule main = vfx.main;
 				    main.maxParticles = 5;
 				    main.startColor = Random.ColorHSV(0, 1, 1, 1, 1, 1);
@@ -426,11 +449,12 @@ public partial class KeyManager : MonoBehaviour
 	{
 		yield return new WaitWhile(() => DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"));
 
-		foreach (Key key in comboHighwayKeys)
-		{
-			if (!key) continue;
-			Destroy(key.gameObject);
-		}
+		// // destroy combohighway keys
+		// foreach (Key key in comboHighwayKeys)
+		// {
+		// 	if (!key) continue;
+		// 	Destroy(key.gameObject);
+		// }
 
 		comboHighwayKeys.Clear();
 	}

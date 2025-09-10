@@ -8,7 +8,6 @@ using Lumina.Essentials.Attributes;
 using MelenitasDev.SoundsGood;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Audio;
 using VInspector;
 using Random = UnityEngine.Random;
 #endregion
@@ -27,7 +26,7 @@ public partial class Key : MonoBehaviour
 	[SerializeField] bool mash;
 	[SerializeField, ReadOnly] int comboIndex;
 	[SerializeField, ReadOnly] int mashCount;
-	
+
 	[Header("Cooldown")]
 	[SerializeField] float cooldown = 2.5f;
 	[SerializeField, ReadOnly] float remainingCooldown;
@@ -54,100 +53,22 @@ public partial class Key : MonoBehaviour
 	[Tooltip("The index of this key within its row. 0-based.")]
 	[SerializeField, ReadOnly] int indexInRow;
 	[Tooltip("The index of this key in the entire keyboard. 0-based.")]
-	[SerializeField, ReadOnly] int indexKey;
+	[SerializeField, ReadOnly] int indexKeyboard;
 
 	Enemy currentEnemy;
 	ComboManager comboManager;
-
-	#region Components/Children
-	public GameObject ChainedMarker => chainedMarker;
-	public GameObject ComboHighlight => comboHighlight;
-	public SpriteRenderer SpriteRenderer => spriteRenderer;
-	public TMP_Text Letter => letter;
-	public SpriteRenderer CooldownSprite => cooldownSprite;
-	public GameObject HomingBar => homingBar;
-	public GameObject offGCDMarker => oGCDMarker;
-	public GameObject ComboMarker => comboMarker;
-	public GameObject MashMarker => mashMarker;
-	public TMP_Text DamageText => damageText;
-	#endregion
 
 	public bool IsActive => isActive;
 	public void Disable(bool setColour = true)
 	{
 		isActive = false;
-		if (setColour) SetColour(Color.grey);
+		SetColour(setColour ? Color.grey : SpriteRenderer.color);
 	}
 
 	public void Enable(bool setColour = true)
 	{
 		isActive = true;
-		if (setColour) SetColour(Color.white);
-	}
-
-	public int ComboIndex
-	{
-		get => comboIndex;
-		set => comboIndex = value;
-	}
-	
-	public enum Modifier
-	{
-		OffGlobalCooldown, // key can be pressed without triggering the global cooldown. Typically, has a longer cooldown.
-		Combo,             // key is part of a combo sequence, which must be pressed in order. If pressed out of order, the combo resets
-		Mash,              // key can be pressed rapidly to build up a counter, which triggers an effect when it reaches a certain threshold
-		Chained,           // key is locked and cannot be pressed manually. Can be unlocked by having a different key activate it (e.g., through a combo that activates an adjacent key)
-		Loose,             // key is loose and will fall off the keyboard when pressed
-		Thorned,           // "rooted"? - take self-damage when key is pressed
-	}
-
-	/// <summary>
-	///     Sets the specified modifier for this key.
-	/// </summary>
-	/// <param name="modifier"> The modifier to set. </param>
-	/// <param name="value"> The value to set the modifier to. </param>
-	/// <param name="args">
-	///     Additional arguments for specific modifiers. For example, OffGlobalCooldown can take a float
-	///     argument to set a new cooldown time.
-	/// </param>
-	public void SetModifier(Modifier modifier, bool value = true, params object[] args)
-	{
-		switch (modifier)
-		{
-			case Modifier.OffGlobalCooldown:
-				OffGlobalCooldown = value;
-				offGCDMarker.SetActive(OffGlobalCooldown);
-				if (args.Length > 0 && args[0] is float newCooldown and > 0f) cooldown = newCooldown;
-				break;
-
-			case Modifier.Combo:
-				Combo = value;
-				ComboMarker.SetActive(Combo);
-				break;
-
-			case Modifier.Mash:
-				Mash = value;
-				MashMarker.SetActive(Mash);
-				break;
-
-			case Modifier.Chained:
-				Chained = value;
-				ChainedMarker.SetActive(Chained);
-				Disable();
-				break;
-
-			case Modifier.Loose:
-				Loose = value;
-				transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
-				break;
-
-			case Modifier.Thorned:
-				Thorned = value;
-				break;
-
-			default:
-				throw new ArgumentOutOfRangeException(nameof(modifier), modifier, null);
-		}
+		SetColour(setColour ? Color.white : SpriteRenderer.color);
 	}
 
 	void Awake()
@@ -170,12 +91,11 @@ public partial class Key : MonoBehaviour
 		MashMarker.SetActive(false);
 	}
 
-
 	#region SFX
 	Sound sfx;
 	float lastSfxTime = -1f;
 	const float SfxCooldown = 0.5f;
-	
+
 	void InitSFX()
 	{
 		sfx = new (SFX.beep);
@@ -184,13 +104,13 @@ public partial class Key : MonoBehaviour
 		sfx.SetRandomPitch(new (0.95f, 1.05f));
 	}
 	#endregion
-	
+
 	void Start()
 	{
 		comboManager = ComboManager.Instance;
 
 		InitSFX();
-		
+
 		OnActivated += (hitEnemy, triggeredBy) =>
 		{
 			if (Time.time - lastSfxTime > SfxCooldown)
@@ -228,12 +148,12 @@ public partial class Key : MonoBehaviour
 		Debug.Assert(DamageText != null, $"{name} is missing a reference to its DamageText!");
 	}
 
-	public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKey)
+	public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKeyboard)
 	{
 		keyboardLetter = keycode;
 		this.row = row;
 		this.indexInRow = indexInRow;
-		this.indexKey = indexKey;
+		this.indexKeyboard = indexKeyboard;
 
 		Letter.text = keycode.ToString();
 		Letter.text = Letter.text.Replace("Alpha", ""); // remove "Alpha" from numeric keys
@@ -272,9 +192,8 @@ public partial class Key : MonoBehaviour
 
 	void OnTriggerExit2D(Collider2D other)
 	{
-		if (other.TryGetComponent(out Enemy enemy))
-			if (currentEnemy == enemy)
-				currentEnemy = null;
+		if (!other.TryGetComponent(out Enemy enemy)) return;
+		if (currentEnemy == enemy) currentEnemy = null;
 	}
 
 	Coroutine mashTimerCoroutine;
@@ -409,15 +328,17 @@ public partial class Key : MonoBehaviour
 				// Combo completed
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
-					var vfx = Resources.Load<ParticleSystem>("PREFABS/Combo Effect");
+					var comboVFX = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
+					ObjectPool comboPool = ObjectPoolManager.FindObjectPool(comboVFX.gameObject);
+
 					List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyboardLetter);
 					Key self = KeyManager.Instance.GetAdjacentKey(this.ToKeyCode(), KeyManager.Direction.All, out List<Key> adjacentKeys);
 
 					foreach (Key key in surroundingKeys)
 					{
-						ParticleSystem instantiate = Instantiate(vfx, key.transform.position, Quaternion.identity);
-						ParticleSystem.MainModule instantiateMain = instantiate.main;
-						instantiateMain.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+						var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
+						ParticleSystem.MainModule main = vfx.main;
+						main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
 						key.Activate(true, 0.5f, this);
 						key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
 						OnActivated?.Invoke(hitEnemy, this);
@@ -450,8 +371,12 @@ public partial class Key : MonoBehaviour
 			if (mashCount % 5 == 0)
 			{
 				int cycles = mashCount / 5;
-				KeyManager.Instance.Wave(cycles, 5); // mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
-				StartLocalCooldown(5f);
+
+				// mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
+				const float waveCooldown = 15f;
+				bool success = KeyManager.Instance.Wave(cycles, 5, waveCooldown);
+
+				StartLocalCooldown(success ? waveCooldown : cooldown);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggeredBy);
 				return;

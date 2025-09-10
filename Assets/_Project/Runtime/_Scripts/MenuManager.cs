@@ -1,3 +1,4 @@
+#region
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,18 +6,18 @@ using System.Linq;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
-using UnityEngine.UI;
+#endregion
 
 public class MenuManager : MonoBehaviour
 {
 	RectTransform buttonGroup;
-	
+
 	KeyManager keyManager;
 	ComboManager comboManager;
 	Canvas canvas;
-	
+
 	public static MenuManager Instance { get; private set; }
-	
+
 	void Awake()
 	{
 		if (Instance != null && Instance != this) Destroy(this);
@@ -25,29 +26,29 @@ public class MenuManager : MonoBehaviour
 		canvas = GetComponent<Canvas>();
 		buttonGroup = (RectTransform) transform.GetChild(0);
 	}
-	
-	bool introSequenceCompleted;
-	public bool IntroSequenceCompleted => introSequenceCompleted;
+
+	public bool IntroSequenceCompleted { get; private set; }
 
 	void Start()
 	{
 		keyManager = KeyManager.Instance;
 		comboManager = ComboManager.Instance;
-		
+
 		// Disable the canvas at start. Its shown at the end of the intro sequence
 		buttonGroup.gameObject.SetActive(false);
+
 		// Ensure the object is active for the intro sequence so the coroutine can run
 		gameObject.SetActive(true);
 
 		// Start intro animation sequence after all setup
 		StartCoroutine(IntroSequence());
-		
+
 		return;
+
 		IEnumerator IntroSequence()
 		{
 			// disable all keys at start
-			foreach (Key key in keyManager.FlatKeys) 
-				key.Disable(false);
+			foreach (Key key in keyManager.FlatKeys) key.Disable(false);
 
 			GameManager.Instance.EnterTransition.gameObject.SetActive(true);
 
@@ -63,11 +64,11 @@ public class MenuManager : MonoBehaviour
 			wooshSFX.SetOutput(Output.SFX);
 			wooshSFX.SetVolume(0.5f);
 			wooshSFX.Play();
-			
+
 			yield return new WaitForSeconds(0.1f);
-			
+
 			var introTween = keyManager.Keyboard.transform.DOMove(new (3.5f, -2f), 1.5f).SetEase(Ease.OutCubic);
-			
+
 			yield return introTween.WaitForCompletion();
 			yield return new WaitForSeconds(1f);
 
@@ -87,13 +88,13 @@ public class MenuManager : MonoBehaviour
 			{
 				titleKey.Enable();
 				titleKey.ComboMarker.SetActive(titleKey.Combo = true);
-				
+
 				var sfx = new Sound(SFX.beep);
 				sfx.SetOutput(Output.SFX);
 				sfx.SetRandomPitch(new (0.95f, 1.05f));
 				sfx.SetVolume(0.5f);
 				sfx.Play();
-				
+
 				yield return new WaitForSeconds(0.1f);
 			}
 
@@ -117,25 +118,26 @@ public class MenuManager : MonoBehaviour
 				           // Enable the menu (canvas)
 				           canvas.enabled = true;
 				           buttonGroup.gameObject.SetActive(true);
-				           
+
 				           buttonGroup.anchoredPosition = new (500, 0);
 				           buttonGroup.DOAnchorPosX(0, 1f).SetEase(Ease.OutCubic);
 
 				           menuKeyPositions = keyManager.FlatKeys.ToDictionary(k => k, k => k.transform.position);
 			           });
-			
+
 			yield return new WaitForSeconds(1f);
 
-			introSequenceCompleted = true;
+			IntroSequenceCompleted = true;
 		}
 	}
 
 	public void Highlight(string str) => HighlightKeys(str, true, true);
+
 	public void EndHighlight(string str) => HighlightKeys(str, false, false);
-	
+
 	Dictionary<Key, Vector3> menuKeyPositions = new ();
 	Vector3 menuKeyboardParentPosition; // stores menu position of parent
-	
+
 	/// <summary>
 	///     Moves the specified word to the center of the middle row, swapping with existing keys.
 	/// </summary>
@@ -174,7 +176,7 @@ public class MenuManager : MonoBehaviour
 			targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic);
 		}
 	}
-	
+
 	public void HighlightKeys(string word, bool enable, bool interactable)
 	{
 		foreach (Key key in keyManager.FlatKeys)
@@ -203,8 +205,7 @@ public class MenuManager : MonoBehaviour
 				comboManager.CreateCombo(keysToHighlight);
 
 				// combo markers on highlighted keys
-				foreach (Key highlightKey in keysToHighlight) 
-					highlightKey.ComboMarker.SetActive(highlightKey.Combo = true);
+				foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = true);
 			}
 		}
 		else
@@ -215,19 +216,16 @@ public class MenuManager : MonoBehaviour
 			{
 				comboManager.RemoveCombo(keysToHighlight);
 
-				foreach (Key highlightKey in keysToHighlight) 
-					highlightKey.ComboMarker.SetActive(highlightKey.Combo = false);
+				foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = false);
 			}
 		}
-		
 	}
-	
+
 	public void ResetKeyPositions()
 	{
 		foreach (Key key in keyManager.FlatKeys)
 		{
-			if (menuKeyPositions.TryGetValue(key, out Vector3 position))
-				key.transform.DOMove(position, 1f);
+			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.DOMove(position, 1f);
 			else Debug.LogWarning($"No stored position for key {key.KeyboardLetter}");
 		}
 	}

@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using UnityEngine;
 #endregion
 
@@ -64,7 +63,7 @@ public partial class KeyManager
 			default:
 				throw new ArgumentOutOfRangeException(nameof(direction));
 		}
-		
+
 		List<Key> AllAdjacentKeys(KeyCode keyCode)
 		{
 			var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
@@ -112,26 +111,32 @@ public partial class KeyManager
 	}
 
 	Coroutine waveCoroutine;
+	Coroutine waveCooldown; // 30 seconds
 
-	public void Wave(int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
+	public bool Wave(int cycles, int maxCycles, float cooldown, float delayBetweenColumns = 0.25f)
 	{
-		if (waveCoroutine == null)
+		// if the wave is already active or on cooldown, do nothing
+		if (waveCoroutine != null || waveCooldown != null)
 		{
-			List<List<Key>> wave = GetWaveKeys();
-			waveCoroutine = StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, delayBetweenColumns));
+			Debug.Log("Wave is already active or on cooldown.");
+			return false;
 		}
+
+		List<List<Key>> wave = GetWaveKeys();
+		waveCoroutine = StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, cooldown, delayBetweenColumns));
+		return waveCoroutine != null;
 	}
-	
-	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
+
+	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float cooldown, float delayBetweenColumns)
 	{
 		for (int i = 0; i < cycles; i++)
 		{
 			if (i >= maxCycles) break;
-			yield return PerformWaveEffect(wave, delayBetweenColumns);
+			yield return ActivateColumn(wave, cooldown, delayBetweenColumns);
 		}
 	}
 
-	IEnumerator PerformWaveEffect(List<List<Key>> wave, float delayBetweenColumns)
+	IEnumerator ActivateColumn(List<List<Key>> wave, float cooldown, float delayBetweenColumns)
 	{
 		foreach (List<Key> column in wave)
 		{
@@ -140,6 +145,13 @@ public partial class KeyManager
 		}
 
 		waveCoroutine = null;
+		waveCooldown ??= StartCoroutine(WaveCooldown(cooldown));
+	}
+
+	IEnumerator WaveCooldown(float cooldown)
+	{
+		yield return new WaitForSeconds(cooldown);
+		waveCooldown = null;
 	}
 	#endregion
 }

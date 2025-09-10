@@ -6,78 +6,89 @@ using UnityEngine;
 
 public class ObjectPool : MonoBehaviour
 {
-    [SerializeField] GameObject objectPrefab;
-    [SerializeField] int startAmount;
+	[SerializeField] GameObject objectPrefab;
+	[SerializeField] int startAmount;
 
-    readonly List<GameObject> pooledObjects = new ();
+	public GameObject ObjectPrefab => objectPrefab;
 
-    void Awake() =>
+	readonly List<GameObject> pooledObjects = new ();
 
-        // Clear the pooledObjects list in case it's not empty. This prevents errors when using Unity Editor Mode options.
-        pooledObjects.Clear();
+	void Awake() =>
 
-    void Start()
-    {
-        ObjectPoolManager.Reset();
-        ObjectPoolManager.AddExistingPool(this);
-        InstantiateStartAmount();
-    }
+			// Clear the pooledObjects list in case it's not empty. This prevents errors when using Unity Editor Mode options.
+			pooledObjects.Clear();
 
-    /// <summary>
-    ///     Basically a constructor.
-    /// </summary>
-    /// <param name="objectPrefab"></param>
-    /// <param name="startAmount"></param>
-    public void SetUpPool(GameObject objectPrefab, int startAmount)
-    {
-        this.objectPrefab = objectPrefab;
-        this.startAmount = startAmount;
+	void Start()
+	{
+		ObjectPoolManager.Reset();
+		ObjectPoolManager.AddExistingPool(this);
+		InstantiateStartAmount();
+	}
 
-        gameObject.name = objectPrefab.name + " (Pool)";
-    }
+	/// <summary>
+	///     Basically a constructor.
+	/// </summary>
+	/// <param name="objectPrefab"></param>
+	/// <param name="startAmount"></param>
+	public void SetUpPool(GameObject objectPrefab, int startAmount)
+	{
+		this.objectPrefab = objectPrefab;
+		this.startAmount = startAmount;
 
-    /// <summary>
-    ///     Instantiates the specified number of starting objects for the pool.
-    /// </summary>
-    void InstantiateStartAmount()
-    {
-        for (int i = 0; i < startAmount; i++) { CreatePooledObject(); }
-    }
+		gameObject.name = objectPrefab.name + " (Pool)";
+	}
 
-    /// <summary>
-    ///     Instantiates an object, adds it to the pool and makes it inactive.
-    /// </summary>
-    /// <returns>The object that was created.</returns>
-    public GameObject CreatePooledObject()
-    {
-        GameObject newObject = Instantiate(objectPrefab, transform, true);
-        newObject.SetActive(false);
-        pooledObjects.Add(newObject);
-        return newObject;
-    }
+	/// <summary>
+	///     Instantiates the specified number of starting objects for the pool.
+	/// </summary>
+	void InstantiateStartAmount()
+	{
+		for (int i = 0; i < startAmount; i++) CreatePooledObject();
+	}
 
-    /// <summary>
-    ///     Returns an object from the pool.
-    /// </summary>
-    /// <param name="setActive">Depicts if the object should be active on return.</param>
-    /// <returns></returns>
-    public GameObject GetPooledObject(bool setActive = false)
-    {
-        foreach (GameObject pooledObject in pooledObjects.Where(pooledObject => !pooledObject.activeInHierarchy))
-        {
-            pooledObject.SetActive(setActive);
-            return pooledObject;
-        }
+	/// <summary>
+	///     Instantiates an object, adds it to the pool and makes it inactive.
+	/// </summary>
+	/// <returns>The object that was created.</returns>
+	public GameObject CreatePooledObject()
+	{
+		GameObject newObject = Instantiate(objectPrefab, transform, true);
+		newObject.SetActive(false);
+		pooledObjects.Add(newObject);
+		return newObject;
+	}
 
-        GameObject objectToReturn = CreatePooledObject();
-        objectToReturn.SetActive(setActive);
+	/// <summary>
+	///     Returns an object from the pool.
+	/// </summary>
+	/// <param name="setActive">Depicts if the object should be active on return.</param>
+	/// <returns></returns>
+	public GameObject GetPooledObject(bool setActive = false)
+	{
+		foreach (GameObject pooledObject in pooledObjects.Where(pooledObject => !pooledObject.activeInHierarchy))
+		{
+			pooledObject.SetActive(setActive);
+			return pooledObject;
+		}
 
-        return objectToReturn;
-    }
+		GameObject objectToReturn = CreatePooledObject();
+		objectToReturn.SetActive(setActive);
 
-    /// <summary>
-    ///     Returns the prefab of the object this pool contains.
-    /// </summary>
-    /// <returns></returns>
-    public GameObject GetPooledObjectPrefab() => objectPrefab;
+		return objectToReturn;
+	}
+
+	public T GetPooledObject<T>(bool setActive = false, Vector3 position = default, Quaternion rotation = default, Transform parent = null)
+			where T : Component
+	{
+		GameObject obj = GetPooledObject(setActive);
+		obj.transform.SetPositionAndRotation(position, rotation);
+		obj.transform.parent = parent;
+		return obj.GetComponent<T>();
+	}
+
+	/// <summary>
+	///     Returns the prefab of the object this pool contains.
+	/// </summary>
+	/// <returns></returns>
+	public GameObject GetPooledObjectPrefab() => objectPrefab;
 }
