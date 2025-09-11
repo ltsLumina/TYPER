@@ -41,6 +41,8 @@ public class ComboManager : MonoBehaviour
 	public int NextComboIndex => nextComboIndex;
 	public int ComboLength => comboLength;
 	public List<Key> CurrentComboKeys => currentComboKeys;
+	public Queue<List<Key>> CompletedCombos { get; } = new ();
+	
 	public bool Loops
 	{
 		get => loops;
@@ -69,8 +71,7 @@ public class ComboManager : MonoBehaviour
 		recentComboIndex = -1;
 		nextComboIndex = -1;
 
-		string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
-
+		//string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
 		//Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
 	}
 
@@ -206,22 +207,20 @@ public class ComboManager : MonoBehaviour
 
 	void ComboCompleted()
 	{
-		//string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
-		//Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
+		string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
+		Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
 
 		var sfx = new Sound(SFX.powerupSFX);
 		sfx.SetOutput(Output.SFX);
 		sfx.SetRandomPitch(new (0.95f, 1.05f));
 		sfx.SetVolume(0.15f);
 		sfx.Play();
-
+		
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
 		OnCompleteCombo?.Invoke(currentComboKeys.ToList());
 
 		ResetCombo();
 	}
-
-	public Queue<List<Key>> CompletedCombos => new ();
 
 	public void ResetCombo()
 	{

@@ -24,6 +24,7 @@ public partial class Key : MonoBehaviour
 	[SerializeField] bool offGlobalCooldown;
 	[SerializeField] bool combo;
 	[SerializeField] bool mash;
+	[SerializeField] ComboEffect comboEffect;
 	[SerializeField, ReadOnly] int comboIndex;
 	[SerializeField, ReadOnly] int mashCount;
 
@@ -122,6 +123,9 @@ public partial class Key : MonoBehaviour
 
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
 		damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
+
+		var comboEffects = Resources.LoadAll<ComboEffect>("Scriptables/Combos");
+		comboEffect = comboEffects.Length > 0 ? comboEffects[Random.Range(0, comboEffects.Length)] : null;
 
 		offGCDMarker.SetActive(offGlobalCooldown);
 		ComboMarker.SetActive(combo);
@@ -331,17 +335,40 @@ public partial class Key : MonoBehaviour
 					var comboVFX = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
 					ObjectPool comboPool = ObjectPoolManager.FindObjectPool(comboVFX.gameObject);
 
-					List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyboardLetter);
-					Key self = KeyManager.Instance.GetAdjacentKey(this.ToKeyCode(), KeyManager.Direction.All, out List<Key> adjacentKeys);
-
-					foreach (Key key in surroundingKeys)
+					if (SceneManagerExtended.ActiveSceneName == "Game")
 					{
-						var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
-						ParticleSystem.MainModule main = vfx.main;
-						main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
-						key.Activate(true, 0.5f, this);
-						key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
-						OnActivated?.Invoke(hitEnemy, this);
+						comboEffect?.Invoke(this); // TODO: this
+
+						// List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyboardLetter);
+						// Key self = KeyManager.Instance.GetAdjacentKey(this.ToKeyCode(), KeyManager.Direction.All, out List<Key> adjacentKeys);
+						//
+						// foreach (Key key in surroundingKeys)
+						// {
+						// 	var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
+						// 	ParticleSystem.MainModule main = vfx.main;
+						// 	main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+						// 	key.Activate(true, 0.5f, this);
+						// 	key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+						// 	OnActivated?.Invoke(hitEnemy, this);
+						// }
+					}
+					else
+					{
+						foreach (Key key in "TYPER".ToKeyCodes().ToKeys())
+						{
+							var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
+							ParticleSystem.MainModule main = vfx.main;
+							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+						}
+						
+						foreach (Key key in "PLAY".ToKeyCodes().ToKeys())
+						{
+							var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
+							ParticleSystem.MainModule main = vfx.main;
+							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+							
+							GameManager.Instance.ExitTransition.gameObject.SetActive(true);
+						}
 					}
 
 					StartLocalCooldown(cooldown);

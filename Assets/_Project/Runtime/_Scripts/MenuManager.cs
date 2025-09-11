@@ -55,11 +55,6 @@ public class MenuManager : MonoBehaviour
 			// Wait to ensure all keys are initialized
 			yield return new WaitForSeconds(1f);
 
-			// Center the title "TYPER" in the middle of the middle row
-			string title = GameManager.Instance.GameName;
-			List<KeyCode> titleKeyCodes = title.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
-			List<Key> titleKeys = titleKeyCodes.Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
-
 			var wooshSFX = new Sound(SFX.introWoosh);
 			wooshSFX.SetOutput(Output.SFX);
 			wooshSFX.SetVolume(0.5f);
@@ -73,8 +68,9 @@ public class MenuManager : MonoBehaviour
 			yield return new WaitForSeconds(1f);
 
 			#region Swap positions of title keys with random keys
-			// Create combo for title keys
-			comboManager.CreateCombo(titleKeys);
+			// Center the title "TYPER" in the middle of the middle row
+			string title = GameManager.Instance.GameName;
+			comboManager.CreateCombo(title.ToKeyCodes());
 
 			// Doesn't use the 'interactable' parameter since we want to animate the markers separately
 			HighlightKeys(title, true, false);
@@ -84,7 +80,7 @@ public class MenuManager : MonoBehaviour
 
 			#region Wait for Player to Start
 			// Animate combo markers on title keys
-			foreach (Key titleKey in titleKeys)
+			foreach (Key titleKey in title.ToKeyCodes().ToKeys())
 			{
 				titleKey.Enable();
 				titleKey.ComboMarker.SetActive(titleKey.Combo = true);
@@ -98,7 +94,8 @@ public class MenuManager : MonoBehaviour
 				yield return new WaitForSeconds(0.1f);
 			}
 
-			yield return new WaitUntil(() => GameManager.Instance.TyperEntered);
+			yield return new WaitUntil(() => comboManager.CompletedCombos.Count > 0);
+			comboManager.CompletedCombos.Dequeue();
 			#endregion
 
 			#region Return to Original Positions

@@ -1,4 +1,5 @@
 #region
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -173,7 +174,7 @@ public partial class KeyManager : MonoBehaviour
 		// Anything below this point only runs in the main game scene
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
 
-		InitializeWordHighway();
+		//InitializeWordHighway();
 
 		// get the first item in each row to determine lane positions
 		for (int row = 0; row < Keys.Count; row++)
@@ -186,23 +187,24 @@ public partial class KeyManager : MonoBehaviour
 			}
 		}
 
-		foreach (Key key in FlatKeys)
-		{
-			key.OnActivated += (hitEnemy, triggeredBy) =>
-			{
-				if (triggeredBy) return; // ignore if activated by another key (e.g., combo)
+		// foreach (Key key in FlatKeys)
+		// {
+		// 	key.OnActivated += (hitEnemy, triggeredBy) =>
+		// 	{
+		// 		if (triggeredBy) return; // ignore if activated by another key (e.g., combo)
+		//
+		// 		if (comboManager.InProgress) return;
+		// 		StartCoroutine(HandleNonComboKey(key));
+		// 	};
+		// }
 
-				if (comboManager.InProgress) return;
-				StartCoroutine(HandleNonComboKey(key));
-			};
-		}
-
-		comboManager.OnBeginCombo += key => HandleComboKey(key, 0);
-		comboManager.OnAdvanceCombo += (keys, indices) => HandleComboKey(keys.Item1, indices.Item1);
-		comboManager.OnCompleteCombo += HandleComboCompleted;
-		comboManager.OnComboReset += key => StartCoroutine(HandleComboReset(key));
+		// comboManager.OnBeginCombo += key => HandleComboKey(key, 0);
+		// comboManager.OnAdvanceCombo += (keys, indices) => HandleComboKey(keys.Item1, indices.Item1);
+		// comboManager.OnCompleteCombo += HandleComboCompleted;
+		// comboManager.OnComboReset += key => StartCoroutine(HandleComboReset(key));
 
 		#region Modifiers
+		if (SceneManagerExtended.ActiveSceneName != "Game") return;
 		List<KeyCode> qweCombo = "QWE".ToKeyCodes();
 		comboManager.CreateCombo(qweCombo);
 
@@ -384,12 +386,12 @@ public partial class KeyManager : MonoBehaviour
 	readonly List<Key> comboHighwayKeys = new ();
 	readonly Queue<Key> queuedKeys = new ();
 
-	void HandleComboKey(Key recentKey, int index)
+	void HandleComboKey(Key recentKey, int index) // TODO: properly implement this
 	{
 		if (DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"))
 		{
 			queuedKeys.Enqueue(recentKey);
-			Debug.Log($"Queued {recentKey.KeyboardLetter} for combo highway! Queue length: {queuedKeys.Count}");
+			//Debug.Log($"Queued {recentKey.KeyboardLetter} for combo highway! Queue length: {queuedKeys.Count}");
 			StartCoroutine(HandleComboKeyQueue());
 			return;
 		}
@@ -412,6 +414,7 @@ public partial class KeyManager : MonoBehaviour
 	IEnumerator HandleComboKeyQueue()
 	{
 		yield return new WaitWhile(() => DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"));
+		yield return new WaitForSeconds(0.2f);
 
 		if (queuedKeys.Count > 0) HandleComboKey(queuedKeys.Dequeue(), comboHighwayKeys.Count);
 	}

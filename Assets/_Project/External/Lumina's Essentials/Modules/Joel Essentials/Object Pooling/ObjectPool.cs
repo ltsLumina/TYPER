@@ -81,8 +81,8 @@ public class ObjectPool : MonoBehaviour
 			where T : Component
 	{
 		GameObject obj = GetPooledObject(setActive);
-		obj.transform.SetPositionAndRotation(position, rotation);
-		obj.transform.parent = parent;
+		if (position != default || rotation != default) obj.transform.SetPositionAndRotation(position, rotation);
+		if (parent != null) obj.transform.parent = parent;
 		return obj.GetComponent<T>();
 	}
 
