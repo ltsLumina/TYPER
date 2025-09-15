@@ -1,5 +1,6 @@
 #region
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using static UnityEngine.Object;
 using Object = UnityEngine.Object;
@@ -121,6 +122,15 @@ namespace Lumina.Essentials.Modules
         
         public static Component GetChildComponent<T>(this Component component) where T : Component => component.GetComponentInChildren<T>();
         public static Component GetChildComponent(this Component component, Type type) => component.GetComponentInChildren(type);
+
+        public static T GetRandomElement<T>(this List<T> list)
+        {
+            if (list == null || list.Count == 0)
+                return default;
+
+            int randomIndex = Random.Range(0, list.Count);
+            return list[randomIndex];
+        }
         #endregion
     }
 }

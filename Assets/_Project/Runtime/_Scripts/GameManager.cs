@@ -1,6 +1,7 @@
 #region
 using System.Collections;
 using System.Collections.Generic;
+using Lumina.Essentials.Modules;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;

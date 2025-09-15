@@ -9,10 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27c3d398d5034999a340747e20852bff, type: 3}
-  m_Name: CE_AdjacentKeys
-  m_EditorClassIdentifier: Assembly-CSharp::CE_AdjacentKeys
+  m_Script: {fileID: 11500000, guid: 4fe905e9a87517045900440a0aba5c7f, type: 3}
+  m_Name: Thorned
+  m_EditorClassIdentifier: Assembly-CSharp::KE_Thorned
   effectName: Effect Name
   effectID: identifier
   description: Effect Description
-  direction: 3

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Adjacent Keys", menuName = "Combos/New Adjacent Keys", order = 1)]
-public class CE_AdjacentKeys : KeyEffect
+public class KE_AdjacentKeys : KeyEffect
 {
 	[SerializeField] KeyManager.Direction direction = KeyManager.Direction.Right;
 
 	public override string ToString() => $"Adjacent Keys ({direction})";
 
-	protected override void Invoke(KeyCode keyCode, Key key = null)
+	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
 	{
 		if (!key) keyCode.ToKey().StartCoroutine(InvokeWithDelay(keyCode, keyCode.ToKey()));
 		else key.StartCoroutine(InvokeWithDelay(keyCode, key));

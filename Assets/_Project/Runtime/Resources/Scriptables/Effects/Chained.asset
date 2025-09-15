@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d97d9cee9e50264e98d740545e0bb63, type: 3}
-  m_Name: Wave
-  m_EditorClassIdentifier: Assembly-CSharp::KE_Wave
+  m_Script: {fileID: 11500000, guid: 65afec93068396a4db46dd3eebcd0547, type: 3}
+  m_Name: Chained
+  m_EditorClassIdentifier: Assembly-CSharp::KE_Chained
   effectName: Effect Name
   effectID: identifier
   description: Effect Description

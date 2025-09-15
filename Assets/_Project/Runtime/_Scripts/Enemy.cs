@@ -8,7 +8,7 @@ using Random = UnityEngine.Random;
 
 interface IDamageable
 {
-	void TakeDamage(int damage, bool isCritical = false);
+	void TakeDamage(int damage);
 }
 
 public class Enemy : MonoBehaviour, IDamageable
@@ -32,7 +32,7 @@ public class Enemy : MonoBehaviour, IDamageable
 		private set => health = value;
 	}
 
-	public override string ToString() => name = $"Enemy (on Lane {Lane + 1} | Health: {Health})";
+	public override string ToString() => name = $"Enemy ({GetInstanceID()}) (on Lane {Lane + 1} | Health: {Health})";
 
 	void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
@@ -94,7 +94,7 @@ public class Enemy : MonoBehaviour, IDamageable
 		if (other.CompareTag("Finish"))
 		{
 			Debug.LogWarning("An enemy has reached the end!");
-			TakeDamage(999, true);
+			TakeDamage(999);
 
 			GameManager.Instance.TakeDamage(damage);
 		}
@@ -114,8 +114,10 @@ public class Enemy : MonoBehaviour, IDamageable
 	int consecutiveHits;
 	int pendingDamage;
 
-	void LateUpdate()
+	IEnumerator PendingDamage()
 	{
+		yield return new WaitForSecondsRealtime(0.1f);
+		
 		// Store the amount of damage taken this frame and apply it at the end of the frame.
 		// This is due to each key applying damage once each, so the enemy takes damage multiple times per frame from different keys.
 		if (pendingDamage > 0)
@@ -126,9 +128,10 @@ public class Enemy : MonoBehaviour, IDamageable
 		}
 	}
 
-	public void TakeDamage(int damage, bool isCritical = false)
+	public void TakeDamage(int damage)
 	{
 		pendingDamage += damage;
+		StartCoroutine(PendingDamage());
 		name = ToString();
 
 		ObjectPool hitVFXPool = ObjectPoolManager.FindObjectPool(hitVFX.gameObject);
@@ -198,7 +201,6 @@ public class Enemy : MonoBehaviour, IDamageable
 		}
 
 		return;
-
 		IEnumerator Slow(float duration, float amount)
 		{
 			float originalSpeed = speed;
@@ -238,11 +240,11 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		void DeathVFX()
 		{
-			var vfx = deathVFXPool.GetPooledObject<ParticleSystem>(true);
+			var vfx = deathVFXPool.GetPooledObject<ParticleSystem>(true, transform.position);
 
 			// change color of the deathVFX to the colour of the enemy or red if critical
 			ParticleSystem.MainModule main = vfx.main;
-			main.startColor = isCritical ? Color.red : spriteRenderer.color;
+			main.startColor = damage > 100 ? Color.red : spriteRenderer.color;
 		}
 	}
 }

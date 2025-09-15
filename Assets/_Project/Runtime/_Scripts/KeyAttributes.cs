@@ -3,14 +3,15 @@ using System;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using Random = UnityEngine.Random;
 #endregion
 
 public partial class Key // Properties
 {
-	public KeyCode KeyboardLetter
+	public KeyCode KeyCode
 	{
-		get => keyboardLetter;
-		set => keyboardLetter = value;
+		get => keyCode;
+		set => keyCode = value;
 	}
 	public int Row
 	{
@@ -70,6 +71,7 @@ public partial class Key // Properties
 		get => remainingCooldown;
 		set => remainingCooldown = value;
 	}
+	public bool LastKeyInCombo { get; set; }
 }
 
 public partial class Key // Components
@@ -112,34 +114,44 @@ public partial class Key // Modifiers
 		switch (modifier)
 		{
 			case Modifier.OffGlobalCooldown:
-				OffGlobalCooldown = value;
-				offGCDMarker.SetActive(OffGlobalCooldown);
+				offGCDMarker.SetActive(OffGlobalCooldown = value);
 				if (args.Length > 0 && args[0] is float newCooldown and > 0f) cooldown = newCooldown;
 				break;
 
 			case Modifier.Combo:
-				Combo = value;
-				ComboMarker.SetActive(Combo);
+				ComboMarker.SetActive(Combo = value);
+
+				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
+				
+				// 50/50 chance to get either adjacent keys or surrounding keys effect
+				keyEffect = Random.value > 0.5f ? KeyEffect.GetEffect<KE_AdjacentKeys>() : KeyEffect.GetEffect<KE_SurroundingKeys>();
 				break;
 
 			case Modifier.Mash:
-				Mash = value;
-				MashMarker.SetActive(Mash);
+				MashMarker.SetActive(Mash = value);
+				
+				keyEffect = KeyEffect.GetEffect<KE_Wave>();
 				break;
 
 			case Modifier.Chained:
-				Chained = value;
-				ChainedMarker.SetActive(Chained);
+				ChainedMarker.SetActive(Chained = value);
 				Disable();
+
+				keyEffect = KeyEffect.GetEffect<KE_Chained>();
 				break;
 
 			case Modifier.Loose:
-				Loose = value;
-				transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
+				// ReSharper disable once AssignmentInConditionalExpression
+				if (Loose = value) transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
+
+				keyEffect = KeyEffect.GetEffect<KE_Loose>();
 				break;
 
 			case Modifier.Thorned:
 				Thorned = value;
+				// TODO: add visual indicator for thorned keys
+				
+				keyEffect = KeyEffect.GetEffect<KE_Thorned>();
 				break;
 
 			default:

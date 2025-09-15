@@ -147,7 +147,7 @@ public class MenuManager : MonoBehaviour
 		List<KeyCode> wordKeyCodes = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
 
 		// The keys corresponding to the letters in the word
-		List<Key> wordKeys = wordKeyCodes.Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
+		List<Key> wordKeys = wordKeyCodes.Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyCode == tc)).Where(k => k != null).ToList();
 
 		if (wordKeys.Count != word.Length)
 		{
@@ -182,7 +182,7 @@ public class MenuManager : MonoBehaviour
 			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.position = position;
 		}
 
-		List<Key> keysToHighlight = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyboardLetter == tc)).Where(k => k != null).ToList();
+		List<Key> keysToHighlight = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyCode == tc)).Where(k => k != null).ToList();
 
 		// List of keys to disable (all keys except the ones to highlight)
 		List<Key> keysToDisable = keyManager.FlatKeys.Except(keysToHighlight).ToList();
@@ -223,7 +223,7 @@ public class MenuManager : MonoBehaviour
 		foreach (Key key in keyManager.FlatKeys)
 		{
 			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.DOMove(position, 1f);
-			else Debug.LogWarning($"No stored position for key {key.KeyboardLetter}");
+			else Debug.LogWarning($"No stored position for key {key.KeyCode}");
 		}
 	}
 }

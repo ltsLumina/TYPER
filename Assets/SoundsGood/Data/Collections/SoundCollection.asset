@@ -43,3 +43,13 @@ MonoBehaviour:
     - {fileID: 8300000, guid: efd0a337cdbc22643919591b05ea8ad3, type: 3}
     compressionPreset: 1
     forceToMono: 0
+  - tag: chained
+    clips:
+    - {fileID: 8300000, guid: 3124618aabe432144870a7160857e9dc, type: 3}
+    compressionPreset: 1
+    forceToMono: 1
+  - tag: unchained
+    clips:
+    - {fileID: 8300000, guid: 89478dca433280944b7294668da3c5a0, type: 3}
+    compressionPreset: 1
+    forceToMono: 1

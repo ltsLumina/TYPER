@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
+using Lumina.Essentials.Modules;
 using MelenitasDev.SoundsGood;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using VInspector;
 using Random = UnityEngine.Random;
 #endregion
@@ -17,7 +19,7 @@ public partial class Key : MonoBehaviour
 {
 	[Tab("Attributes")]
 	[Header("Attributes")]
-	[SerializeField, ReadOnly] KeyCode keyboardLetter = KeyCode.Q;
+	[SerializeField, ReadOnly] KeyCode keyCode = KeyCode.Q;
 	[SerializeField] int damage;
 	[SerializeField] bool chained;
 	[SerializeField] bool loose;
@@ -96,14 +98,14 @@ public partial class Key : MonoBehaviour
 	#region SFX
 	Sound sfx;
 	float lastSfxTime = -1f;
-	const float SfxCooldown = 0.5f;
+	const float SfxCooldown = 0.25f;
 
 	void InitSFX()
 	{
 		sfx = new (SFX.beep);
 		sfx.SetOutput(Output.SFX);
 		sfx.SetVolume(0.85f);
-		sfx.SetRandomPitch(new (0.95f, 1.05f));
+		sfx.SetRandomPitch();
 	}
 	#endregion
 
@@ -113,28 +115,21 @@ public partial class Key : MonoBehaviour
 
 		InitSFX();
 
-		OnActivated += (hitEnemy, triggeredBy) =>
+		OnActivated += (_, _) =>
 		{
 			if (Time.time - lastSfxTime > SfxCooldown)
 			{
+				sfx.SetRandomPitch();
 				sfx.Play();
 				lastSfxTime = Time.time;
 			}
 		};
 
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
-		damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
-
-		var effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects").ToList();
-		var toRemove = new List<KeyEffect> { Resources.Load<KE_Wave>("Scriptables/Effects/Wave"), Resources.Load<KE_Default>("Scriptables/Effects/Default Combo Effect (None)") };
-		effects.RemoveAll(e => toRemove.Contains(e));
-
-		if (Combo) keyEffect = effects[Random.Range(0, effects.Count)];
-		if (Mash) keyEffect = Resources.Load<KE_Wave>("Scriptables/Effects/Wave");
-
-		offGCDMarker.SetActive(offGlobalCooldown);
-		ComboMarker.SetActive(combo);
-		MashMarker.SetActive(mash);
+		// Minimum damage is 2, maximum is roughly half the number of keys in the row, e.g. for 10 keys in a row, max damage is 5
+		int min = 2;
+		damage = Mathf.Max(min, Mathf.RoundToInt(indexInRow / 2f) + min);
+		
 		MashText.text = Mash ? mashCount.ToString() : string.Empty;
 
 		// reset all fills (hide)
@@ -155,11 +150,13 @@ public partial class Key : MonoBehaviour
 		Debug.Assert(ComboMarker != null, $"{name} is missing a reference to its ComboMarker!");
 		Debug.Assert(MashMarker != null, $"{name} is missing a reference to its MashMarker!");
 		Debug.Assert(MashText != null, $"{name} is missing a reference to its DamageText!");
+		
+		Debug.Assert(Helpers.CameraMain.GetComponent<Physics2DRaycaster>(), "Main Camera is missing a \"Physics 2D Raycaster\" component, which is required for UI interaction with keys.");
 	}
 
 	public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKeyboard)
 	{
-		keyboardLetter = keycode;
+		keyCode = keycode;
 		this.row = row;
 		this.indexInRow = indexInRow;
 		this.indexKeyboard = indexKeyboard;
@@ -193,49 +190,21 @@ public partial class Key : MonoBehaviour
 
 	void DrawCooldownFill() => CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, CooldownTime / currentCooldown));
 
+	readonly List<Enemy> overlappingEnemies = new ();
+	
 	void OnTriggerEnter2D(Collider2D other)
 	{
-		//Debug.Log($"{name} overlapping with: {other.name}!", other.gameObject);
-		if (other.TryGetComponent(out Enemy enemy)) currentEnemy = enemy;
+	    if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy))
+	        overlappingEnemies.Add(enemy);
 	}
-
+	
 	void OnTriggerExit2D(Collider2D other)
 	{
-		if (!other.TryGetComponent(out Enemy enemy)) return;
-		if (currentEnemy == enemy) currentEnemy = null;
+	    if (other.TryGetComponent(out Enemy enemy))
+	        overlappingEnemies.Remove(enemy);
 	}
 
 	Coroutine mashTimerCoroutine;
-
-	void ActivatedWhileLoose()
-	{
-		DOTween.Kill("Loose"); // Stop the infinite shaking tween.
-
-		isActive = false; // Disables the key while falling but doesn't change the colour.
-		Loose = false;
-		Vector3 originalPos = transform.position;
-
-		var rb = gameObject.AddComponent<Rigidbody2D>();
-		rb.bodyType = RigidbodyType2D.Dynamic;
-		const float FORCE = 1.5f;
-		rb.AddForce(new Vector3(1f, 3f) * FORCE, ForceMode2D.Impulse);
-		rb.AddTorque(5, ForceMode2D.Impulse);
-
-		// Falling off animation
-		transform.DOScale(Vector3.zero, 1.5f)
-		         .SetDelay(1f)
-		         .SetEase(Ease.InBack)
-		         .OnComplete
-		          (() =>
-		          {
-			          Disable();
-			          SpriteRenderer.gameObject.SetActive(false);
-			          transform.position = originalPos;
-			          transform.rotation = Quaternion.identity;
-			          transform.localScale = Vector3.one;
-			          Destroy(rb);
-		          });
-	}
 
 	int timesActivatedByKey;
 	const int MAX_ACTIVATIONS_PER_FRAME = 5; // arbitrary limit to prevent infinite loops
@@ -265,11 +234,11 @@ public partial class Key : MonoBehaviour
 	///     If greater than 0, this value will be used as the cooldown instead of the key's default
 	///     cooldown.
 	/// </param>
-	/// <param name="triggeredBy"> The key that triggered this key, if any. Null if triggered by player input. (false) </param>
+	/// <param name="triggerKey"> The key that triggered this key, if any. Null if triggered by player input. (false) </param>
 	/// <returns> True if an enemy was hit, false otherwise. </returns>
-	public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f, Key triggeredBy = null) // false by default
+	public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f, Key triggerKey = null) // false by default
 	{
-		bool triggeredByKey = triggeredBy != null;
+		bool triggeredByKey = triggerKey != null;
 		#region Infnite Loop Protection - only allow 1 activation per frame per key
 		if (triggeredByKey)
 		{
@@ -290,18 +259,7 @@ public partial class Key : MonoBehaviour
 
 		if (Chained)
 		{
-			if (triggeredByKey)
-			{
-				Chained = false;
-				ChainedMarker.SetActive(false);
-				Enable();
-			}
-			else
-			{
-				// shake the key left and right quickly to indicate it is chained
-				transform.DOPunchPosition(new (0.1f, 0f, 0f), 0.2f, 20);
-				return;
-			}
+			keyEffect?.Invoke(this, triggeredByKey);
 		}
 
 		if (!isActive) return;
@@ -323,10 +281,10 @@ public partial class Key : MonoBehaviour
 
 			if (comboIndex == 0)
 			{
-				comboManager.BeginCombo(keyboardLetter);
+				comboManager.BeginCombo(keyCode);
 				StartLocalCooldown(cooldown);
 				SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
-				OnActivated?.Invoke(hitEnemy, triggeredBy);
+				OnActivated?.Invoke(hitEnemy, triggerKey);
 
 				ComboHighlight.gameObject.SetActive(false);
 				return;
@@ -334,7 +292,7 @@ public partial class Key : MonoBehaviour
 
 			if (comboIndex == nextKeyIndex)
 			{
-				comboManager.AdvanceCombo(keyboardLetter);
+				comboManager.AdvanceCombo(keyCode);
 
 				// Combo completed
 				if (comboIndex == comboManager.ComboLength - 1)
@@ -345,7 +303,8 @@ public partial class Key : MonoBehaviour
 					if (SceneManagerExtended.ActiveSceneName == "Game")
 					{
 						// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-						if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) keyEffect?.Invoke(this);
+						if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
+							keyEffect?.Invoke(this, triggeredByKey);
 					}
 					else
 					{
@@ -368,14 +327,15 @@ public partial class Key : MonoBehaviour
 
 					StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
-					OnActivated?.Invoke(hitEnemy, triggeredBy);
+					OnActivated?.Invoke(hitEnemy, triggerKey);
 					return;
 				}
 
 				StartLocalCooldown(cooldown);
 				SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
-				OnActivated?.Invoke(hitEnemy, triggeredBy);
+				OnActivated?.Invoke(hitEnemy, triggerKey);
 
+				// Hide the highlight when the combo is complete or reset
 				ComboHighlight.gameObject.SetActive(false);
 				return;
 			}
@@ -383,7 +343,9 @@ public partial class Key : MonoBehaviour
 
 		if (Mash)
 		{
-			mashCount++;
+			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
+			if (triggerKey != this) mashCount++;
+
 			MashText.text = mashCount.ToString();
 
 			if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
@@ -391,50 +353,55 @@ public partial class Key : MonoBehaviour
 
 			if (mashCount % 5 == 0) // every 5th mash
 			{
-				keyEffect?.Invoke(this);
+				keyEffect?.Invoke(this, triggeredByKey);
 				StartLocalCooldown(5f);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
-				OnActivated?.Invoke(hitEnemy, triggeredBy);
+				OnActivated?.Invoke(hitEnemy, triggerKey);
 				return;
 			}
 
 			StartLocalCooldown(0.25f);
 			SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
-			OnActivated?.Invoke(hitEnemy, triggeredBy);
+			OnActivated?.Invoke(hitEnemy, triggerKey);
 			return;
 		}
 
 		// If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
-		if (Loose && !triggeredByKey) ActivatedWhileLoose();
+		if (Loose) keyEffect?.Invoke(this, triggeredByKey);
+		
+		if (Thorned) keyEffect?.Invoke(this, triggeredByKey);
 
 		if (OffGlobalCooldown)
 		{
 			StartLocalCooldown(cooldown + 2.5f); // note: temporary
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
-			OnActivated?.Invoke(hitEnemy, triggeredBy);
+			OnActivated?.Invoke(hitEnemy, triggerKey);
 			return;
 		}
 
 		if (overrideGlobalCooldown)
 		{
-			StartLocalCooldown(cooldownOverride > 0 ? cooldownOverride : cooldown);
+			StartLocalCooldown(cooldownOverride > -1f ? cooldownOverride : cooldown);
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
-			OnActivated?.Invoke(hitEnemy, triggeredBy);
+			OnActivated?.Invoke(hitEnemy, triggerKey);
 		}
 		else
 		{
 			KeyManager.Instance.StartGlobalCooldown();
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
-			OnActivated?.Invoke(hitEnemy, triggeredBy);
+			OnActivated?.Invoke(hitEnemy, triggerKey);
 		}
 	}
 
 	bool DealDamage()
 	{
-		if (currentEnemy)
+		foreach (Enemy enemy in overlappingEnemies)
 		{
-			currentEnemy.TakeDamage(damage);
-			return true;
+			if (enemy != null)
+			{
+				enemy.TakeDamage(damage);
+				return true;
+			}
 		}
 
 		return false;
@@ -489,13 +456,13 @@ public static class KeyExtensions
 	}
 
 	// to keycode from single key
-	public static KeyCode ToKeyCode(this Key key) => !key ? KeyCode.None : key.KeyboardLetter;
+	public static KeyCode ToKeyCode(this Key key) => !key ? KeyCode.None : key.KeyCode;
 
 	// to Key from single keycode
 	public static Key ToKey(this KeyCode keycode) => KeyManager.Instance.GetKey(keycode);
 
 	// convert list of keys to keycodes
-	public static List<KeyCode> ToKeyCodes(this List<Key> keys) => keys.Select(k => k.KeyboardLetter).ToList();
+	public static List<KeyCode> ToKeyCodes(this List<Key> keys) => keys.Select(k => k.KeyCode).ToList();
 
 	// to keycodes from string
 	public static List<KeyCode> ToKeyCodes(this string str)

@@ -57,6 +57,7 @@ public partial class KeyManager : MonoBehaviour
 	public GameObject Keyboard { get; private set; }
 
 	public KeyCode KeyPressed { get; private set; }
+	
 	public float GlobalCooldown => globalCooldown;
 	public float CurrentCooldown => currentCooldown;
 	public bool OnCooldown => currentCooldown > 0;
@@ -144,7 +145,7 @@ public partial class KeyManager : MonoBehaviour
 		for (int r = 0; r < Keys.Count; r++)
 		{
 			for (int c = 0; c < Keys[r].Count; c++)
-				if (Keys[r][c].KeyboardLetter == keycode)
+				if (Keys[r][c].KeyCode == keycode)
 					return (true, r, c);
 		}
 
@@ -233,6 +234,10 @@ public partial class KeyManager : MonoBehaviour
 		// chain J key
 		Key chainKey = GetKey(KeyCode.J);
 		chainKey.SetModifier(Key.Modifier.Chained);
+		
+		// thorn K key
+		Key thornKey = GetKey(KeyCode.K);
+		thornKey.SetModifier(Key.Modifier.Thorned);
 		#endregion
 	}
 
@@ -246,7 +251,7 @@ public partial class KeyManager : MonoBehaviour
 
 		KeyPressed = pressedKey;
 
-		keyObj = FlatKeys.FirstOrDefault(k => k.KeyboardLetter == KeyPressed);
+		keyObj = FlatKeys.FirstOrDefault(k => k.KeyCode == KeyPressed);
 		if (keyObj != null) keyObj.Activate();
 		#endregion
 	}
@@ -369,7 +374,7 @@ public partial class KeyManager : MonoBehaviour
 	{
 		yield return null; // wait one frame (fixes it for some reason)
 
-		if (comboManager.RecentKey?.KeyboardLetter == key.KeyboardLetter)
+		if (comboManager.RecentKey?.KeyCode == key.KeyCode)
 		{
 			if (highwayKey) Destroy(highwayKey.gameObject);
 			yield break;
@@ -377,8 +382,8 @@ public partial class KeyManager : MonoBehaviour
 
 		var prefab = Resources.Load<Key>("PREFABS/Highway Key");
 		if (!highwayKey) highwayKey = Instantiate(prefab, wordHighway.transform.position, Quaternion.identity, wordHighway.transform);
-		highwayKey.name = key.KeyboardLetter.ToString();
-		highwayKey.Letter.text = key.KeyboardLetter.ToString();
+		highwayKey.name = key.KeyCode.ToString();
+		highwayKey.Letter.text = key.KeyCode.ToString();
 		highwayKey.gameObject.SetActive(true);
 	}
 
@@ -405,8 +410,8 @@ public partial class KeyManager : MonoBehaviour
 
 		comboKey.transform.DOPunchPosition(new (0, 0.5f, 0), 0.3f).SetLink(comboKey.gameObject);
 		comboKey.transform.localPosition = comboPos;
-		comboKey.name = recentKey.KeyboardLetter.ToString();
-		comboKey.Letter.text = recentKey.KeyboardLetter.ToString();
+		comboKey.name = recentKey.KeyCode.ToString();
+		comboKey.Letter.text = recentKey.KeyCode.ToString();
 		comboKey.gameObject.SetActive(true);
 		comboHighwayKeys.Add(comboKey);
 	}

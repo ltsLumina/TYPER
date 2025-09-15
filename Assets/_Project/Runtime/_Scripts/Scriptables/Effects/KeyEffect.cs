@@ -16,7 +16,33 @@ public abstract class KeyEffect : ScriptableObject
 	[TextArea, Tooltip("Description of the combo effect for UI display.")]
 	[SerializeField] protected string description = "Effect Description";
 
-	protected abstract void Invoke(KeyCode keyCode, Key key = null);
+	protected abstract void Invoke(KeyCode keyCode, Key key, bool triggeredByKey);
 
-	public void Invoke(Key key) => Invoke(key.ToKeyCode(), key);
+	public void Invoke(Key key, bool triggeredByKey) => Invoke(key.ToKeyCode(), key, triggeredByKey);
+	
+	public static KeyEffect GetEffectByID(string identifier)
+	{
+		KeyEffect[] effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects");
+		foreach (var e in effects)
+		{
+			if (e.effectID == identifier.ToLower())
+				return e;
+		}
+
+		Debug.LogWarning($"No KeyEffect found with ID: {identifier}");
+		return null;
+	}
+	
+	public static KeyEffect GetEffect<T>() where T : KeyEffect
+	{
+		KeyEffect[] effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects");
+		foreach (var e in effects)
+		{
+			if (e is T)
+				return e;
+		}
+
+		Debug.LogWarning($"No KeyEffect found of type: {typeof(T)}");
+		return null;
+	}
 }

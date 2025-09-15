@@ -1,6 +1,7 @@
 ﻿#region
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 #endregion
@@ -19,6 +20,11 @@ public static class ScriptWriter
 		bool hasPrefix = effectName.StartsWith("KE_");
 		string newClassName = hasPrefix ? effectName : $"KE_{effectName}";
 		template = template.Replace("KE_Default", newClassName);
+		
+		// set the 'order' in the CreateAssetMenu attribute based on existing scripts
+		string[] existingFiles = Directory.GetFiles(savePath, "KE_*.cs");
+		int newOrder = existingFiles.Length + 1;
+		template = template.Replace("order = 0", $"order = {newOrder}");
 
 		// Write new script
 		string newFilePath = Path.Combine(savePath, newClassName + ".cs");
@@ -33,41 +39,5 @@ public static class ScriptWriter
 
 		AssetDatabase.ImportAsset(newFilePath);
 		AssetDatabase.Refresh();
-	}
-}
-
-public class Pipeline : AssetPostprocessor
-{
-	public static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-	{
-		if (importedAssets.Length > 0)
-		{
-			foreach (string assetPath in importedAssets)
-			{
-				if (assetPath.EndsWith(".cs"))
-				{
-					var monoScript = AssetDatabase.LoadAssetAtPath<MonoScript>(assetPath);
-
-					if (monoScript != null)
-					{
-						Type type = monoScript.GetClass();
-
-						if (type != null && typeof(ScriptableObject).IsAssignableFrom(type))
-						{
-							ScriptableObject asset = ScriptableObject.CreateInstance(type);
-							string niceName = type.Name.StartsWith("KE_") ? type.Name.Replace("KE_", string.Empty) : type.Name;
-
-							string SAVE_PATH = "Assets/_Project/Runtime/Resources/Scriptables/Effects" + "/" + niceName + ".asset";
-							AssetDatabase.CreateAsset(asset, SAVE_PATH);
-							Debug.Log($"Created ScriptableObject asset at: {SAVE_PATH}");
-						}
-						else { Debug.LogWarning($"Class not found or is not a ScriptableObject for script: {assetPath}"); }
-					}
-				}
-			}
-
-			AssetDatabase.Refresh();
-			AssetDatabase.SaveAssets();
-		}
 	}
 }

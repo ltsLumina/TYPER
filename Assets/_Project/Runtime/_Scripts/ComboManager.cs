@@ -34,6 +34,7 @@ public class ComboManager : MonoBehaviour
 	[SerializeField] bool loops; // TODO: implement looping combos
 	[Space(10)]
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
+	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
 
 	public List<Dictionary<Key, (int, bool)>> Combos => combos;
 
@@ -55,20 +56,21 @@ public class ComboManager : MonoBehaviour
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
-	/// <param name="keys"></param>
+	/// <param name="comboKeys"></param>
 	/// <param name="loops"> Whether the combo should loop back to the start after completion.</param>
-	public void CreateCombo(List<Key> keys, bool loops = false)
+	public void CreateCombo(List<Key> comboKeys, bool loops = false)
 	{
-		foreach (Key key in keys)
+		// last key in combo
+		Key lastKey = comboKeys[^1];
+		lastKey.LastKeyInCombo = true;
+		
+		foreach (Key key in comboKeys)
 		{
-			key.Combo = true;
-			key.ComboIndex = keys.IndexOf(key);
+			key.SetModifier(Key.Modifier.Combo);
+			key.ComboIndex = comboKeys.IndexOf(key);
 		}
 
-		// last key in combo
-		Key lastKey = keys[^1];
-
-		combos.Add(keys.ToDictionary(k => k, k => (k.ComboIndex, loops)));
+		combos.Add(comboKeys.ToDictionary(k => k, k => (k.ComboIndex, loops)));
 		recentComboKey = null;
 		nextComboKey = null;
 		recentComboIndex = -1;
@@ -92,14 +94,14 @@ public class ComboManager : MonoBehaviour
 		// if the combo already exists, do not create the combo
 		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
 		{
-			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyboardLetter))}");
+			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}");
 			return;
 		}
 
 		// if any key is already in a combo, do not create the combo
 		if (comboKeys.Any(k => k.Combo))
 		{
-			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.Combo).Select(k => k.KeyboardLetter))}");
+			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.Combo).Select(k => k.KeyCode))}");
 			return;
 		}
 
@@ -121,7 +123,7 @@ public class ComboManager : MonoBehaviour
 				key.ComboHighlight.gameObject.SetActive(false);
 			}
 
-			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyboardLetter))}");
+			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyCode))}");
 		}
 	}
 
@@ -136,7 +138,7 @@ public class ComboManager : MonoBehaviour
 		if (nextComboIndex == -1)
 		{
 			// Find a combo that starts with the given key
-			var matchingCombo = combos.FirstOrDefault(c => c.Keys.First().KeyboardLetter == key);
+			var matchingCombo = combos.FirstOrDefault(c => c.Keys.First().KeyCode == key);
 
 			if (matchingCombo == null)
 			{
@@ -169,7 +171,7 @@ public class ComboManager : MonoBehaviour
 	public void AdvanceCombo(KeyCode keycode)
 	{
 		// Only advance if the key matches the expected key in the current combo
-		if (currentComboKeys[nextComboIndex].KeyboardLetter != keycode)
+		if (currentComboKeys[nextComboIndex].KeyCode != keycode)
 		{
 			//Debug.LogWarning($"Key {keycode} does not match expected combo key {currentComboKeys[nextComboIndex].KeyboardLetter}");
 			return;
@@ -215,11 +217,19 @@ public class ComboManager : MonoBehaviour
 
 		var sfx = new Sound(SFX.powerupSFX);
 		sfx.SetOutput(Output.SFX);
-		sfx.SetRandomPitch(new (0.95f, 1.05f));
+		sfx.SetRandomPitch(new (0.9f, 1.05f));
 		sfx.SetVolume(0.15f);
 		sfx.Play();
 
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
+
+		if (CompletedCombos.Count > 5)
+		{
+			CompletedCombos.Dequeue();
+			completedComboStrings.RemoveAt(0);
+		}
+
+		completedComboStrings.Add(string.Join(" -> ", currentComboKeys.Select(k => k.KeyCode)));
 		OnCompleteCombo?.Invoke(currentComboKeys.ToList());
 
 		ResetCombo();

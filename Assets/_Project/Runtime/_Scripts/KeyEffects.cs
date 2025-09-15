@@ -85,7 +85,8 @@ public partial class KeyManager
 		{
 			for (int c = col - 1; c <= col + 1; c++)
 			{
-				if (r >= 0 && r < Keys.Count && c >= 0 && c < Keys[r].Count && (r != row || c != col)) surroundingKeys.Add(Keys[r][c]);
+				if (r >= 0 && r < Keys.Count && c >= 0 && c < Keys[r].Count && (r != row || c != col)) 
+					surroundingKeys.Add(Keys[r][c]);
 			}
 		}
 
@@ -96,7 +97,7 @@ public partial class KeyManager
 	#endregion
 
 	#region Wave
-	public List<List<Key>> GetWaveKeys()
+	List<List<Key>> GetWaveKeys()
 	{
 		List<List<Key>> wave = new ();
 		int maxCols = Keys.Max(row => row.Count);
@@ -141,7 +142,14 @@ public partial class KeyManager
 	{
 		foreach (List<Key> column in wave)
 		{
-			foreach (Key key in column) key.Activate(true, 2.5f, key);
+			foreach (Key key in column)
+			{
+				key.Activate(true, 2.5f, key);
+				// slight delay between keys in the same column. Helps with combos and sounds.
+				// affects the way combos are hit during the wave, however. First row will always be first, so any combos on lower rows may not have their combo triggered.
+				yield return new WaitForSeconds(0.02f);
+			}
+
 			yield return new WaitForSeconds(delayBetweenColumns);
 		}
 

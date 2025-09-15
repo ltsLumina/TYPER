@@ -12,7 +12,6 @@ using static UnityEngine.GUILayout;
 
 namespace Lumina.Debugging
 {
-[EditorWindowTitle(title = "Debug", icon = "Debug.png")]
 public class DebugWindow : EditorWindow
 {
 	static Action activeMenu;
@@ -43,7 +42,6 @@ public class DebugWindow : EditorWindow
 		EditorApplication.playModeStateChanged += PlayModeState;
 
 		return;
-
 		void Initialize() => activeMenu = DefaultMenu;
 	}
 
@@ -52,7 +50,6 @@ public class DebugWindow : EditorWindow
 		Terminate();
 
 		return;
-
 		void Terminate()
 		{
 			// Clear the added scenes list.
@@ -75,10 +72,9 @@ public class DebugWindow : EditorWindow
 		// Dock next to inspector. Find the inspector window using reflection
 		Type desiredDockNextTo = typeof(EditorWindow).Assembly.GetType("UnityEditor.InspectorWindow");
 		var window = GetWindow<DebugWindow>("Debug", true, desiredDockNextTo);
-
-		// Set the icon. The icon is found in the Icons folder. Name of icon is "Debug.png"
-		var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Editor/Debugging/Icons/Debug.png");
-		window.titleContent.image = icon;
+		
+		var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Editor/Debugging/Icons/Debug.png");
+		window.titleContent = new ("Debug", icon);
 		window.minSize = new (350, 200);
 		window.maxSize = window.minSize;
 
@@ -94,6 +90,12 @@ public class DebugWindow : EditorWindow
 	#endregion
 
 	#region GUI
+	static void NewMenu()
+	{
+		Label("New Menu - Not Yet Implemented", EditorStyles.largeLabel);
+		if (Button("Back", Height(30))) activeMenu = DefaultMenu;
+	}
+	
 	static void DefaultMenu()
 	{
 		// Default Menu is scrollable.
@@ -116,12 +118,16 @@ public class DebugWindow : EditorWindow
 			FlexibleSpace();
 			FlexibleSpace();
 			FlexibleSpace();
-
-			bool isPlaying = Application.isPlaying;
-
-			Label(isPlaying ? "Load Scene" : "Open Scene", EditorStyles.largeLabel);
+			FlexibleSpace();
 			FlexibleSpace();
 
+			bool isPlaying = Application.isPlaying;
+			Label(isPlaying ? "Load Scene" : "Open Scene", EditorStyles.largeLabel);
+			
+			FlexibleSpace();
+			FlexibleSpace();
+			FlexibleSpace();
+			
 			DrawBackButton();
 		}
 	}
@@ -512,10 +518,8 @@ public class DebugWindow : EditorWindow
 
 			if (Button("Back", Width(pixels)))
 			{
-				Debug.LogWarning("Back button is not yet implemented.");
-
-				// -- End --
-				activeMenu = DefaultMenu;
+				if (activeMenu == DefaultMenu) activeMenu = NewMenu;
+				else activeMenu = DefaultMenu;
 			}
 		}
 	}
