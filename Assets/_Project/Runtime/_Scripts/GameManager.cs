@@ -16,15 +16,11 @@ public class GameManager : MonoBehaviour
 	[SerializeField] TransitionAnimator enterTransition;
 	[SerializeField] TransitionAnimator exitTransition;
 
-	[Header("Settings")]
-	[SerializeField] bool showDamageNumbers;
-
 	public static GameManager Instance { get; private set; }
 
 	public bool TyperEntered { get; private set; }
 
 	public string GameName => gameName;
-	public bool ShowDamageNumbers => showDamageNumbers;
 
 	public int Health
 	{
@@ -92,7 +88,7 @@ public class GameManager : MonoBehaviour
 
 	Coroutine hitStopCoroutine;
 
-	public void TriggerHitStop(float duration, float slowdownFactor = 0.05f)
+	public void TriggerHitStop(float duration = 0.1f, float slowdownFactor = 0.05f)
 	{
 		// if already active, restart hit stop
 		if (hitStopCoroutine != null)

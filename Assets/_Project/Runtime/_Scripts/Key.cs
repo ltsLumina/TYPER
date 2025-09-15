@@ -12,6 +12,7 @@ using VInspector;
 using Random = UnityEngine.Random;
 #endregion
 
+[SelectionBase]
 public partial class Key : MonoBehaviour
 {
 	[Tab("Attributes")]
@@ -24,7 +25,7 @@ public partial class Key : MonoBehaviour
 	[SerializeField] bool offGlobalCooldown;
 	[SerializeField] bool combo;
 	[SerializeField] bool mash;
-	[SerializeField] ComboEffect comboEffect;
+	[SerializeField] KeyEffect keyEffect;
 	[SerializeField, ReadOnly] int comboIndex;
 	[SerializeField, ReadOnly] int mashCount;
 
@@ -43,7 +44,7 @@ public partial class Key : MonoBehaviour
 	[SerializeField] GameObject oGCDMarker;
 	[SerializeField] GameObject comboMarker;
 	[SerializeField] GameObject mashMarker;
-	[SerializeField] TMP_Text damageText;
+	[SerializeField] TMP_Text mashText;
 
 	[Tab("Settings")]
 	[Header("Settings")]
@@ -76,20 +77,20 @@ public partial class Key : MonoBehaviour
 	{
 		#region Cooldown Sprite
 		// Ensure the cooldown sprite is fully opaque at start. In the prefab view the alpha is 0.5f;
-		Color color = CooldownSprite.color;
+		Color color = cooldownSprite.color;
 		color.a = 0.65f;
-		CooldownSprite.color = color;
+		cooldownSprite.color = color;
 
 		// makes the cooldown fill animate the other way (looks better)
-		CooldownSprite.flipX = true;
+		cooldownSprite.flipX = true;
 		#endregion
 
-		ChainedMarker.SetActive(false);
-		ComboHighlight.SetActive(false);
-		HomingBar.SetActive(false);
-		offGCDMarker.SetActive(false);
-		ComboMarker.SetActive(false);
-		MashMarker.SetActive(false);
+		chainedMarker.SetActive(false);
+		comboHighlight.SetActive(false);
+		homingBar.SetActive(false);
+		oGCDMarker.SetActive(false);
+		comboMarker.SetActive(false);
+		mashMarker.SetActive(false);
 	}
 
 	#region SFX
@@ -124,13 +125,17 @@ public partial class Key : MonoBehaviour
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
 		damage = Mathf.Max(1, Mathf.RoundToInt(indexInRow / 2f));
 
-		var comboEffects = Resources.LoadAll<ComboEffect>("Scriptables/Combos");
-		comboEffect = comboEffects.Length > 0 ? comboEffects[Random.Range(0, comboEffects.Length)] : null;
+		var effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects").ToList();
+		var toRemove = new List<KeyEffect> { Resources.Load<KE_Wave>("Scriptables/Effects/Wave"), Resources.Load<KE_Default>("Scriptables/Effects/Default Combo Effect (None)") };
+		effects.RemoveAll(e => toRemove.Contains(e));
+
+		if (Combo) keyEffect = effects[Random.Range(0, effects.Count)];
+		if (Mash) keyEffect = Resources.Load<KE_Wave>("Scriptables/Effects/Wave");
 
 		offGCDMarker.SetActive(offGlobalCooldown);
 		ComboMarker.SetActive(combo);
 		MashMarker.SetActive(mash);
-		DamageText.text = Mash ? mashCount.ToString() : string.Empty;
+		MashText.text = Mash ? mashCount.ToString() : string.Empty;
 
 		// reset all fills (hide)
 		DrawCooldownFill();
@@ -149,7 +154,7 @@ public partial class Key : MonoBehaviour
 		Debug.Assert(offGCDMarker != null, $"{name} is missing a reference to its offGCDMarker!");
 		Debug.Assert(ComboMarker != null, $"{name} is missing a reference to its ComboMarker!");
 		Debug.Assert(MashMarker != null, $"{name} is missing a reference to its MashMarker!");
-		Debug.Assert(DamageText != null, $"{name} is missing a reference to its DamageText!");
+		Debug.Assert(MashText != null, $"{name} is missing a reference to its DamageText!");
 	}
 
 	public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKeyboard)
@@ -160,7 +165,7 @@ public partial class Key : MonoBehaviour
 		this.indexKeyboard = indexKeyboard;
 
 		Letter.text = keycode.ToString();
-		Letter.text = Letter.text.Replace("Alpha", ""); // remove "Alpha" from numeric keys
+		Letter.text = Letter.text.Replace("Alpha", string.Empty); // remove "Alpha" from numeric keys
 
 		HomingBar.SetActive(keycode is KeyCode.F or KeyCode.J);
 	}
@@ -233,6 +238,8 @@ public partial class Key : MonoBehaviour
 	}
 
 	int timesActivatedByKey;
+	const int MAX_ACTIVATIONS_PER_FRAME = 5; // arbitrary limit to prevent infinite loops
+
 	IEnumerator StackOverflowProtection()
 	{
 		yield return null;
@@ -268,7 +275,7 @@ public partial class Key : MonoBehaviour
 		{
 			timesActivatedByKey++;
 
-			if (timesActivatedByKey > 1)
+			if (timesActivatedByKey > MAX_ACTIVATIONS_PER_FRAME)
 			{
 #if false
                 Debug.LogError($"Potential infinite activation loop detected on key {name}. Activation aborted.");
@@ -337,20 +344,8 @@ public partial class Key : MonoBehaviour
 
 					if (SceneManagerExtended.ActiveSceneName == "Game")
 					{
-						comboEffect?.Invoke(this); // TODO: this
-
-						// List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyboardLetter);
-						// Key self = KeyManager.Instance.GetAdjacentKey(this.ToKeyCode(), KeyManager.Direction.All, out List<Key> adjacentKeys);
-						//
-						// foreach (Key key in surroundingKeys)
-						// {
-						// 	var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
-						// 	ParticleSystem.MainModule main = vfx.main;
-						// 	main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
-						// 	key.Activate(true, 0.5f, this);
-						// 	key.SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
-						// 	OnActivated?.Invoke(hitEnemy, this);
-						// }
+						// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
+						if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) keyEffect?.Invoke(this);
 					}
 					else
 					{
@@ -360,13 +355,13 @@ public partial class Key : MonoBehaviour
 							ParticleSystem.MainModule main = vfx.main;
 							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
 						}
-						
+
 						foreach (Key key in "PLAY".ToKeyCodes().ToKeys())
 						{
 							var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
 							ParticleSystem.MainModule main = vfx.main;
 							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
-							
+
 							GameManager.Instance.ExitTransition.gameObject.SetActive(true);
 						}
 					}
@@ -388,22 +383,16 @@ public partial class Key : MonoBehaviour
 
 		if (Mash)
 		{
+			mashCount++;
+			MashText.text = mashCount.ToString();
+
 			if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
 			mashTimerCoroutine = StartCoroutine(MashTimer());
 
-			mashCount++;
-			DamageText.text = mashCount > 0 ? mashCount.ToString() : string.Empty;
-
-			// every 5th mash triggers a special effect. Wave effect cycles multiple times based on how many multiples of 5 have been reached.
-			if (mashCount % 5 == 0)
+			if (mashCount % 5 == 0) // every 5th mash
 			{
-				int cycles = mashCount / 5;
-
-				// mashCount of 5 = 1 cycle, 10 = 2 cycles, etc. Max 5 cycles.
-				const float waveCooldown = 15f;
-				bool success = KeyManager.Instance.Wave(cycles, 5, waveCooldown);
-
-				StartLocalCooldown(success ? waveCooldown : cooldown);
+				keyEffect?.Invoke(this);
+				StartLocalCooldown(5f);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggeredBy);
 				return;
@@ -420,7 +409,7 @@ public partial class Key : MonoBehaviour
 
 		if (OffGlobalCooldown)
 		{
-			StartLocalCooldown(cooldown + 2.5f);
+			StartLocalCooldown(cooldown + 2.5f); // note: temporary
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
 			OnActivated?.Invoke(hitEnemy, triggeredBy);
 			return;
@@ -431,8 +420,6 @@ public partial class Key : MonoBehaviour
 			StartLocalCooldown(cooldownOverride > 0 ? cooldownOverride : cooldown);
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
 			OnActivated?.Invoke(hitEnemy, triggeredBy);
-
-			//Debug.Log($"{name} activated by {(triggerKey != null ? triggerKey.name : "Player Input")}.");
 		}
 		else
 		{
@@ -458,7 +445,7 @@ public partial class Key : MonoBehaviour
 		// if 3 seconds pass without a mash, reset the mash count
 		yield return new WaitForSeconds(3f);
 		mashCount = 0;
-		DamageText.text = mashCount.ToString();
+		MashText.text = mashCount.ToString();
 	}
 
 	public void StartLocalCooldown(float cooldown)

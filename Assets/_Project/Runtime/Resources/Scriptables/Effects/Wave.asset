@@ -9,6 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bdabe491da3a42bb83b0e00732c8588d, type: 3}
-  m_Name: Default Combo Effect
-  m_EditorClassIdentifier: Assembly-CSharp::ComboEffect
+  m_Script: {fileID: 11500000, guid: 0d97d9cee9e50264e98d740545e0bb63, type: 3}
+  m_Name: Wave
+  m_EditorClassIdentifier: Assembly-CSharp::CE_Wave
+  effectName: Wave
+  effectID: wave
+  description: Activates each column of keys in a wave with a delay between each.

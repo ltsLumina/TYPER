@@ -111,12 +111,13 @@ public partial class KeyManager
 	}
 
 	Coroutine waveCoroutine;
-	Coroutine waveCooldown; // 30 seconds
+
+	//Coroutine waveCooldown; // 30 seconds // not currently used
 
 	public bool Wave(int cycles, int maxCycles, float cooldown, float delayBetweenColumns = 0.25f)
 	{
 		// if the wave is already active or on cooldown, do nothing
-		if (waveCoroutine != null || waveCooldown != null)
+		if (waveCoroutine != null)
 		{
 			Debug.Log("Wave is already active or on cooldown.");
 			return false;
@@ -145,13 +146,24 @@ public partial class KeyManager
 		}
 
 		waveCoroutine = null;
-		waveCooldown ??= StartCoroutine(WaveCooldown(cooldown));
+
+		//waveCooldown ??= StartCoroutine(WaveCooldown(cooldown));
 	}
+
+	float cooldownRemaining;
+	public float CooldownRemaining => cooldownRemaining;
 
 	IEnumerator WaveCooldown(float cooldown)
 	{
-		yield return new WaitForSeconds(cooldown);
-		waveCooldown = null;
+		cooldownRemaining = cooldown;
+
+		while (cooldownRemaining > 0f)
+		{
+			cooldownRemaining -= Time.deltaTime;
+			yield return null;
+		}
+
+		//waveCooldown = null;
 	}
 	#endregion
 }

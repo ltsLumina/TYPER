@@ -784,6 +784,7 @@ MonoBehaviour:
   offGlobalCooldown: 0
   combo: 0
   mash: 0
+  keyEffect: {fileID: 0}
   comboIndex: 0
   mashCount: 0
   cooldown: 2.5
@@ -798,11 +799,11 @@ MonoBehaviour:
   oGCDMarker: {fileID: 5489329388572892794}
   comboMarker: {fileID: 8257230677043649474}
   mashMarker: {fileID: 5263246864951546072}
-  damageText: {fileID: 7668886888516169902}
+  mashText: {fileID: 7668886888516169902}
   isActive: 1
   row: 0
   indexInRow: 0
-  indexKey: 0
+  indexKeyboard: 0
 --- !u!61 &251285257252138855
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1059,7 +1060,7 @@ GameObject:
   - component: {fileID: 6028656240811215525}
   - component: {fileID: 7668886888516169902}
   m_Layer: 0
-  m_Name: Text (Damage)
+  m_Name: Text (Mash)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

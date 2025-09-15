@@ -139,7 +139,8 @@ public class Enemy : MonoBehaviour, IDamageable
 			// death
 			case <= 0: {
 				name = $"\"Enemy\" on Lane {Lane + 1} | Dead ({-Health})";
-				Debug.LogWarning($"{name} has Died!");
+
+				//Debug.Log($"{name} has Died!");
 
 				// add score. Score is calculated as 10 points per health at spawn time
 				GameManager.Instance.AddScore(scoreValue);

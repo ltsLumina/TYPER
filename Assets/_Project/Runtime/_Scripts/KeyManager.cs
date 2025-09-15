@@ -1,5 +1,4 @@
 #region
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -391,6 +390,7 @@ public partial class KeyManager : MonoBehaviour
 		if (DOTween.IsTweening("highwayCompleted") || DOTween.IsTweening("highwayKeyPunch"))
 		{
 			queuedKeys.Enqueue(recentKey);
+
 			//Debug.Log($"Queued {recentKey.KeyboardLetter} for combo highway! Queue length: {queuedKeys.Count}");
 			StartCoroutine(HandleComboKeyQueue());
 			return;
@@ -423,8 +423,6 @@ public partial class KeyManager : MonoBehaviour
 	{
 		var prefab = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
 		ObjectPool pool = ObjectPoolManager.FindObjectPool(prefab.gameObject);
-
-		GameManager.Instance.TriggerHitStop(0.1f, 0.1f);
 
 		foreach (Key key in comboHighwayKeys)
 		{

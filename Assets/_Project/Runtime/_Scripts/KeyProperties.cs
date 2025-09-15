@@ -57,6 +57,9 @@ public partial class Key // Properties
 		get => loose;
 		set => loose = value;
 	}
+	/// <summary>
+	/// </summary>
+	/// <remarks> Also known as "rooted". </remarks>
 	public bool Thorned
 	{
 		get => thorned;
@@ -80,7 +83,7 @@ public partial class Key // Components
 	public GameObject offGCDMarker => oGCDMarker;
 	public GameObject ComboMarker => comboMarker;
 	public GameObject MashMarker => mashMarker;
-	public TMP_Text DamageText => damageText;
+	public TMP_Text MashText => mashText;
 }
 
 public partial class Key // Modifiers

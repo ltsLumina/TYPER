@@ -42,7 +42,7 @@ public class ComboManager : MonoBehaviour
 	public int ComboLength => comboLength;
 	public List<Key> CurrentComboKeys => currentComboKeys;
 	public Queue<List<Key>> CompletedCombos { get; } = new ();
-	
+
 	public bool Loops
 	{
 		get => loops;
@@ -64,6 +64,9 @@ public class ComboManager : MonoBehaviour
 			key.Combo = true;
 			key.ComboIndex = keys.IndexOf(key);
 		}
+
+		// last key in combo
+		Key lastKey = keys[^1];
 
 		combos.Add(keys.ToDictionary(k => k, k => (k.ComboIndex, loops)));
 		recentComboKey = null;
@@ -207,15 +210,15 @@ public class ComboManager : MonoBehaviour
 
 	void ComboCompleted()
 	{
-		string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
-		Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
+		// string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
+		// Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
 
 		var sfx = new Sound(SFX.powerupSFX);
 		sfx.SetOutput(Output.SFX);
 		sfx.SetRandomPitch(new (0.95f, 1.05f));
 		sfx.SetVolume(0.15f);
 		sfx.Play();
-		
+
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
 		OnCompleteCombo?.Invoke(currentComboKeys.ToList());
 
@@ -231,7 +234,7 @@ public class ComboManager : MonoBehaviour
 		currentComboKeys.Clear();
 
 		// Reset combo state. If loops is enabled, start from the beginning again, otherwise clear the combo.
-		nextComboIndex = loops ? 0 : -1;
+		nextComboIndex = -1;
 		recentComboKey = nextComboKey;
 		nextComboKey = null;
 
