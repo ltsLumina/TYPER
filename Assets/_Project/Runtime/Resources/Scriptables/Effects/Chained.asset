@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65afec93068396a4db46dd3eebcd0547, type: 3}
   m_Name: Chained
   m_EditorClassIdentifier: Assembly-CSharp::KE_Chained
-  effectName: Effect Name
-  effectID: identifier
-  description: Effect Description
+  effectName: Chained
+  effectID: chained
+  description: Key is chained and cannot be pressed by player input. Becomes unchained
+    (regular key) upon being activated by an adjacent key, e.g., through an effect.

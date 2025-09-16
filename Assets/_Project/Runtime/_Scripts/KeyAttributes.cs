@@ -1,5 +1,6 @@
 #region
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -124,7 +125,8 @@ public partial class Key // Modifiers
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
 				
 				// 50/50 chance to get either adjacent keys or surrounding keys effect
-				keyEffect = Random.value > 0.5f ? KeyEffect.GetEffect<KE_AdjacentKeys>() : KeyEffect.GetEffect<KE_SurroundingKeys>();
+				List<KeyEffect> possibleEffects = new() { KeyEffect.GetEffect<KE_AdjacentKeys>(), KeyEffect.GetEffect<KE_Shockwave>(), KeyEffect.GetEffect<KE_Pulse>() };
+				keyEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
 				break;
 
 			case Modifier.Mash:

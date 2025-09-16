@@ -1,4 +1,6 @@
 ﻿#region
+using System;
+using JetBrains.Annotations;
 using UnityEngine;
 #endregion
 
@@ -16,9 +18,32 @@ public abstract class KeyEffect : ScriptableObject
 	[TextArea, Tooltip("Description of the combo effect for UI display.")]
 	[SerializeField] protected string description = "Effect Description";
 
-	protected abstract void Invoke(KeyCode keyCode, Key key, bool triggeredByKey);
+	public string EffectName => effectName;
+	public string EffectID => effectID;
+	public string Description => description;
 
-	public void Invoke(Key key, bool triggeredByKey) => Invoke(key.ToKeyCode(), key, triggeredByKey);
+	void Awake() => effectID = effectName.ToLower().Replace(" ", "_");
+
+	/// <summary>
+	///   Invoke the effect using a KeyCode and optional Key reference.
+	/// </summary>
+	/// <param name="keyCode"> The KeyCode that triggered this effect. </param>
+	/// <param name="key"> The Key reference that triggered this effect. </param>
+	/// <param name="trigger"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
+	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
+	/// </param>
+	protected abstract void Invoke(KeyCode keyCode, [NotNull] Key key, (bool byKey, Key key) trigger);
+
+	/// <summary>
+	///    Invoke the effect using a Key reference.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <param name="trigger"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
+	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
+	/// </param>
+	public void Invoke(Key key, (bool byKey, Key key) trigger) => Invoke(key.ToKeyCode(), key, (trigger.byKey, trigger.key));
+	
+	public void Invoke(Key key, Key triggerKey) => Invoke(key.ToKeyCode(), key, (triggerKey != null, triggerKey));
 	
 	public static KeyEffect GetEffectByID(string identifier)
 	{

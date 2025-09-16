@@ -6,10 +6,10 @@ using UnityEngine;
 public class KE_AdjacentKeys : KeyEffect
 {
 	[SerializeField] KeyManager.Direction direction = KeyManager.Direction.Right;
-
+	
 	public override string ToString() => $"Adjacent Keys ({direction})";
 
-	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
 		if (!key) keyCode.ToKey().StartCoroutine(InvokeWithDelay(keyCode, keyCode.ToKey()));
 		else key.StartCoroutine(InvokeWithDelay(keyCode, key));
@@ -21,7 +21,7 @@ public class KE_AdjacentKeys : KeyEffect
 
 		yield return new WaitForSecondsRealtime(0.1f);
 
-		Debug.Log($"Key Effect \"{ToString()}\" triggered on {keyCode}", key);
+		//Debug.Log($"Key Effect \"{ToString()}\" triggered on {keyCode}", key);
 
 		var comboVFX = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
 		ObjectPool comboPool = ObjectPoolManager.FindObjectPool(comboVFX.gameObject);

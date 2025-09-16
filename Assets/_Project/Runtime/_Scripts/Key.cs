@@ -259,7 +259,7 @@ public partial class Key : MonoBehaviour
 
 		if (Chained)
 		{
-			keyEffect?.Invoke(this, triggeredByKey);
+			keyEffect?.Invoke(this, triggerKey);
 		}
 
 		if (!isActive) return;
@@ -304,7 +304,7 @@ public partial class Key : MonoBehaviour
 					{
 						// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
 						if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
-							keyEffect?.Invoke(this, triggeredByKey);
+							keyEffect?.Invoke(this, triggerKey);
 					}
 					else
 					{
@@ -345,6 +345,7 @@ public partial class Key : MonoBehaviour
 		{
 			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
 			if (triggerKey != this) mashCount++;
+			else return;
 
 			MashText.text = mashCount.ToString();
 
@@ -353,7 +354,7 @@ public partial class Key : MonoBehaviour
 
 			if (mashCount % 5 == 0) // every 5th mash
 			{
-				keyEffect?.Invoke(this, triggeredByKey);
+				keyEffect?.Invoke(this, triggerKey);
 				StartLocalCooldown(5f);
 				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 				OnActivated?.Invoke(hitEnemy, triggerKey);
@@ -367,9 +368,9 @@ public partial class Key : MonoBehaviour
 		}
 
 		// If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
-		if (Loose) keyEffect?.Invoke(this, triggeredByKey);
+		if (Loose) keyEffect?.Invoke(this, triggerKey);
 		
-		if (Thorned) keyEffect?.Invoke(this, triggeredByKey);
+		if (Thorned) keyEffect?.Invoke(this, triggerKey);
 
 		if (OffGlobalCooldown)
 		{

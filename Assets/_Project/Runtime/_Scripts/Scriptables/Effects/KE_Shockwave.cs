@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Surrounding Keys", menuName = "Combos/New Surrounding Keys", order = 2)]
-public class KE_SurroundingKeys : KeyEffect
+public class KE_Shockwave : KeyEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
 		if (!key) keyCode.ToKey().StartCoroutine(InvokeWithDelay(keyCode, keyCode.ToKey()));
 		else key.StartCoroutine(InvokeWithDelay(keyCode, key));

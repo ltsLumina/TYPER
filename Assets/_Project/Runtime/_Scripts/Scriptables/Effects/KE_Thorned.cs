@@ -3,8 +3,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Thorned", menuName = "Combos/New Thorned", order = 6)]
 public class KE_Thorned : KeyEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
+		if (trigger.Item1) return;
 		GameManager.Instance.TakeDamage(1);
 		
 		var vfx = Instantiate(Resources.Load<ParticleSystem>("PREFABS/Enemy Death VFX"), key.transform.position, Quaternion.identity);

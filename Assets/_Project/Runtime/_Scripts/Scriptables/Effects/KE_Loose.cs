@@ -1,12 +1,13 @@
+using System;
 using DG.Tweening;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Loose", menuName = "Combos/New Loose", order = 5)]
 public class KE_Loose : KeyEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
-		ActivatedWhileLoose(key, triggeredByKey);
+		ActivatedWhileLoose(key, trigger.byKey);
 	}
 
 	static void ActivatedWhileLoose(Key key, bool triggeredByKey)

@@ -48,6 +48,7 @@ public partial class KeyManager : MonoBehaviour
 	Key highwayKey;
 	GameObject wordHighway;
 	Key keyObj;
+	Tooltip tooltip;
 
 	public static KeyManager Instance { get; private set; }
 
@@ -84,6 +85,12 @@ public partial class KeyManager : MonoBehaviour
 
 			return currentlyValidKeys;
 		}
+	}
+
+	public Tooltip Tooltip
+	{
+		get => tooltip;
+		set => tooltip = value;
 	}
 
 	#region Get Key Functions

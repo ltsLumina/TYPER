@@ -1,3 +1,4 @@
+using System;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
@@ -5,27 +6,13 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Chained", menuName = "Combos/New Chained", order = 4)]
 public class KE_Chained : KeyEffect
 {
-	/// <summary>
-	/// Invokes the chained effect on the key.
-	/// </summary>
-	/// <param name="keyCode"></param>
-	/// <param name="key"></param>
-	/// <param name="triggeredByKey"></param>
-	protected override void Invoke(KeyCode keyCode, Key key, bool triggeredByKey)
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
-		if (!triggeredByKey)
-		{
-			if (DOTween.IsTweening("Chained")) return; // Prevents re-triggering while the animation is playing.
-			key.transform.DOPunchPosition(new (0.1f, 0f, 0f), 0.2f, 20).SetId("Chained");
-			
-			var chainedSFX = new Sound(SFX.chained);
-			chainedSFX.Play();
-		}
-		else
+		if (trigger.byKey)
 		{
 			key.Chained = false;
 			key.Enable();
-			
+
 			var chainedSFX = new Sound(SFX.unchained);
 			chainedSFX.Play();
 
@@ -54,6 +41,14 @@ public class KE_Chained : KeyEffect
 				       Destroy(rb);
 			       });
 			#endregion
+		}
+		else
+		{
+			if (DOTween.IsTweening("Chained")) return; // Prevents re-triggering while the animation is playing.
+			key.transform.DOPunchPosition(new (0.1f, 0f, 0f), 0.2f, 20).SetId("Chained");
+
+			var chainedSFX = new Sound(SFX.chained);
+			chainedSFX.Play();
 		}
 	}
 	

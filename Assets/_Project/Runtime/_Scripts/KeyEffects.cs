@@ -115,18 +115,10 @@ public partial class KeyManager
 
 	//Coroutine waveCooldown; // 30 seconds // not currently used
 
-	public bool Wave(int cycles, int maxCycles, float cooldown, float delayBetweenColumns = 0.25f)
+	public void Wave(int cycles, int maxCycles, float cooldown, float delayBetweenColumns = 0.25f)
 	{
-		// if the wave is already active or on cooldown, do nothing
-		if (waveCoroutine != null)
-		{
-			Debug.Log("Wave is already active or on cooldown.");
-			return false;
-		}
-
 		List<List<Key>> wave = GetWaveKeys();
-		waveCoroutine = StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, cooldown, delayBetweenColumns));
-		return waveCoroutine != null;
+		StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, cooldown, delayBetweenColumns));
 	}
 
 	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float cooldown, float delayBetweenColumns)
@@ -172,6 +164,68 @@ public partial class KeyManager
 		}
 
 		//waveCooldown = null;
+	}
+	#endregion
+
+	#region Pulse
+	// pulse outwards from a central key, activating adjacent keys in a wave-like manner
+	Coroutine pulseCoroutine;
+	
+	/// <summary>
+	/// Pulse effect that activates keys in expanding layers from a central key.
+	/// </summary>
+	/// <param name="centerKey"> The key to start the pulse from. </param>
+	/// <param name="maxLayers"> Maximum number of layers to pulse outwards. This limits how far the pulse spreads. To cover the whole keyboard, set this to a high number like 10. </param>
+	/// <param name="delayBetweenLayers"> Delay in seconds between activating each layer of keys. </param>
+	public void Pulse(Key centerKey, int maxLayers = 3, float delayBetweenLayers = 0.1f)
+	{
+		if (pulseCoroutine != null)
+		{
+			Debug.Log("Pulse is already active.");
+			return;
+		}
+
+		pulseCoroutine = StartCoroutine(PulseCoroutine(centerKey, maxLayers, delayBetweenLayers));
+	}
+	
+	IEnumerator PulseCoroutine(Key centerKey, int maxLayers, float delayBetweenLayers)
+	{
+		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
+		if (!found)
+		{
+			pulseCoroutine = null;
+			yield break;
+		}
+
+		int layers = 0;
+		List<Key> currentLayerKeys = new () { centerKey };
+		HashSet<Key> activatedKeys = new () { centerKey };
+
+		while (currentLayerKeys.Count > 0 && layers < maxLayers)
+		{
+			List<Key> nextLayerKeys = new ();
+
+			foreach (Key key in currentLayerKeys)
+			{
+				key.Activate(true, 2.5f, centerKey);
+
+				List<Key> adjacentKeys = GetSurroundingKeys(key.ToKeyCode());
+				foreach (Key adjacent in adjacentKeys)
+				{
+					if (!activatedKeys.Contains(adjacent))
+					{
+						nextLayerKeys.Add(adjacent);
+						activatedKeys.Add(adjacent);
+					}
+				}
+			}
+
+			currentLayerKeys = nextLayerKeys;
+			layers++;
+			yield return new WaitForSeconds(layers == 1 ? 0.1f : delayBetweenLayers);
+		}
+
+		pulseCoroutine = null;
 	}
 	#endregion
 }

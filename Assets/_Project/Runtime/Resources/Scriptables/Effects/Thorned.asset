@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fe905e9a87517045900440a0aba5c7f, type: 3}
   m_Name: Thorned
   m_EditorClassIdentifier: Assembly-CSharp::KE_Thorned
-  effectName: Effect Name
-  effectID: identifier
-  description: Effect Description
+  effectName: Thorned
+  effectID: thorned
+  description: Damages the player upon being pressed by player input. After activation,
+    the thorns retreat, making the button safe to press for a short while.

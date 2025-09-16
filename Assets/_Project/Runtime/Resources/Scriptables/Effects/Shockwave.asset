@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57a9f9ce64b349b08747da48d1e81305, type: 3}
-  m_Name: Surrounding Keys
+  m_Name: Shockwave
   m_EditorClassIdentifier: Assembly-CSharp::CE_SurroundingKeys
-  effectName: Surrounding Keys
-  effectID: surrounding_keys
+  effectName: Shockwave
+  effectID: shockwave
   description: Activates all the surrounding keys, triggering their effects and combos.

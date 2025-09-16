@@ -20,11 +20,6 @@ public static class ScriptWriter
 		bool hasPrefix = effectName.StartsWith("KE_");
 		string newClassName = hasPrefix ? effectName : $"KE_{effectName}";
 		template = template.Replace("KE_Default", newClassName);
-		
-		// set the 'order' in the CreateAssetMenu attribute based on existing scripts
-		string[] existingFiles = Directory.GetFiles(savePath, "KE_*.cs");
-		int newOrder = existingFiles.Length + 1;
-		template = template.Replace("order = 0", $"order = {newOrder}");
 
 		// Write new script
 		string newFilePath = Path.Combine(savePath, newClassName + ".cs");
@@ -35,6 +30,12 @@ public static class ScriptWriter
 		string menuName = $"Combos/New {fileName}";
 		string createAssetMenuAttribute = $"[CreateAssetMenu(fileName = \"{fileName}\", menuName = \"{menuName}\", order = 0)]";
 		template = template.Replace("[CreateAssetMenu(fileName = \"Default Key Effect (None)\", menuName = \"Combos/New Default Key Effect (None)\", order = 0)]", createAssetMenuAttribute);
+
+		// set the 'order' in the CreateAssetMenu attribute based on existing scripts
+		string[] existingFiles = Directory.GetFiles(savePath, "KE_*.cs");
+		int newOrder = existingFiles.Length + 1;
+		template = template.Replace("order = 0", $"order = {newOrder}");
+		
 		File.WriteAllText(newFilePath, template);
 
 		AssetDatabase.ImportAsset(newFilePath);

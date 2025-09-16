@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d97d9cee9e50264e98d740545e0bb63, type: 3}
   m_Name: Wave
   m_EditorClassIdentifier: Assembly-CSharp::KE_Wave
-  effectName: Effect Name
-  effectID: identifier
-  description: Effect Description
+  effectName: Wave
+  effectID: wave
+  description: Sweeps over the keyboard in a wave, activating each column one by
+    one.

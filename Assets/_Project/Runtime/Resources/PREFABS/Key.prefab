@@ -776,7 +776,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69d9929b7e77d8841b0aa4a114e56b70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Key
-  keyboardLetter: 113
+  keyCode: 113
   damage: 0
   chained: 0
   loose: 0
@@ -787,7 +787,7 @@ MonoBehaviour:
   keyEffect: {fileID: 0}
   comboIndex: 0
   mashCount: 0
-  cooldown: 2.5
+  cooldown: 1
   remainingCooldown: 0
   currentCooldown: 0
   chainedMarker: {fileID: 3520967611828121813}
