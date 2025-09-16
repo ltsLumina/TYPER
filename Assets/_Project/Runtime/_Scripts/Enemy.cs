@@ -32,7 +32,7 @@ public class Enemy : MonoBehaviour, IDamageable
 		private set => health = value;
 	}
 
-	public override string ToString() => name = $"Enemy ({GetInstanceID()}) (on Lane {Lane + 1} | Health: {Health})";
+	public override string ToString() => name = $"Enemy (#{GetInstanceID()}) (on Lane {Lane + 1} | Health: {Health})";
 
 	void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
@@ -88,7 +88,7 @@ public class Enemy : MonoBehaviour, IDamageable
 			if (!key.IsActive) return;
 			Color color = key.SpriteRenderer.color;
 			color.a -= 0.3f;
-			key.SpriteRenderer.color = color;
+			key.SetColour(color);
 		}
 
 		if (other.CompareTag("Finish"))
@@ -107,7 +107,7 @@ public class Enemy : MonoBehaviour, IDamageable
 			if (!key.IsActive) return;
 			Color color = key.SpriteRenderer.color;
 			color.a = 1f;
-			key.SpriteRenderer.color = color;
+			key.SetColour(color);
 		}
 	}
 
@@ -133,9 +133,6 @@ public class Enemy : MonoBehaviour, IDamageable
 		pendingDamage += damage;
 		StartCoroutine(PendingDamage());
 		name = ToString();
-
-		ObjectPool hitVFXPool = ObjectPoolManager.FindObjectPool(hitVFX.gameObject);
-		ObjectPool deathVFXPool = ObjectPoolManager.FindObjectPool(deathVFX.gameObject);
 
 		switch (Health - pendingDamage)
 		{
@@ -225,9 +222,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		void HitVFX()
 		{
-			var vfx = hitVFXPool.GetPooledObject<ParticleSystem>(true);
-			ParticleSystem.MainModule main = vfx.main;
-			main.startColor = spriteRenderer.color * 0.8f; // slightly darker than enemy color
+			var vfx = KeyManager.SpawnVFX(KeyManager.CommonVFX.Hit, transform.position, spriteRenderer.color * 0.8f);
 
 			// increase the amount of burst count based on damage taken
 			ParticleSystem.EmissionModule emission = vfx.emission;
@@ -238,13 +233,8 @@ public class Enemy : MonoBehaviour, IDamageable
 			emission.SetBurst(0, burst);
 		}
 
-		void DeathVFX()
-		{
-			var vfx = deathVFXPool.GetPooledObject<ParticleSystem>(true, transform.position);
-
-			// change color of the deathVFX to the colour of the enemy or red if critical
-			ParticleSystem.MainModule main = vfx.main;
-			main.startColor = damage > 100 ? Color.red : spriteRenderer.color;
-		}
+		void DeathVFX() =>
+				// change color of the deathVFX to the colour of the enemy or red if critical
+				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo,transform.position, damage > 100 ? Color.red : spriteRenderer.color);
 	}
 }

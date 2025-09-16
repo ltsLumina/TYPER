@@ -17,7 +17,7 @@ public class KE_Loose : KeyEffect
 		DOTween.Kill("Loose"); // Stop the infinite shaking tween.
 
 		key.Disable(false); // Disables the key while falling but doesn't change the colour.
-		key.Loose = false;
+		key.RemoveEffect(Key.Effects.Loose);
 		Vector3 originalPos = key.transform.position;
 
 		var rb = key.gameObject.AddComponent<Rigidbody2D>();

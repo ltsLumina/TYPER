@@ -10,14 +10,14 @@ public class KonamiCodeChecker : MonoBehaviour
 	[NonReorderable]
 	[SerializeField] List<KeyCode> inputKeys = new ();
 	readonly List<KeyCode> konamiCode = new ()
-	{ KeyCode.UpArrow,
-	  KeyCode.UpArrow,
-	  KeyCode.DownArrow,
-	  KeyCode.DownArrow,
-	  KeyCode.LeftArrow,
-	  KeyCode.RightArrow,
-	  KeyCode.LeftArrow,
-	  KeyCode.RightArrow,
+	{ KeyCode.W,
+	  KeyCode.W,
+	  KeyCode.S,
+	  KeyCode.S,
+	  KeyCode.A,
+	  KeyCode.D,
+	  KeyCode.A,
+	  KeyCode.D,
 	  KeyCode.B,
 	  KeyCode.A };
 
@@ -34,7 +34,7 @@ public class KonamiCodeChecker : MonoBehaviour
 	{
 		if (Input.anyKeyDown)
 		{
-			KeyCode[] possibleKeys = { KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.B, KeyCode.A };
+			KeyCode[] possibleKeys = konamiCode.Distinct().ToArray();
 
 			foreach (KeyCode key in possibleKeys)
 			{

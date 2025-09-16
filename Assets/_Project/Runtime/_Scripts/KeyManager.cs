@@ -225,26 +225,26 @@ public partial class KeyManager : MonoBehaviour
 		comboManager.CreateCombo(cvbCombo);
 
 		List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
-		oGCD_Keys.SetModifier(Key.Modifier.OffGlobalCooldown);
+		oGCD_Keys.SetModifier(Key.Effects.OffGlobalCooldown);
 
 		const float cooldown = 10f;
-		KeyCode.V.ToKey().SetModifier(Key.Modifier.OffGlobalCooldown, true, cooldown);
+		KeyCode.V.ToKey().SetEffect(Key.Effects.OffGlobalCooldown, true, cooldown);
 
 		// set G key to be a mash key
 		Key mashKey = GetKey(KeyCode.G);
-		mashKey.SetModifier(Key.Modifier.Mash);
+		mashKey.SetEffect(Key.Effects.Mash);
 
 		// make H shake
 		Key shakeKey = Instance.GetKey(KeyCode.H);
-		shakeKey.SetModifier(Key.Modifier.Loose);
+		shakeKey.SetEffect(Key.Effects.Loose);
 
 		// chain J key
 		Key chainKey = GetKey(KeyCode.J);
-		chainKey.SetModifier(Key.Modifier.Chained);
+		chainKey.SetEffect(Key.Effects.Chained);
 		
 		// thorn K key
 		Key thornKey = GetKey(KeyCode.K);
-		thornKey.SetModifier(Key.Modifier.Thorned);
+		thornKey.SetEffect(Key.Effects.Thorned);
 		#endregion
 	}
 
@@ -374,7 +374,7 @@ public partial class KeyManager : MonoBehaviour
 
 	public void StartGlobalCooldown()
 	{
-		foreach (Key key in FlatKeys.Where(k => !k.OffGlobalCooldown)) key.StartLocalCooldown(globalCooldown);
+		foreach (Key key in FlatKeys.Where(k => !k.IsOffGCD)) key.StartLocalCooldown(globalCooldown);
 	}
 
 	IEnumerator HandleNonComboKey(Key key)

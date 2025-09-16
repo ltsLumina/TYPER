@@ -1,7 +1,8 @@
-﻿#region
+#region
 using System;
 using JetBrains.Annotations;
 using UnityEngine;
+using Random = UnityEngine.Random;
 #endregion
 
 /// <summary>
@@ -22,7 +23,7 @@ public abstract class KeyEffect : ScriptableObject
 	public string EffectID => effectID;
 	public string Description => description;
 
-	void Awake() => effectID = effectName.ToLower().Replace(" ", "_");
+	protected virtual void Awake() => effectID = effectName.ToLower().Replace(" ", "_");
 
 	/// <summary>
 	///   Invoke the effect using a KeyCode and optional Key reference.
@@ -30,7 +31,7 @@ public abstract class KeyEffect : ScriptableObject
 	/// <param name="keyCode"> The KeyCode that triggered this effect. </param>
 	/// <param name="key"> The Key reference that triggered this effect. </param>
 	/// <param name="trigger"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
-	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
+	///     <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
 	/// </param>
 	protected abstract void Invoke(KeyCode keyCode, [NotNull] Key key, (bool byKey, Key key) trigger);
 
@@ -38,11 +39,9 @@ public abstract class KeyEffect : ScriptableObject
 	///    Invoke the effect using a Key reference.
 	/// </summary>
 	/// <param name="key"></param>
-	/// <param name="trigger"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
+	/// <param name="triggerKey"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
 	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
 	/// </param>
-	public void Invoke(Key key, (bool byKey, Key key) trigger) => Invoke(key.ToKeyCode(), key, (trigger.byKey, trigger.key));
-	
 	public void Invoke(Key key, Key triggerKey) => Invoke(key.ToKeyCode(), key, (triggerKey != null, triggerKey));
 	
 	public static KeyEffect GetEffectByID(string identifier)
@@ -58,13 +57,20 @@ public abstract class KeyEffect : ScriptableObject
 		return null;
 	}
 	
-	public static KeyEffect GetEffect<T>() where T : KeyEffect
+	public static KeyEffect GetEffect<T>(bool instanced = false) where T : KeyEffect
 	{
 		KeyEffect[] effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects");
 		foreach (var e in effects)
 		{
-			if (e is T)
-				return e;
+			if (e is not T) continue;
+
+			if (instanced)
+			{
+				var instance = Instantiate(e);
+				instance.name = $"{e.name} (Instance #{Guid.NewGuid()})";
+				return instance;
+			}
+			return e;
 		}
 
 		Debug.LogWarning($"No KeyEffect found of type: {typeof(T)}");

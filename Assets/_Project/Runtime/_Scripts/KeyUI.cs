@@ -18,12 +18,14 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		
 		currentKey = GetPointerKey(eventData);
 
-		if (currentKey?.keyEffect)
+		if (DOTween.IsTweening("KeyHover")) return;
+		Sequence sequence = DOTween.Sequence();
+
+		// Highlight if it has a key effect
+		if (currentKey.keyEffect)
 		{
 			ShowTooltip();
 			
-			if (DOTween.IsTweening("KeyHover")) return;
-			Sequence sequence = DOTween.Sequence();
 			sequence.AppendCallback
 			(() =>
 			{
@@ -31,18 +33,26 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 				var anim = currentKey.ComboHighlight.GetComponent<Animation>();
 				anim.Play();
 			});
-			sequence.Append(currentKey.transform.DOPunchScale(Vector3.one * 0.1f, 0.2f, 5, 0.5f).SetEase(Ease.OutQuad));
-			sequence.OnKill(() =>
+		}
+
+		// Otherwise just do the hover pop tween
+		sequence.Append(currentKey.transform.DOScale(Vector3.one * 1.1f, 0.25f).SetEase(Ease.OutBack));
+		
+		sequence.OnKill
+		(() =>
+		{
+			if (currentKey.keyEffect)
 			{
 				// Only disable if it's not the next key in the combo, otherwise it will flicker off when hovering over it
-				if (comboManager.NextKey != currentKey) 
-					currentKey.comboHighlight.SetActive(false);
-				currentKey.transform.localScale = Vector3.one;
-			});
-			sequence.SetId("KeyHover");
-			sequence.SetAutoKill(false);
-			sequence.Play();
-		}
+				if (comboManager.NextKey != currentKey) currentKey.comboHighlight.SetActive(false);
+			}
+
+			currentKey.transform.DOScale(Vector3.one, 0.1f).SetEase(Ease.OutBack);
+		});
+
+		sequence.SetId("KeyHover");
+		sequence.SetAutoKill(false);
+		sequence.Play();
 	}
 
 	public void OnPointerExit(PointerEventData eventData)

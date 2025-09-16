@@ -7,26 +7,20 @@ public class KE_Shockwave : KeyEffect
 {
 	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
-		if (!key) keyCode.ToKey().StartCoroutine(InvokeWithDelay(keyCode, keyCode.ToKey()));
-		else key.StartCoroutine(InvokeWithDelay(keyCode, key));
+		key.StartCoroutine(Shockwave(keyCode, key));
 	}
 
-	IEnumerator InvokeWithDelay(KeyCode keyCode, Key key)
+	IEnumerator Shockwave(KeyCode keyCode, Key key)
 	{
 		GameManager.Instance.TriggerHitStop(0.1f, 0.1f);
 
 		yield return new WaitForSecondsRealtime(0.1f);
-
-		var comboVFX = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
-		ObjectPool comboPool = ObjectPoolManager.FindObjectPool(comboVFX.gameObject);
-
+		
 		List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyCode);
 
 		foreach (Key k in surroundingKeys)
 		{
-			var vfx = comboPool.GetPooledObject<ParticleSystem>(true, k.transform.position);
-			ParticleSystem.MainModule main = vfx.main;
-			main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+			KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
 			k.Activate(true, 0.5f, key);
 			yield return new WaitForSecondsRealtime(0.02f);
 		}

@@ -83,7 +83,7 @@ public class MenuManager : MonoBehaviour
 			foreach (Key titleKey in title.ToKeyCodes().ToKeys())
 			{
 				titleKey.Enable();
-				titleKey.ComboMarker.SetActive(titleKey.Combo = true);
+				titleKey.SetEffect(Key.Effects.Combo);
 
 				var sfx = new Sound(SFX.beep);
 				sfx.SetOutput(Output.SFX);
@@ -104,7 +104,7 @@ public class MenuManager : MonoBehaviour
 
 			yield return new WaitForSeconds(1f);
 
-			foreach (Key key in keyManager.FlatKeys) key.ComboMarker.SetActive(key.Combo = false);
+			foreach (Key key in keyManager.FlatKeys) key.RemoveEffect(Key.Effects.Combo);
 			#endregion
 
 			keyManager.Keyboard.transform.DOMove(new (0.85f, -5f), 1.5f)
@@ -202,7 +202,7 @@ public class MenuManager : MonoBehaviour
 				comboManager.CreateCombo(keysToHighlight);
 
 				// combo markers on highlighted keys
-				foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = true);
+				foreach (Key highlightKey in keysToHighlight) highlightKey.SetEffect(Key.Effects.Combo);
 			}
 		}
 		else
@@ -213,7 +213,7 @@ public class MenuManager : MonoBehaviour
 			{
 				comboManager.RemoveCombo(keysToHighlight);
 
-				foreach (Key highlightKey in keysToHighlight) highlightKey.ComboMarker.SetActive(highlightKey.Combo = false);
+				foreach (Key highlightKey in keysToHighlight) highlightKey.RemoveEffect(Key.Effects.Combo);
 			}
 		}
 	}

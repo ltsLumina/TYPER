@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 #endregion
 
 public partial class KeyManager
@@ -97,7 +98,8 @@ public partial class KeyManager
 	#endregion
 
 	#region Wave
-	List<List<Key>> GetWaveKeys()
+	/// <returns> A list of lists representing the keyboard in columns, for wave effects. </returns>
+	public List<List<Key>> GetWaveKeys()
 	{
 		List<List<Key>> wave = new ();
 		int maxCols = Keys.Max(row => row.Count);
@@ -110,116 +112,72 @@ public partial class KeyManager
 
 		return wave;
 	}
-	
-	public void Wave(int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
-	{
-		List<List<Key>> wave = GetWaveKeys();
-		StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, delayBetweenColumns));
-	}
-
-	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
-	{
-		for (int i = 0; i < cycles; i++)
-		{
-			if (i >= maxCycles) break;
-			yield return ActivateColumn(wave, delayBetweenColumns);
-		}
-	}
-
-	IEnumerator ActivateColumn(List<List<Key>> wave, float delayBetweenColumns)
-	{
-		foreach (List<Key> column in wave)
-		{
-			foreach (Key key in column)
-			{
-				key.Activate(true, 0.5f, key);
-				// slight delay between keys in the same column. Helps with combos and sounds.
-				// affects the way combos are hit during the wave, however. First row will always be first, so any combos on lower rows may not have their combo triggered.
-				yield return new WaitForSeconds(0.02f);
-			}
-
-			yield return new WaitForSeconds(delayBetweenColumns);
-		}
-
-		//waveCooldown ??= StartCoroutine(WaveCooldown(cooldown));
-	}
-
-	float cooldownRemaining;
-	public float CooldownRemaining => cooldownRemaining;
-
-	IEnumerator WaveCooldown(float cooldown)
-	{
-		cooldownRemaining = cooldown;
-
-		while (cooldownRemaining > 0f)
-		{
-			cooldownRemaining -= Time.deltaTime;
-			yield return null;
-		}
-
-		//waveCooldown = null;
-	}
 	#endregion
+	
+	#region VFX
+	public enum CommonVFX
+	{
+		Combo,
+		Hit,
+		Death,
+	}
+	
+	static ObjectPool GetCommonVFXPool(CommonVFX type)
+	{
+		string path = type switch
+		{
+			CommonVFX.Combo => "PREFABS/Combo VFX",
+			CommonVFX.Hit   => "PREFABS/Enemy Hit VFX",
+			CommonVFX.Death => "PREFABS/Enemy Death VFX",
+			_               => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+		};
+		
+		var prefab = Resources.Load<ParticleSystem>(path);
+		if (!prefab)
+		{
+			Debug.LogWarning($"No ParticleSystem prefab found at path: {path}");
+			return null;
+		}
 
-	#region Pulse
-	// pulse outwards from a central key, activating adjacent keys in a wave-like manner
-	Coroutine pulseCoroutine;
+		return ObjectPoolManager.FindObjectPool(prefab.gameObject);
+	}
+
+	/// <summary>
+	///    Spawns a common VFX at the specified position with the given color, or a random color if none is provided.
+	/// </summary>
+	/// <param name="prefab"> The ParticleSystem prefab to spawn. Use Resources.Load&lt;ParticleSystem&gt;("path/to/prefab") to load it. </param>
+	/// <param name="position"> The world position to spawn the VFX at. </param>
+	/// <param name="colour"> The color to apply to the ParticleSystem. Refer to remarks for default behavior. </param>
+	/// <remarks> If colour is default, the colour will instead be randomized instead using Random.ColorHSV(). </remarks>
+	/// <returns> The spawned ParticleSystem, or null if the pool or prefab was not found. </returns>
+	public static ParticleSystem SpawnVFX(ParticleSystem prefab, Vector3 position, Color colour = default)
+	{
+		var pool = ObjectPoolManager.FindObjectPool(prefab.gameObject);
+		if (pool == null) return null;
+		
+		var vfx = pool.GetPooledObject<ParticleSystem>(true, position);
+		ParticleSystem.MainModule main = vfx.main;
+		main.startColor = colour == default ? Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f) : colour;
+		return vfx;
+	}
 	
 	/// <summary>
-	/// Pulse effect that activates keys in expanding layers from a central key.
+	///    Spawns a common VFX at the specified position with the given color, or a random color if none is provided.
 	/// </summary>
-	/// <param name="centerKey"> The key to start the pulse from. </param>
-	/// <param name="maxLayers"> Maximum number of layers to pulse outwards. This limits how far the pulse spreads. To cover the whole keyboard, set this to a high number like 10. </param>
-	/// <param name="delayBetweenLayers"> Delay in seconds between activating each layer of keys. </param>
-	public void Pulse(Key centerKey, int maxLayers = 3, float delayBetweenLayers = 0.1f)
+	/// <param name="type"> The type of common VFX to spawn. </param>
+	/// <param name="position"> The world position to spawn the VFX at. </param>
+	/// <param name="colour"> The color to apply to the ParticleSystem. Refer to remarks for default behavior. </param>
+	/// <remarks> If colour is default, the colour will instead be randomized instead using Random.ColorHSV(). </remarks>
+	/// <returns> The spawned ParticleSystem, or null if the pool or prefab was not found. </returns>
+	public static ParticleSystem SpawnVFX(CommonVFX type, Vector3 position, Color colour = default)
 	{
-		if (pulseCoroutine != null)
-		{
-			Debug.Log("Pulse is already active.");
-			return;
-		}
-
-		pulseCoroutine = StartCoroutine(PulseCoroutine(centerKey, maxLayers, delayBetweenLayers));
-	}
-	
-	IEnumerator PulseCoroutine(Key centerKey, int maxLayers, float delayBetweenLayers)
-	{
-		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
-		if (!found)
-		{
-			pulseCoroutine = null;
-			yield break;
-		}
-
-		int layers = 0;
-		List<Key> currentLayerKeys = new () { centerKey };
-		HashSet<Key> activatedKeys = new () { centerKey };
-
-		while (currentLayerKeys.Count > 0 && layers < maxLayers)
-		{
-			List<Key> nextLayerKeys = new ();
-
-			foreach (Key key in currentLayerKeys)
-			{
-				key.Activate(true, 0.5f, centerKey);
-
-				List<Key> adjacentKeys = GetSurroundingKeys(key.ToKeyCode());
-				foreach (Key adjacent in adjacentKeys)
-				{
-					if (!activatedKeys.Contains(adjacent))
-					{
-						nextLayerKeys.Add(adjacent);
-						activatedKeys.Add(adjacent);
-					}
-				}
-			}
-
-			currentLayerKeys = nextLayerKeys;
-			layers++;
-			yield return new WaitForSeconds(layers == 1 ? 0.1f : delayBetweenLayers);
-		}
-
-		pulseCoroutine = null;
+		var pool = GetCommonVFXPool(type);
+		if (pool == null) return null;
+		
+		var vfx = pool.GetPooledObject<ParticleSystem>(true, position);
+		ParticleSystem.MainModule main = vfx.main;
+		main.startColor = colour == default ? Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f) : colour;
+		return vfx;
 	}
 	#endregion
 }

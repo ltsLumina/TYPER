@@ -53,6 +53,9 @@ public class ComboManager : MonoBehaviour
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
 
+	/// <returns> The last key in the current combo, or null if no combo is active. </returns>
+	public Key LastKey => currentComboKeys.Count > 0 ? currentComboKeys[^1] : null;
+	
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
@@ -60,13 +63,12 @@ public class ComboManager : MonoBehaviour
 	/// <param name="loops"> Whether the combo should loop back to the start after completion.</param>
 	public void CreateCombo(List<Key> comboKeys, bool loops = false)
 	{
-		// last key in combo
-		Key lastKey = comboKeys[^1];
+		Key lastKey = comboKeys.Last();
 		lastKey.LastKeyInCombo = true;
 		
 		foreach (Key key in comboKeys)
 		{
-			key.SetModifier(Key.Modifier.Combo);
+			key.SetEffect(Key.Effects.Combo);
 			key.ComboIndex = comboKeys.IndexOf(key);
 		}
 
@@ -99,9 +101,9 @@ public class ComboManager : MonoBehaviour
 		}
 
 		// if any key is already in a combo, do not create the combo
-		if (comboKeys.Any(k => k.Combo))
+		if (comboKeys.Any(k => k.IsCombo))
 		{
-			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.Combo).Select(k => k.KeyCode))}");
+			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.IsCombo).Select(k => k.KeyCode))}");
 			return;
 		}
 
@@ -118,7 +120,7 @@ public class ComboManager : MonoBehaviour
 
 			foreach (var key in keys)
 			{
-				key.Combo = false;
+				key.RemoveEffect(Key.Effects.Combo);
 				key.ComboIndex = -1;
 				key.ComboHighlight.gameObject.SetActive(false);
 			}
@@ -226,10 +228,11 @@ public class ComboManager : MonoBehaviour
 		if (CompletedCombos.Count > 5)
 		{
 			CompletedCombos.Dequeue();
-			completedComboStrings.RemoveAt(0);
+			completedComboStrings.RemoveAt(completedComboStrings.Count - 1); // remove the oldest entry
 		}
 
-		completedComboStrings.Add(string.Join(" -> ", currentComboKeys.Select(k => k.KeyCode)));
+		// Insert at the start so the most recent combo is always at the top
+		completedComboStrings.Insert(0, $"{Time.time:F2}s: {string.Join(" -> ", currentComboKeys.Select(k => k.KeyCode))}");
 		OnCompleteCombo?.Invoke(currentComboKeys.ToList());
 
 		ResetCombo();

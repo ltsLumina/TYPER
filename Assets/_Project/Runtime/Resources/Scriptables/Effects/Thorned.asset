@@ -16,3 +16,4 @@ MonoBehaviour:
   effectID: thorned
   description: Damages the player upon being pressed by player input. After activation,
     the thorns retreat, making the button safe to press for a short while.
+  cooldown: 3

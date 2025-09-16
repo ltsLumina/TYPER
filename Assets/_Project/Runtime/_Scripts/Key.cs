@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
 using MelenitasDev.SoundsGood;
@@ -20,16 +21,11 @@ public partial class Key : MonoBehaviour
 	[Tab("Attributes")]
 	[Header("Attributes")]
 	[SerializeField, ReadOnly] KeyCode keyCode = KeyCode.Q;
-	[SerializeField] int damage;
-	[SerializeField] bool chained;
-	[SerializeField] bool loose;
-	[SerializeField] bool thorned;
-	[SerializeField] bool offGlobalCooldown;
-	[SerializeField] bool combo;
-	[SerializeField] bool mash;
+	[SerializeField] Effects effects;
 	[SerializeField] KeyEffect keyEffect;
-	[SerializeField, ReadOnly] int comboIndex;
-	[SerializeField, ReadOnly] int mashCount;
+	
+	[Header("Stats")]
+	[SerializeField] int damage;
 
 	[Header("Cooldown")]
 	[SerializeField] float cooldown = 2.5f;
@@ -38,6 +34,7 @@ public partial class Key : MonoBehaviour
 
 	[Tab("References")]
 	[SerializeField] GameObject chainedMarker;
+	[SerializeField] GameObject thornedMarker;
 	[SerializeField] GameObject comboHighlight;
 	[SerializeField] SpriteRenderer spriteRenderer;
 	[SerializeField] TMP_Text letter;
@@ -51,12 +48,20 @@ public partial class Key : MonoBehaviour
 	[Tab("Settings")]
 	[Header("Settings")]
 	[SerializeField] bool isActive = true;
+	
 	[Header("Debug Info")]
+	[Header("Indexes")]
+	[SerializeField, ReadOnly] int comboIndex;
+	[SerializeField, ReadOnly] int mashCount;
+	
 	[Tooltip("The index of the row this key is in. 1-based.")]
+	[UsedImplicitly]
 	[SerializeField, ReadOnly] int row;
 	[Tooltip("The index of this key within its row. 0-based.")]
+	[UsedImplicitly]
 	[SerializeField, ReadOnly] int indexInRow;
 	[Tooltip("The index of this key in the entire keyboard. 0-based.")]
+	[UsedImplicitly]
 	[SerializeField, ReadOnly] int indexKeyboard;
 
 	Enemy currentEnemy;
@@ -88,6 +93,7 @@ public partial class Key : MonoBehaviour
 		#endregion
 
 		chainedMarker.SetActive(false);
+		thornedMarker.SetActive(false);
 		comboHighlight.SetActive(false);
 		homingBar.SetActive(false);
 		oGCDMarker.SetActive(false);
@@ -130,7 +136,7 @@ public partial class Key : MonoBehaviour
 		int min = 2;
 		damage = Mathf.Max(min, Mathf.RoundToInt(indexInRow / 2f) + min);
 		
-		MashText.text = Mash ? mashCount.ToString() : string.Empty;
+		mashText.text = IsMash ? mashCount.ToString() : string.Empty;
 
 		// reset all fills (hide)
 		DrawCooldownFill();
@@ -141,15 +147,16 @@ public partial class Key : MonoBehaviour
 	void Assert()
 	{
 		Debug.Assert(ChainedMarker != null, $"{name} is missing a reference to its ChainedSprite!");
+		Debug.Assert(thornedMarker != null, $"{name} is missing a reference to its ThornedMarker!");
 		Debug.Assert(ComboHighlight != null, $"{name} is missing a reference to its ComboHighlight!");
 		Debug.Assert(SpriteRenderer != null, $"{name} is missing a reference to its SpriteRenderer!");
 		Debug.Assert(Letter != null, $"{name} is missing a reference to its Letter TMP_Text!");
-		Debug.Assert(CooldownSprite != null, $"{name} is missing a reference to its CooldownSprite!");
-		Debug.Assert(HomingBar != null, $"{name} is missing a reference to its HomingBar!");
-		Debug.Assert(offGCDMarker != null, $"{name} is missing a reference to its offGCDMarker!");
-		Debug.Assert(ComboMarker != null, $"{name} is missing a reference to its ComboMarker!");
-		Debug.Assert(MashMarker != null, $"{name} is missing a reference to its MashMarker!");
-		Debug.Assert(MashText != null, $"{name} is missing a reference to its DamageText!");
+		Debug.Assert(cooldownSprite != null, $"{name} is missing a reference to its CooldownSprite!");
+		Debug.Assert(homingBar != null, $"{name} is missing a reference to its HomingBar!");
+		Debug.Assert(oGCDMarker != null, $"{name} is missing a reference to its offGCDMarker!");
+		Debug.Assert(comboMarker != null, $"{name} is missing a reference to its ComboMarker!");
+		Debug.Assert(mashMarker != null, $"{name} is missing a reference to its MashMarker!");
+		Debug.Assert(mashText != null, $"{name} is missing a reference to its DamageText!");
 		
 		Debug.Assert(Helpers.CameraMain.GetComponent<Physics2DRaycaster>(), "Main Camera is missing a \"Physics 2D Raycaster\" component, which is required for UI interaction with keys.");
 	}
@@ -164,21 +171,21 @@ public partial class Key : MonoBehaviour
 		Letter.text = keycode.ToString();
 		Letter.text = Letter.text.Replace("Alpha", string.Empty); // remove "Alpha" from numeric keys
 
-		HomingBar.SetActive(keycode is KeyCode.F or KeyCode.J);
+		homingBar.SetActive(keycode is KeyCode.F or KeyCode.J);
 	}
 
 	void Update()
 	{
-		if (!isActive || Chained) return;
+		if (!isActive || IsChained) return;
 
 		// Handle per-key cooldown timer
-		if (RemainingCooldown > 0f)
+		if (remainingCooldown > 0f)
 		{
-			RemainingCooldown -= Time.deltaTime;
+			remainingCooldown = remainingCooldown - Time.deltaTime;
 
-			if (RemainingCooldown <= 0f)
+			if (remainingCooldown <= 0f)
 			{
-				RemainingCooldown = 0f;
+				remainingCooldown = 0f;
 				SetColour(Color.white);
 			}
 			else // not finished cooldown yet
@@ -188,7 +195,7 @@ public partial class Key : MonoBehaviour
 
 	readonly static int Arc2 = Shader.PropertyToID("_Arc2");
 
-	void DrawCooldownFill() => CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, RemainingCooldown / currentCooldown));
+	void DrawCooldownFill() => cooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, remainingCooldown / currentCooldown));
 
 	readonly List<Enemy> overlappingEnemies = new ();
 	
@@ -257,7 +264,7 @@ public partial class Key : MonoBehaviour
 		}
 		#endregion
 
-		if (Chained)
+		if (IsChained)
 		{
 			keyEffect?.Invoke(this, triggerKey);
 		}
@@ -265,17 +272,18 @@ public partial class Key : MonoBehaviour
 		if (!isActive) return;
 
 		// Prevent activation if the key is still on cooldown and global cooldown override is not requested.
-		if (RemainingCooldown > 0f && !overrideGlobalCooldown) return;
+		if (remainingCooldown > 0f && !overrideGlobalCooldown) return;
 
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
-		// (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
-		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) comboManager.ResetCombo();
+		// (2) combo in progress, (not triggered by key), this key is part of the combo but is not the next key
+		if (comboManager.InProgress /*&& !triggeredByKey*/ && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) 
+			comboManager.ResetCombo();
 
 		bool hitEnemy = DealDamage();
 
 		// Combo key logic
-		if (Combo)
+		if (IsCombo)
 		{
 			int nextKeyIndex = comboManager.NextComboIndex;
 
@@ -297,9 +305,6 @@ public partial class Key : MonoBehaviour
 				// Combo completed
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
-					var comboVFX = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
-					ObjectPool comboPool = ObjectPoolManager.FindObjectPool(comboVFX.gameObject);
-
 					if (SceneManagerExtended.ActiveSceneName == "Game")
 					{
 						// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
@@ -310,16 +315,12 @@ public partial class Key : MonoBehaviour
 					{
 						foreach (Key key in "TYPER".ToKeyCodes().ToKeys())
 						{
-							var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
-							ParticleSystem.MainModule main = vfx.main;
-							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+							KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
 						}
 
 						foreach (Key key in "PLAY".ToKeyCodes().ToKeys())
 						{
-							var vfx = comboPool.GetPooledObject<ParticleSystem>(true, key.transform.position);
-							ParticleSystem.MainModule main = vfx.main;
-							main.startColor = Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f);
+							KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
 
 							GameManager.Instance.ExitTransition.gameObject.SetActive(true);
 						}
@@ -341,24 +342,26 @@ public partial class Key : MonoBehaviour
 			}
 		}
 
-		if (Mash)
+		if (IsMash)
 		{
 			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
-			if (triggerKey != this) mashCount++;
-			else return;
-
-			MashText.text = mashCount.ToString();
-
-			if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
-			mashTimerCoroutine = StartCoroutine(MashTimer());
-
-			if (mashCount % 5 == 0) // every 5th mash
+			if (!triggeredByKey)
 			{
-				keyEffect?.Invoke(this, triggerKey);
-				StartLocalCooldown(5f);
-				SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
-				OnActivated?.Invoke(hitEnemy, triggerKey);
-				return;
+				mashCount++;
+
+				mashText.text = mashCount.ToString();
+
+				if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
+				mashTimerCoroutine = StartCoroutine(MashTimer());
+
+				if (mashCount % 5 == 0) // every 5th mash
+				{
+					keyEffect?.Invoke(this, triggerKey);
+					StartLocalCooldown(5f);
+					SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
+					OnActivated?.Invoke(hitEnemy, triggerKey);
+					return;
+				}
 			}
 
 			StartLocalCooldown(0.25f);
@@ -368,11 +371,11 @@ public partial class Key : MonoBehaviour
 		}
 
 		// If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
-		if (Loose) keyEffect?.Invoke(this, triggerKey);
+		if (IsLoose) keyEffect?.Invoke(this, triggerKey);
 		
-		if (Thorned) keyEffect?.Invoke(this, triggerKey);
+		if (IsThorned) keyEffect?.Invoke(this, triggerKey);
 
-		if (OffGlobalCooldown)
+		if (IsOffGCD)
 		{
 			StartLocalCooldown(cooldown + 2.5f); // note: temporary
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
@@ -413,33 +416,33 @@ public partial class Key : MonoBehaviour
 		// if 3 seconds pass without a mash, reset the mash count
 		yield return new WaitForSeconds(3f);
 		mashCount = 0;
-		MashText.text = mashCount.ToString();
+		mashText.text = mashCount.ToString();
 	}
 
 	public void StartLocalCooldown(float cooldown)
 	{
 		// dont start a new cooldown if the current cooldown is longer than the new one
-		if (RemainingCooldown > cooldown) return;
+		if (remainingCooldown > cooldown) return;
 
-		RemainingCooldown = cooldown;
+		remainingCooldown = cooldown;
 		currentCooldown = cooldown;
 
 		SetColour(Color.grey);
 	}
 
-	void SetColour(Color color)
+	public void SetColour(Color color)
 	{
 		if (SpriteRenderer.color == Color.green || SpriteRenderer.color == Color.crimson) return;
 		SpriteRenderer.color = color;
 	}
 
-	void SetColour(Color color, float duration) => StartCoroutine(SwitchColour(color, duration));
+	public void SetColour(Color color, float duration) => StartCoroutine(SwitchColour(color, duration));
 
 	IEnumerator SwitchColour(Color colour, float duration)
 	{
 		SpriteRenderer.color = colour;
 		yield return new WaitForSeconds(duration);
-		SpriteRenderer.color = RemainingCooldown > 0f ? Color.grey : Color.white;
+		SpriteRenderer.color = remainingCooldown > 0f ? Color.grey : Color.white;
 	}
 }
 
@@ -451,9 +454,9 @@ public static class KeyExtensions
 	/// <param name="keys"> The list of keys to modify. </param>
 	/// <param name="modifier"> The modifier to set. </param>
 	/// <param name="value"> The value to set the modifier to. </param>
-	public static void SetModifier(this List<Key> keys, Key.Modifier modifier, bool value = true)
+	public static void SetModifier(this List<Key> keys, Key.Effects modifier, bool value = true)
 	{
-		foreach (Key key in keys) key.SetModifier(modifier, value);
+		foreach (Key key in keys) key.SetEffect(modifier, value);
 	}
 
 	// to keycode from single key

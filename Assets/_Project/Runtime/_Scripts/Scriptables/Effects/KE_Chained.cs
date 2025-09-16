@@ -10,7 +10,7 @@ public class KE_Chained : KeyEffect
 	{
 		if (trigger.byKey)
 		{
-			key.Chained = false;
+			key.RemoveEffect(Key.Effects.Chained);
 			key.Enable();
 
 			var chainedSFX = new Sound(SFX.unchained);
