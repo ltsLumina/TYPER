@@ -110,33 +110,29 @@ public partial class KeyManager
 
 		return wave;
 	}
-
-	Coroutine waveCoroutine;
-
-	//Coroutine waveCooldown; // 30 seconds // not currently used
-
-	public void Wave(int cycles, int maxCycles, float cooldown, float delayBetweenColumns = 0.25f)
+	
+	public void Wave(int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
 	{
 		List<List<Key>> wave = GetWaveKeys();
-		StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, cooldown, delayBetweenColumns));
+		StartCoroutine(WaveCoroutine(wave, cycles, maxCycles, delayBetweenColumns));
 	}
 
-	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float cooldown, float delayBetweenColumns)
+	IEnumerator WaveCoroutine(List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
 	{
 		for (int i = 0; i < cycles; i++)
 		{
 			if (i >= maxCycles) break;
-			yield return ActivateColumn(wave, cooldown, delayBetweenColumns);
+			yield return ActivateColumn(wave, delayBetweenColumns);
 		}
 	}
 
-	IEnumerator ActivateColumn(List<List<Key>> wave, float cooldown, float delayBetweenColumns)
+	IEnumerator ActivateColumn(List<List<Key>> wave, float delayBetweenColumns)
 	{
 		foreach (List<Key> column in wave)
 		{
 			foreach (Key key in column)
 			{
-				key.Activate(true, 2.5f, key);
+				key.Activate(true, 0.5f, key);
 				// slight delay between keys in the same column. Helps with combos and sounds.
 				// affects the way combos are hit during the wave, however. First row will always be first, so any combos on lower rows may not have their combo triggered.
 				yield return new WaitForSeconds(0.02f);
@@ -144,8 +140,6 @@ public partial class KeyManager
 
 			yield return new WaitForSeconds(delayBetweenColumns);
 		}
-
-		waveCoroutine = null;
 
 		//waveCooldown ??= StartCoroutine(WaveCooldown(cooldown));
 	}
@@ -207,7 +201,7 @@ public partial class KeyManager
 
 			foreach (Key key in currentLayerKeys)
 			{
-				key.Activate(true, 2.5f, centerKey);
+				key.Activate(true, 0.5f, centerKey);
 
 				List<Key> adjacentKeys = GetSurroundingKeys(key.ToKeyCode());
 				foreach (Key adjacent in adjacentKeys)

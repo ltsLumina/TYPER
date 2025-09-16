@@ -67,11 +67,13 @@ public partial class Key // Properties
 		get => thorned;
 		set => thorned = value;
 	}
-	public float CooldownTime
+	public float RemainingCooldown
 	{
 		get => remainingCooldown;
 		set => remainingCooldown = value;
 	}
+	public float Cooldown => cooldown;
+
 	public bool LastKeyInCombo { get; set; }
 }
 

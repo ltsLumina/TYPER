@@ -172,13 +172,13 @@ public partial class Key : MonoBehaviour
 		if (!isActive || Chained) return;
 
 		// Handle per-key cooldown timer
-		if (CooldownTime > 0f)
+		if (RemainingCooldown > 0f)
 		{
-			CooldownTime -= Time.deltaTime;
+			RemainingCooldown -= Time.deltaTime;
 
-			if (CooldownTime <= 0f)
+			if (RemainingCooldown <= 0f)
 			{
-				CooldownTime = 0f;
+				RemainingCooldown = 0f;
 				SetColour(Color.white);
 			}
 			else // not finished cooldown yet
@@ -188,7 +188,7 @@ public partial class Key : MonoBehaviour
 
 	readonly static int Arc2 = Shader.PropertyToID("_Arc2");
 
-	void DrawCooldownFill() => CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, CooldownTime / currentCooldown));
+	void DrawCooldownFill() => CooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, RemainingCooldown / currentCooldown));
 
 	readonly List<Enemy> overlappingEnemies = new ();
 	
@@ -265,7 +265,7 @@ public partial class Key : MonoBehaviour
 		if (!isActive) return;
 
 		// Prevent activation if the key is still on cooldown and global cooldown override is not requested.
-		if (CooldownTime > 0f && !overrideGlobalCooldown) return;
+		if (RemainingCooldown > 0f && !overrideGlobalCooldown) return;
 
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
@@ -419,9 +419,9 @@ public partial class Key : MonoBehaviour
 	public void StartLocalCooldown(float cooldown)
 	{
 		// dont start a new cooldown if the current cooldown is longer than the new one
-		if (CooldownTime > cooldown) return;
+		if (RemainingCooldown > cooldown) return;
 
-		CooldownTime = cooldown;
+		RemainingCooldown = cooldown;
 		currentCooldown = cooldown;
 
 		SetColour(Color.grey);
@@ -439,7 +439,7 @@ public partial class Key : MonoBehaviour
 	{
 		SpriteRenderer.color = colour;
 		yield return new WaitForSeconds(duration);
-		SpriteRenderer.color = CooldownTime > 0f ? Color.grey : Color.white;
+		SpriteRenderer.color = RemainingCooldown > 0f ? Color.grey : Color.white;
 	}
 }
 

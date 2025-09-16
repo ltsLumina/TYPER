@@ -6,6 +6,6 @@ public class KE_Wave : KeyEffect
 {
 	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
-		KeyManager.Instance.Wave(1, 1, 30f, 0.25f);
+		KeyManager.Instance.Wave(1, 1, 0.25f);
 	}
 }
