@@ -94,7 +94,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 	
 	void ShowTooltip()
 	{
-		if (tooltip != null)
+		if (tooltip)
 		{
 			tooltip.gameObject.SetActive(true);
 			tooltip.transform.position = Input.mousePosition;
@@ -127,6 +127,9 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		GameObject canvas = GameObject.FindWithTag("Canvas");
 		var prefab = Resources.Load<Tooltip>("PREFABS/Tooltip");
 		tooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
+
+		(string title, string description) = (currentKey.keyEffect.EffectName, currentKey.keyEffect.Description);
+		tooltip.SetText(title, description);
 	}
 
 	GameObject GetPointerGameObject(PointerEventData pointerEventData)

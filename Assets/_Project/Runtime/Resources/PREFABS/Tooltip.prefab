@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Shockwave
+  m_text: PLACEHOLDER
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e7966075b59eb2847947c28bb02dc761, type: 2}
   m_sharedMaterial: {fileID: 9024928972698925724, guid: e7966075b59eb2847947c28bb02dc761, type: 2}
@@ -201,8 +201,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Activates an adjacent key in the specified direction, or alternatively
-    all keys in every cardinal direction.
+  m_text: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+    tempor incididunt.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e7966075b59eb2847947c28bb02dc761, type: 2}
   m_sharedMaterial: {fileID: 9024928972698925724, guid: e7966075b59eb2847947c28bb02dc761, type: 2}

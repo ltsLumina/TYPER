@@ -31,8 +31,36 @@ public class MenuManager : MonoBehaviour
 
 	void Start()
 	{
+		Cursor.visible = false;
+		Cursor.lockState = CursorLockMode.Locked;
+		
 		keyManager = KeyManager.Instance;
 		comboManager = ComboManager.Instance;
+
+		comboManager.OnCompleteCombo += keys =>
+		{
+			// listen for "PLAY" to start the game, "MENU" to show menu, "EXIT" to quit
+			if (IntroSequenceCompleted && comboManager.CompletedCombos.Count > 0)
+			{
+				string comboString = string.Join("", keys.Select(k => k.KeyCode));
+				switch (comboString)
+				{
+					case "PLAY":
+						GameManager.Instance.ExitTransition.gameObject.SetActive(true);
+						break;
+
+					case "MENU":
+						Debug.Log("Opening Menu...");
+						break;
+
+					case "EXIT":
+						Debug.Log("Exiting Game...");
+						Application.Quit();
+						Debug.Break();
+						break;
+				}
+			}
+		};
 
 		// Disable the canvas at start. Its shown at the end of the intro sequence
 		buttonGroup.gameObject.SetActive(false);
@@ -51,9 +79,9 @@ public class MenuManager : MonoBehaviour
 			foreach (Key key in keyManager.FlatKeys) key.Disable(false);
 
 			GameManager.Instance.EnterTransition.gameObject.SetActive(true);
-
-			// Wait to ensure all keys are initialized
-			yield return new WaitForSeconds(1f);
+			
+			// Dramatic effect
+			yield return new WaitForSeconds(2f);
 
 			var wooshSFX = new Sound(SFX.introWoosh);
 			wooshSFX.SetOutput(Output.SFX);
@@ -69,11 +97,11 @@ public class MenuManager : MonoBehaviour
 
 			#region Swap positions of title keys with random keys
 			// Center the title "TYPER" in the middle of the middle row
-			string title = GameManager.Instance.GameName;
+			string title = GameManager.TYPER;
 			comboManager.CreateCombo(title.ToKeyCodes());
 
 			// Doesn't use the 'interactable' parameter since we want to animate the markers separately
-			HighlightKeys(title, true, false);
+			HighlightKeys(title);
 			#endregion
 
 			yield return new WaitForSeconds(0.75f);
@@ -99,12 +127,17 @@ public class MenuManager : MonoBehaviour
 			#endregion
 
 			#region Return to Original Positions
-			// Removes combo for title keys as well
-			HighlightKeys(title, false, false);
+			ResetKeyPositions(true);
+
+			List<Key> keys = title.ToKeys();
+			comboManager.RemoveCombo(keys);
+			foreach (Key k in keyManager.FlatKeys)
+			{
+				k.Enable();
+				k.RemoveEffect(Key.Effects.Combo);
+			}
 
 			yield return new WaitForSeconds(1f);
-
-			foreach (Key key in keyManager.FlatKeys) key.RemoveEffect(Key.Effects.Combo);
 			#endregion
 
 			keyManager.Keyboard.transform.DOMove(new (0.85f, -5f), 1.5f)
@@ -122,15 +155,21 @@ public class MenuManager : MonoBehaviour
 				           menuKeyPositions = keyManager.FlatKeys.ToDictionary(k => k, k => k.transform.position);
 			           });
 
-			yield return new WaitForSeconds(1f);
-
+			yield return new WaitForSeconds(2.5f);
+			
+			Highlight("PLAY");
+			Cursor.visible = true;
+			Cursor.lockState = CursorLockMode.None;
+			
 			IntroSequenceCompleted = true;
 		}
 	}
 
-	public void Highlight(string str) => HighlightKeys(str, true, true);
+	public void Highlight(string str) => HighlightKeys(str);
+	public void EndHighlight(string str) => ResetKeyPositions();
 
-	public void EndHighlight(string str) => HighlightKeys(str, false, false);
+	public void ScaleUp(GameObject obj) => obj.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutCubic);
+	public void ScaleDown(GameObject obj) => obj.transform.DOScale(1f, 0.1f).SetEase(Ease.OutCubic);
 
 	Dictionary<Key, Vector3> menuKeyPositions = new ();
 	Vector3 menuKeyboardParentPosition; // stores menu position of parent
@@ -146,7 +185,6 @@ public class MenuManager : MonoBehaviour
 		int startIdx = (middleRowKeys.Count - word.Length) / 2;
 		List<KeyCode> wordKeyCodes = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).ToList();
 
-		// The keys corresponding to the letters in the word
 		List<Key> wordKeys = wordKeyCodes.Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyCode == tc)).Where(k => k != null).ToList();
 
 		if (wordKeys.Count != word.Length)
@@ -155,7 +193,6 @@ public class MenuManager : MonoBehaviour
 			return;
 		}
 
-		// save original positions of all keys
 		menuKeyPositions = keyManager.FlatKeys.ToDictionary(k => k, k => k.transform.position);
 
 		for (int i = 0; i < wordKeys.Count; i++)
@@ -163,67 +200,53 @@ public class MenuManager : MonoBehaviour
 			Key targetKey = middleRowKeys[startIdx + i];
 			Key wordKey = wordKeys[i];
 
-			if (wordKey == targetKey) continue; // skip if the key is already in the correct position
+			if (wordKey == targetKey) continue;
 
 			Vector3 targetPosition = targetKey.transform.position;
 			Vector3 wordPosition = wordKey.transform.position;
 
-			// Swap positions
-			wordKey.transform.DOMove(targetPosition, 0.5f).SetEase(Ease.InOutCubic);
-			targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic);
+			var sequence = DOTween.Sequence();
+			sequence.Append(wordKey.transform.DOMove(targetPosition, 0.25f).SetEase(Ease.InOutCubic));
+			sequence.Join(targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic));
 		}
 	}
 
-	public void HighlightKeys(string word, bool enable, bool interactable)
+	void HighlightKeys(string word)
 	{
-		foreach (Key key in keyManager.FlatKeys)
-		{
-			if (!key) continue;
-			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.position = position;
-		}
+		ResetKeyPositions();
 
 		List<Key> keysToHighlight = word.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString().ToUpper())).Select(tc => keyManager.FlatKeys.FirstOrDefault(k => k.KeyCode == tc)).Where(k => k != null).ToList();
 
 		// List of keys to disable (all keys except the ones to highlight)
 		List<Key> keysToDisable = keyManager.FlatKeys.Except(keysToHighlight).ToList();
 
-		foreach (Key key in keysToDisable)
-		{
-			if (enable) key.Disable();
-			else key.Enable();
-		}
+		foreach (Key k in keysToDisable) k.Disable();
 
-		if (enable)
-		{
-			MoveWordToCenterRow(word);
+		MoveWordToCenterRow(word);
 
-			if (interactable)
-			{
-				comboManager.CreateCombo(keysToHighlight);
+		comboManager.CreateCombo(keysToHighlight);
 
-				// combo markers on highlighted keys
-				foreach (Key highlightKey in keysToHighlight) highlightKey.SetEffect(Key.Effects.Combo);
-			}
-		}
-		else
-		{
-			ResetKeyPositions();
-
-			if (!interactable)
-			{
-				comboManager.RemoveCombo(keysToHighlight);
-
-				foreach (Key highlightKey in keysToHighlight) highlightKey.RemoveEffect(Key.Effects.Combo);
-			}
-		}
+		// combo markers on highlighted keys
+		foreach (Key highlightKey in keysToHighlight) 
+			highlightKey.SetEffect(Key.Effects.Combo);
 	}
 
-	public void ResetKeyPositions()
+	void ResetKeyPositions(bool tween = false)
 	{
 		foreach (Key key in keyManager.FlatKeys)
 		{
-			if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.DOMove(position, 1f);
-			else Debug.LogWarning($"No stored position for key {key.KeyCode}");
+			key.transform.DOKill();
+
+			if (tween)
+			{
+				key.transform.DOMove(menuKeyPositions[key], 0.5f).SetEase(Ease.InOutCubic);
+			}
+			else
+			{
+				if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.position = position;
+			}
+
+			key.Enable();
 		}
 	}
 }

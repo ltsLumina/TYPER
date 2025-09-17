@@ -67,7 +67,7 @@ public abstract class KeyEffect : ScriptableObject
 			if (instanced)
 			{
 				var instance = Instantiate(e);
-				instance.name = $"{e.name} (Instance #{Guid.NewGuid()})";
+				instance.name = $"{e.name} (Instance #{Random.Range(1000, 9999)})";
 				return instance;
 			}
 			return e;

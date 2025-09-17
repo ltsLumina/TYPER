@@ -15,6 +15,6 @@ MonoBehaviour:
   musicTracks:
   - tag: musicSFX
     clips:
-    - {fileID: 8300000, guid: c8948eb1fb7b90d44a777a1d81581885, type: 3}
+    - {fileID: 8300000, guid: 57ada615bc82f2a4a92dbebcd3b4aca3, type: 3}
     compressionPreset: 0
     forceToMono: 0

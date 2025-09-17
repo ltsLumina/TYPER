@@ -14,8 +14,8 @@ using VInspector;
 public class FrenzyManager : MonoBehaviour
 {
 	[Header("Frenzy State")]
-	[SerializeField] [ReadOnly] bool frenzied;
-	[SerializeField] [ReadOnly] float frenzyTime;
+	[SerializeField, ReadOnly] bool frenzied;
+	[SerializeField, ReadOnly] float frenzyTime;
 
 	[Tab("Frenzy Settings")]
 	[Tooltip("Score threshold to enter a permanent frenzy mode.")]

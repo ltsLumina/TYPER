@@ -157,8 +157,10 @@ public partial class Key : MonoBehaviour
 		Debug.Assert(comboMarker != null, $"{name} is missing a reference to its ComboMarker!");
 		Debug.Assert(mashMarker != null, $"{name} is missing a reference to its MashMarker!");
 		Debug.Assert(mashText != null, $"{name} is missing a reference to its DamageText!");
-		
-		Debug.Assert(Helpers.CameraMain.GetComponent<Physics2DRaycaster>(), "Main Camera is missing a \"Physics 2D Raycaster\" component, which is required for UI interaction with keys.");
+
+		var physics2DRaycaster = Helpers.CameraMain.GetComponent<Physics2DRaycaster>();
+		Debug.Assert(physics2DRaycaster, "Main Camera is missing a \"Physics 2D Raycaster\" component, which is required for UI interaction with keys.");
+		Debug.Assert(physics2DRaycaster.eventMask == 1 << LayerMask.NameToLayer("Key"), "Main Camera's Physics 2D Raycaster event mask is not set to the Keys layer, which is required for UI interaction with keys.");
 	}
 
 	public void InitKey(KeyCode keycode, int row, int indexInRow, int indexKeyboard)
@@ -276,9 +278,11 @@ public partial class Key : MonoBehaviour
 
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
-		// (2) combo in progress, (not triggered by key), this key is part of the combo but is not the next key
-		if (comboManager.InProgress /*&& !triggeredByKey*/ && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) 
+		// (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
+		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) 
 			comboManager.ResetCombo();
+		
+		//TODO: removing "!triggeredbyKey" changes the behaviour of combos being reset when certain effects are running, e.g. wave, pulse. This may or may not be desirable.
 
 		bool hitEnemy = DealDamage();
 
@@ -305,26 +309,9 @@ public partial class Key : MonoBehaviour
 				// Combo completed
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
-					if (SceneManagerExtended.ActiveSceneName == "Game")
-					{
-						// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-						if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
-							keyEffect?.Invoke(this, triggerKey);
-					}
-					else
-					{
-						foreach (Key key in "TYPER".ToKeyCodes().ToKeys())
-						{
-							KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-						}
-
-						foreach (Key key in "PLAY".ToKeyCodes().ToKeys())
-						{
-							KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-
-							GameManager.Instance.ExitTransition.gameObject.SetActive(true);
-						}
-					}
+					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
+					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
+						keyEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
@@ -345,7 +332,8 @@ public partial class Key : MonoBehaviour
 		if (IsMash)
 		{
 			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
-			if (!triggeredByKey)
+			if (triggerKey == this) { }
+			else
 			{
 				mashCount++;
 
@@ -481,4 +469,6 @@ public static class KeyExtensions
 
 	// get a list of keys from a list of keycodes
 	public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyManager.Instance.GetKey(k)).Where(k => k != null).ToList();
+	
+	public static List<Key> ToKeys(this string str) => str.ToKeyCodes().ToKeys();
 }

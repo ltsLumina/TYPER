@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using Lumina.Essentials.Attributes;
+using Lumina.Essentials.Modules;
 using UnityEngine;
 using Random = UnityEngine.Random;
 #endregion
@@ -48,7 +49,6 @@ public partial class KeyManager : MonoBehaviour
 	Key highwayKey;
 	GameObject wordHighway;
 	Key keyObj;
-	Tooltip tooltip;
 
 	public static KeyManager Instance { get; private set; }
 
@@ -87,11 +87,7 @@ public partial class KeyManager : MonoBehaviour
 		}
 	}
 
-	public Tooltip Tooltip
-	{
-		get => tooltip;
-		set => tooltip = value;
-	}
+	public Tooltip Tooltip { get; set; }
 
 	#region Get Key Functions
 	List<KeyCode> GetKeySetByLayout()
@@ -174,6 +170,8 @@ public partial class KeyManager : MonoBehaviour
 
 	void Start()
 	{
+		Helpers.CameraMain.DOFieldOfView(60f, 1f).From(179f).SetEase(Ease.OutCirc);
+		
 		comboManager = ComboManager.Instance;
 
 		InitializeKeyboard();
@@ -182,17 +180,6 @@ public partial class KeyManager : MonoBehaviour
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
 
 		//InitializeWordHighway();
-
-		// get the first item in each row to determine lane positions
-		for (int row = 0; row < Keys.Count; row++)
-		{
-			if (Keys[row].Count > 0)
-			{
-				float lane = Keys[row][0].transform.position.y;
-				Lanes[row] = lane;
-				Debug.DrawLine(new (-10f, lane, 0f), new (10f, lane, 0f), Color.green, 300f);
-			}
-		}
 
 		// foreach (Key key in FlatKeys)
 		// {
@@ -265,7 +252,7 @@ public partial class KeyManager : MonoBehaviour
 
 	void InitializeKeyboard()
 	{
-		Keyboard = GameObject.Find("Keyboard");
+		Keyboard = GameObject.Find("--- Keyboard ---");
 		if (Keyboard != null) Destroy(Keyboard);
 		Keyboard = new ("Keyboard");
 
@@ -276,10 +263,21 @@ public partial class KeyManager : MonoBehaviour
 
 		FlatKeys = GenerateKeys();
 
-		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (3.5f, -2f);
+		if (SceneManagerExtended.ActiveSceneName == "Game") 
+			Keyboard.transform.position = new (3.5f, -2f);
 
 		// Set initial position for intro animation off-screen
 		else Keyboard.transform.position = new (3.5f, 8f);
+
+		for (int row = 0; row < Keys.Count; row++)
+		{
+			if (Keys[row].Count > 0)
+			{
+				float lane = Keys[row][0].transform.position.y;
+				Lanes[row] = lane;
+				Debug.DrawLine(new (-10f, lane, 0f), new (10f, lane, 0f), Color.green, 300f);
+			}
+		}
 
 		#region Utility
 		return;

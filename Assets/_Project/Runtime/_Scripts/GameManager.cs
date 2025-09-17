@@ -1,7 +1,5 @@
 #region
 using System.Collections;
-using System.Collections.Generic;
-using Lumina.Essentials.Modules;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;
@@ -9,30 +7,27 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-	[SerializeField] string gameName = "TYPER";
 	[SerializeField] int health = 10;
 	[SerializeField] int score;
 
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
 	[SerializeField] TransitionAnimator exitTransition;
-
+	
 	public static GameManager Instance { get; private set; }
 
-	public bool TyperEntered { get; private set; }
-
-	public string GameName => gameName;
+	public static string TYPER => "TYPER";
 
 	public int Health
 	{
 		get => health;
-		private set => health = Mathf.Max(0, value);
+		private set => health = Mathf.Clamp(health, 0, value);
 	}
 
 	public int Score
 	{
 		get => score;
-		private set => score = Mathf.Max(0, value);
+		private set => score = value;
 	}
 
 	public TransitionAnimator EnterTransition => enterTransition;
@@ -46,29 +41,14 @@ public class GameManager : MonoBehaviour
 
 	void Start()
 	{
-		//DOTween.SetTweensCapacity(1250, 50);
-
-		// ensure gameName is within 9 characters and has no duplicate letters
-		if (gameName.Length > 9 || new HashSet<char>(gameName).Count != gameName.Length)
-		{
-			Debug.LogError("Game name exceeds 9 characters. Truncating to first 9 characters.");
-			gameName = gameName[..9];
-			Debug.Break();
-		}
-
+		Cursor.visible = true;
+		Cursor.lockState = CursorLockMode.None;
+		
 		var music = new Music(Track.musicSFX);
 		music.SetOutput(Output.Music);
-		music.SetVolume(0.1f);
+		music.SetVolume(0.65f);
 		music.SetLoop(true);
 		music.Play();
-	}
-
-	void Update()
-	{
-		if (Input.GetKeyDown(KeyCode.Alpha1))
-		{
-			// for testing
-		}
 	}
 
 	public void TakeDamage(int damage)
@@ -84,7 +64,8 @@ public class GameManager : MonoBehaviour
 			Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
 			Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
 		}
-		else { Debug.Log($"Player took {damage} damage. Remaining health: {Health}"); }
+		else { Debug.LogWarning($"Player took {damage} damage.\n" +
+		                        $"Remaining health: {Health}"); }
 	}
 
 	Coroutine hitStopCoroutine;
@@ -123,18 +104,13 @@ public class GameManager : MonoBehaviour
 		var frenzyManager = FrenzyManager.Instance;
 
 		int pointsWithMult = Mathf.CeilToInt(points * frenzyManager.FrenzyMultiplier);
-		int scoreToAdd = frenzyManager.Frenzied ? pointsWithMult : points;
-
 		Score += frenzyManager.Frenzied ? pointsWithMult : points;
-
-		string withMult = frenzyManager.Frenzied ? $"({frenzyManager.FrenzyMultiplier}x frenzy multiplier)" : string.Empty;
-		Debug.Log($"Score increased by {scoreToAdd}! {withMult}");
 		
 		//TODO: very temporary way of doing this
 		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(0).GetComponent<TMPro.TextMeshProUGUI>();
 	string text = $"{Score} pts"
 			+ (frenzyManager.Frenzied ? $" ({frenzyManager.FrenzyMultiplier}x)" : string.Empty)
-			+ (Time.timeScale > 1.1f ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
+			+ (Time.timeScale >= 1.1f ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
 		scoreText.text = text;
 	}
 }

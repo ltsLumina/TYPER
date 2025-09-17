@@ -13,10 +13,7 @@ public class KE_Thorned : KeyEffect
 		{
 			Debug.Log($"Key {keyCode} activated while thorned! Player takes damage.");
 			GameManager.Instance.TakeDamage(1);
-			var prefab = Resources.Load<GameObject>("PREFABS/Enemy Death VFX");
-			var vfx = ObjectPoolManager.FindObjectPool(prefab).GetPooledObject<ParticleSystem>(true, key.transform.position, Quaternion.identity);
-			ParticleSystem.MainModule mainModule = vfx.main;
-			mainModule.startColor = Color.red;
+			KeyManager.SpawnVFX(KeyManager.CommonVFX.Death, key.transform.position, Color.red);
 		}    
 		
 		if (DOTween.IsTweening("Thorned")) return; // Prevent overlapping thorned animations.

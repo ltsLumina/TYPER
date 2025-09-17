@@ -1,4 +1,5 @@
 #region
+using System;
 using System.Collections;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
@@ -127,6 +128,8 @@ public class Enemy : MonoBehaviour, IDamageable
 			pendingDamage = 0;
 		}
 	}
+	
+	public event Action OnDeath;
 
 	public void TakeDamage(int damage)
 	{
@@ -153,8 +156,9 @@ public class Enemy : MonoBehaviour, IDamageable
 				deathSFX.SetOutput(Output.SFX);
 				deathSFX.SetRandomPitch(new (0.9f, 1.05f));
 				deathSFX.Play();
-
-				Destroy(gameObject);
+				
+				ObjectPoolManager.ReturnToPool(gameObject);
+				OnDeath?.Invoke();
 				break;
 			}
 

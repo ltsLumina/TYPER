@@ -18,7 +18,7 @@ public class ComboManager : MonoBehaviour
 	}
 
 	[Header("Combos")]
-	[SerializeField] List<Dictionary<Key, (int, bool)>> combos = new ();
+	[SerializeField, ReadOnly] string currentCombo;
 
 	[Header("Combo Settings")]
 	[Tooltip("The length of the combo. 1-based.")]
@@ -36,7 +36,7 @@ public class ComboManager : MonoBehaviour
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
 
-	public List<Dictionary<Key, (int, bool)>> Combos => combos;
+	readonly List<Dictionary<Key, (int, bool)>> combos = new ();
 
 	public bool InProgress => nextComboIndex != -1;
 	public int NextComboIndex => nextComboIndex;
@@ -52,9 +52,6 @@ public class ComboManager : MonoBehaviour
 
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
-
-	/// <returns> The last key in the current combo, or null if no combo is active. </returns>
-	public Key LastKey => currentComboKeys.Count > 0 ? currentComboKeys[^1] : null;
 	
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
@@ -125,7 +122,7 @@ public class ComboManager : MonoBehaviour
 				key.ComboHighlight.gameObject.SetActive(false);
 			}
 
-			Debug.Log($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyCode))}");
+			Logger.LogWarning($"Removed combo: {string.Join(" -> ", keys.Select(k => k.KeyCode))}");
 		}
 	}
 
@@ -149,6 +146,7 @@ public class ComboManager : MonoBehaviour
 			}
 
 			// Initialize combo state. E.g. if the combo is A, S, D and the player pressed A, set up to expect S next.
+			currentCombo = string.Join(" -> ", matchingCombo.Keys.Select(k => k.KeyCode));
 			currentComboKeys = matchingCombo.Keys.ToList();
 			comboLength = currentComboKeys.Count;
 			recentComboKey = currentComboKeys[0];
@@ -247,6 +245,7 @@ public class ComboManager : MonoBehaviour
 		currentComboKeys.Clear();
 
 		// Reset combo state. If loops is enabled, start from the beginning again, otherwise clear the combo.
+		//comboLength = -1;
 		nextComboIndex = -1;
 		recentComboKey = nextComboKey;
 		nextComboKey = null;

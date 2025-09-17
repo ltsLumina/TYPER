@@ -126,9 +126,9 @@ public partial class KeyManager
 	{
 		string path = type switch
 		{
-			CommonVFX.Combo => "PREFABS/Combo VFX",
-			CommonVFX.Hit   => "PREFABS/Enemy Hit VFX",
-			CommonVFX.Death => "PREFABS/Enemy Death VFX",
+			CommonVFX.Combo => "PREFABS/VFX/Combo VFX",
+			CommonVFX.Hit   => "PREFABS/VFX/Enemy Hit VFX",
+			CommonVFX.Death => "PREFABS/VFX/Enemy Death VFX",
 			_               => throw new ArgumentOutOfRangeException(nameof(type), type, null)
 		};
 		
@@ -154,13 +154,13 @@ public partial class KeyManager
 	{
 		var pool = ObjectPoolManager.FindObjectPool(prefab.gameObject);
 		if (pool == null) return null;
-		
+
 		var vfx = pool.GetPooledObject<ParticleSystem>(true, position);
 		ParticleSystem.MainModule main = vfx.main;
 		main.startColor = colour == default ? Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f) : colour;
 		return vfx;
 	}
-	
+
 	/// <summary>
 	///    Spawns a common VFX at the specified position with the given color, or a random color if none is provided.
 	/// </summary>
