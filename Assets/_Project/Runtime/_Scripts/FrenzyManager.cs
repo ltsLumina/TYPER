@@ -170,10 +170,7 @@ public class FrenzyManager : MonoBehaviour
 			Frenzied = true;
 		}
 
-		if (Frenzied)
-		{
-			Time.timeScale = 1.1f * frenzyTime / 60f + 1f;
-		}
+		if (Frenzied) { Time.timeScale = 1.1f * frenzyTime / 60f + 1f; }
 
 		if (Frenzied)
 		{
@@ -233,9 +230,9 @@ public class FrenzyManager : MonoBehaviour
 			bloom.intensity.value = Mathf.Lerp(bloom.intensity.value, 0f, lerpSpeed);
 			bloom.scatter.value = Mathf.Lerp(bloom.scatter.value, 0f, lerpSpeed);
 
-			// check if bloom is approximately zero, within a tolerance
-			bool bloomComplete = bloom.threshold.value < 0.1;
-			SetOverrideState(Override.Bloom, bloomComplete);
+			// Note: idk doesnt work so just keep it on
+			//bool bloomComplete = bloom.threshold.value < 0.01f;
+			//SetOverrideState(Override.Bloom, bloomComplete);
 			#endregion
 
 			#region Chromatic Aberration

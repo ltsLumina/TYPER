@@ -118,17 +118,17 @@ public class Enemy : MonoBehaviour, IDamageable
 	IEnumerator PendingDamage()
 	{
 		yield return new WaitForSecondsRealtime(0.1f);
-		
+
 		// Store the amount of damage taken this frame and apply it at the end of the frame.
 		// This is due to each key applying damage once each, so the enemy takes damage multiple times per frame from different keys.
 		if (pendingDamage > 0)
 		{
 			Health = Mathf.Max(0, Health - pendingDamage);
-			Debug.Log($"{name} took {pendingDamage} damage. Remaining health: {Health}");
+			Debug.Log($"{name} took {pendingDamage} damage." + $"\nRemaining health: {Health}");
 			pendingDamage = 0;
 		}
 	}
-	
+
 	public event Action OnDeath;
 
 	public void TakeDamage(int damage)
@@ -156,7 +156,7 @@ public class Enemy : MonoBehaviour, IDamageable
 				deathSFX.SetOutput(Output.SFX);
 				deathSFX.SetRandomPitch(new (0.9f, 1.05f));
 				deathSFX.Play();
-				
+
 				ObjectPoolManager.ReturnToPool(gameObject);
 				OnDeath?.Invoke();
 				break;
@@ -202,6 +202,7 @@ public class Enemy : MonoBehaviour, IDamageable
 		}
 
 		return;
+
 		IEnumerator Slow(float duration, float amount)
 		{
 			float originalSpeed = speed;
@@ -238,7 +239,8 @@ public class Enemy : MonoBehaviour, IDamageable
 		}
 
 		void DeathVFX() =>
+
 				// change color of the deathVFX to the colour of the enemy or red if critical
-				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo,transform.position, damage > 100 ? Color.red : spriteRenderer.color);
+				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, transform.position, damage > 100 ? Color.red : spriteRenderer.color);
 	}
 }

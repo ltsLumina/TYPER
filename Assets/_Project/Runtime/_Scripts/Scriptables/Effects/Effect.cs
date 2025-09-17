@@ -1,5 +1,4 @@
 #region
-using System;
 using JetBrains.Annotations;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -11,7 +10,7 @@ using Random = UnityEngine.Random;
 ///     <para>Combo effects can be invoked with a KeyCode or a Key reference.</para>
 ///     <para>Assign combo effects as scriptable objects to keys in the inspector.</para>
 /// </summary>
-public abstract class KeyEffect : ScriptableObject
+public abstract class Effect : ScriptableObject
 {
 	[SerializeField] protected string effectName = "Effect Name";
 	[Tooltip("Rough equivalent of FName in Unreal. Used for identifying the effect in code.")]
@@ -43,37 +42,63 @@ public abstract class KeyEffect : ScriptableObject
 	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
 	/// </param>
 	public void Invoke(Key key, Key triggerKey) => Invoke(key.ToKeyCode(), key, (triggerKey != null, triggerKey));
-	
-	public static KeyEffect GetEffectByID(string identifier)
+
+	public static Effect GetEffectByID(string identifier)
 	{
-		KeyEffect[] effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects");
+		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+
 		foreach (var e in effects)
 		{
-			if (e.effectID == identifier.ToLower())
-				return e;
+			if (e.effectID == identifier.ToLower()) return e;
 		}
 
-		Debug.LogWarning($"No KeyEffect found with ID: {identifier}");
+		Debug.LogWarning($"No KeyModifier found with ID: {identifier}");
 		return null;
 	}
-	
-	public static KeyEffect GetEffect<T>(bool instanced = false) where T : KeyEffect
+
+	public static T GetEffect<T>(bool instanced = false)
+			where T : ComboEffect
 	{
-		KeyEffect[] effects = Resources.LoadAll<KeyEffect>("Scriptables/Effects");
+		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+
 		foreach (var e in effects)
 		{
-			if (e is not T) continue;
+			if (e is not T effect) continue;
 
 			if (instanced)
 			{
 				var instance = Instantiate(e);
-				instance.name = $"{e.name} (Instance #{Random.Range(1000, 9999)})";
-				return instance;
+				instance.name = $"{effect.name} (Instance #{Random.Range(1000, 9999)})";
+				return instance as T;
 			}
-			return e;
+
+			return effect;
 		}
 
-		Debug.LogWarning($"No KeyEffect found of type: {typeof(T)}");
+		Debug.LogWarning($"No KeyModifier found of type: {typeof(T)}");
+		return null;
+	}
+
+	public static T GetModifier<T>(bool instanced = false)
+			where T : KeyModifier
+	{
+		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+
+		foreach (var e in effects)
+		{
+			if (e is not T modifier) continue;
+
+			if (instanced)
+			{
+				var instance = Instantiate(e);
+				instance.name = $"{modifier.name} (Instance #{Random.Range(1000, 9999)})";
+				return instance as T;
+			}
+
+			return modifier;
+		}
+
+		Debug.LogWarning($"No KeyModifier found of type: {typeof(T)}");
 		return null;
 	}
 }

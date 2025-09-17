@@ -58,7 +58,7 @@ public partial class KeyManager : MonoBehaviour
 	public GameObject Keyboard { get; private set; }
 
 	public KeyCode KeyPressed { get; private set; }
-	
+
 	public float GlobalCooldown => globalCooldown;
 	public float CurrentCooldown => currentCooldown;
 	public bool OnCooldown => currentCooldown > 0;
@@ -171,7 +171,7 @@ public partial class KeyManager : MonoBehaviour
 	void Start()
 	{
 		Helpers.CameraMain.DOFieldOfView(60f, 1f).From(179f).SetEase(Ease.OutCirc);
-		
+
 		comboManager = ComboManager.Instance;
 
 		InitializeKeyboard();
@@ -212,26 +212,26 @@ public partial class KeyManager : MonoBehaviour
 		comboManager.CreateCombo(cvbCombo);
 
 		List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
-		oGCD_Keys.SetModifier(Key.Effects.OffGlobalCooldown);
+		oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
 
 		const float cooldown = 10f;
-		KeyCode.V.ToKey().SetEffect(Key.Effects.OffGlobalCooldown, true, cooldown);
+		KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
 
 		// set G key to be a mash key
 		Key mashKey = GetKey(KeyCode.G);
-		mashKey.SetEffect(Key.Effects.Mash);
+		mashKey.SetModifier(Key.Modifiers.Mash);
 
 		// make H shake
 		Key shakeKey = Instance.GetKey(KeyCode.H);
-		shakeKey.SetEffect(Key.Effects.Loose);
+		shakeKey.SetModifier(Key.Modifiers.Loose);
 
 		// chain J key
 		Key chainKey = GetKey(KeyCode.J);
-		chainKey.SetEffect(Key.Effects.Chained);
-		
+		chainKey.SetModifier(Key.Modifiers.Chained);
+
 		// thorn K key
 		Key thornKey = GetKey(KeyCode.K);
-		thornKey.SetEffect(Key.Effects.Thorned);
+		thornKey.SetModifier(Key.Modifiers.Thorned);
 		#endregion
 	}
 
@@ -263,8 +263,7 @@ public partial class KeyManager : MonoBehaviour
 
 		FlatKeys = GenerateKeys();
 
-		if (SceneManagerExtended.ActiveSceneName == "Game") 
-			Keyboard.transform.position = new (3.5f, -2f);
+		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (3.5f, -2f);
 
 		// Set initial position for intro animation off-screen
 		else Keyboard.transform.position = new (3.5f, 8f);

@@ -46,94 +46,8 @@ MonoBehaviour:
         - iColor: 1
           icon: d_eyeDropper.sml
       goDatasByInstanceId:
-        keys: c0bd000052be000032be00001ebe0000d0bd000060be0000c4bd000022fa0000eafa0000b6fa000094fa000036fa0000f8fa000026fa00009e0c0100660d0100320d0100100d0100b20c0100740d0100a20c0100222d0100ea2d0100b42d0100922d0100342d0100fa2d0100262d01001a330100e2330100ac3301008a3301002c330100f23301001e330100e0370100aa3801007438010050380100f2370100b8380100e43701004e0ffdffa63b0100643c0100303c0100b83b0100aa3b0100723c0100
+        keys: 40a7000000a80000caa7000052a7000044a700000ea80000
         values:
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
         - iColor: 1
@@ -155,6 +69,8 @@ MonoBehaviour:
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-755607928-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-363270067-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-46667972-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-211954289-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-752903497-0
         values:
         - iColor: 0
           icon: 
@@ -170,8 +86,12 @@ MonoBehaviour:
           icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: Canvas Icon
+        - iColor: 0
+          icon: EventSystem Icon
       goDatasByInstanceId:
-        keys: e4f8000016f80000def80000aaf8000088f8000028f80000eef9000020f90000e8f90000b4f9000092f9000032f9000010fe000042fd00000afe0000d6fd0000b4fd000054fd000010ff000042fe00000aff0000d6fe0000b4fe000054fe0000f603010044030100f2030100c8030100a603010054030100ce3601001c360100ca360100a03601007c3601002c360100b0370100fe360100ac370100823701005e3701000e3701003e3d01008c3c01003a3d0100103d0100ec3c01009c3c01009a0bfdff
+        keys: a4a3000010a300009aa300007aa3000060a3000026a3000002a3000006a3000056a30000
         values:
         - iColor: 0
           icon: 
@@ -185,89 +105,9 @@ MonoBehaviour:
           icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
         - iColor: 1
           icon: d_eyeDropper.sml
         - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
+          icon: Canvas Icon
         - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 0
-          icon: 
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
-        - iColor: 1
-          icon: d_eyeDropper.sml
+          icon: EventSystem Icon

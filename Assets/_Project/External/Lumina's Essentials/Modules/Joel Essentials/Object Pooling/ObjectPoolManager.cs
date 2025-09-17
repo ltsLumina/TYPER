@@ -93,7 +93,7 @@ public static class ObjectPoolManager
 		string key = GetPrefabKey(objectPrefab);
 		if (ObjectPoolLookup.TryGetValue(key, out ObjectPool objectPool)) return objectPool;
 
-		Debug.LogWarning($"Object of type {key} is NOT yet pooled! Creating a new pool...");
+		//Debug.LogWarning($"Object of type {key} is NOT yet pooled! Creating a new pool...");
 		objectPool = CreateNewPool(objectPrefab, startAmount);
 		ObjectPoolLookup[key] = objectPool;
 		return objectPool;

@@ -2,7 +2,7 @@ using DG.Tweening;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Thorned", menuName = "Combos/New Thorned", order = 8)]
-public class KE_Thorned : KeyEffect
+public class KE_Thorned : KeyModifier
 {
 	[SerializeField] float cooldown = 3f;
 	bool isActive = true;
@@ -14,10 +14,10 @@ public class KE_Thorned : KeyEffect
 			Debug.Log($"Key {keyCode} activated while thorned! Player takes damage.");
 			GameManager.Instance.TakeDamage(1);
 			KeyManager.SpawnVFX(KeyManager.CommonVFX.Death, key.transform.position, Color.red);
-		}    
-		
+		}
+
 		if (DOTween.IsTweening("Thorned")) return; // Prevent overlapping thorned animations.
-		
+
 		var sequence = DOTween.Sequence();
 		sequence.Append(key.ThornedMarker.transform.DOMoveY(-1f, 0.5f).SetRelative(true).SetEase(Ease.Linear));
 		sequence.Join(key.ThornedMarker.transform.DOScaleY(0f, 0.25f).SetEase(Ease.Linear));

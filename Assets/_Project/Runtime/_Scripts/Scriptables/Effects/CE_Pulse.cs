@@ -1,19 +1,14 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 [CreateAssetMenu(fileName = "Pulse", menuName = "Combos/New Pulse", order = 7)]
-public class KE_Pulse : KeyEffect
+public class CE_Pulse : ComboEffect
 {
 	Coroutine pulseCoroutine;
-	
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
-	{
-		Pulse(key, 3, 0.1f);
-	}
+
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger) { Pulse(key, 3, 0.1f); }
 
 	/// <summary>
 	/// Pulse effect that activates keys in expanding layers from a central key.
@@ -41,7 +36,7 @@ public class KE_Pulse : KeyEffect
 		int layers = 0;
 		List<Key> currentLayerKeys = new () { centerKey };
 		HashSet<Key> activatedKeys = new () { centerKey };
-		
+
 		while (currentLayerKeys.Count > 0 && layers < maxLayers)
 		{
 			List<Key> nextLayerKeys = new ();

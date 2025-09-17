@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
@@ -12,7 +11,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using VInspector;
-using Random = UnityEngine.Random;
 #endregion
 
 [SelectionBase]
@@ -21,9 +19,10 @@ public partial class Key : MonoBehaviour
 	[Tab("Attributes")]
 	[Header("Attributes")]
 	[SerializeField, ReadOnly] KeyCode keyCode = KeyCode.Q;
-	[SerializeField] Effects effects;
-	[SerializeField] KeyEffect keyEffect;
-	
+	[SerializeField] Modifiers modifiers;
+	[SerializeField] KeyModifier keyModifier;
+	[SerializeField] ComboEffect comboEffect;
+
 	[Header("Stats")]
 	[SerializeField] int damage;
 
@@ -48,12 +47,12 @@ public partial class Key : MonoBehaviour
 	[Tab("Settings")]
 	[Header("Settings")]
 	[SerializeField] bool isActive = true;
-	
+
 	[Header("Debug Info")]
 	[Header("Indexes")]
 	[SerializeField, ReadOnly] int comboIndex;
 	[SerializeField, ReadOnly] int mashCount;
-	
+
 	[Tooltip("The index of the row this key is in. 1-based.")]
 	[UsedImplicitly]
 	[SerializeField, ReadOnly] int row;
@@ -135,7 +134,7 @@ public partial class Key : MonoBehaviour
 		// Minimum damage is 2, maximum is roughly half the number of keys in the row, e.g. for 10 keys in a row, max damage is 5
 		int min = 2;
 		damage = Mathf.Max(min, Mathf.RoundToInt(indexInRow / 2f) + min);
-		
+
 		mashText.text = IsMash ? mashCount.ToString() : string.Empty;
 
 		// reset all fills (hide)
@@ -200,17 +199,15 @@ public partial class Key : MonoBehaviour
 	void DrawCooldownFill() => cooldownSprite.material.SetFloat(Arc2, Mathf.Lerp(360f, 0f, remainingCooldown / currentCooldown));
 
 	readonly List<Enemy> overlappingEnemies = new ();
-	
+
 	void OnTriggerEnter2D(Collider2D other)
 	{
-	    if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy))
-	        overlappingEnemies.Add(enemy);
+		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy)) overlappingEnemies.Add(enemy);
 	}
-	
+
 	void OnTriggerExit2D(Collider2D other)
 	{
-	    if (other.TryGetComponent(out Enemy enemy))
-	        overlappingEnemies.Remove(enemy);
+		if (other.TryGetComponent(out Enemy enemy)) overlappingEnemies.Remove(enemy);
 	}
 
 	Coroutine mashTimerCoroutine;
@@ -266,10 +263,7 @@ public partial class Key : MonoBehaviour
 		}
 		#endregion
 
-		if (IsChained)
-		{
-			keyEffect?.Invoke(this, triggerKey);
-		}
+		if (IsChained) { keyModifier?.Invoke(this, triggerKey); }
 
 		if (!isActive) return;
 
@@ -279,9 +273,8 @@ public partial class Key : MonoBehaviour
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
 		// (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
-		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) 
-			comboManager.ResetCombo();
-		
+		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) comboManager.ResetCombo();
+
 		//TODO: removing "!triggeredbyKey" changes the behaviour of combos being reset when certain effects are running, e.g. wave, pulse. This may or may not be desirable.
 
 		bool hitEnemy = DealDamage();
@@ -310,8 +303,7 @@ public partial class Key : MonoBehaviour
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
-						keyEffect?.Invoke(this, triggerKey);
+					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) comboEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
@@ -344,7 +336,7 @@ public partial class Key : MonoBehaviour
 
 				if (mashCount % 5 == 0) // every 5th mash
 				{
-					keyEffect?.Invoke(this, triggerKey);
+					comboEffect?.Invoke(this, triggerKey);
 					StartLocalCooldown(5f);
 					SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 					OnActivated?.Invoke(hitEnemy, triggerKey);
@@ -359,9 +351,9 @@ public partial class Key : MonoBehaviour
 		}
 
 		// If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
-		if (IsLoose) keyEffect?.Invoke(this, triggerKey);
-		
-		if (IsThorned) keyEffect?.Invoke(this, triggerKey);
+		if (IsLoose) keyModifier?.Invoke(this, triggerKey);
+
+		if (IsThorned) keyModifier?.Invoke(this, triggerKey);
 
 		if (IsOffGCD)
 		{
@@ -442,9 +434,9 @@ public static class KeyExtensions
 	/// <param name="keys"> The list of keys to modify. </param>
 	/// <param name="modifier"> The modifier to set. </param>
 	/// <param name="value"> The value to set the modifier to. </param>
-	public static void SetModifier(this List<Key> keys, Key.Effects modifier, bool value = true)
+	public static void SetModifier(this List<Key> keys, Key.Modifiers modifier, bool value = true)
 	{
-		foreach (Key key in keys) key.SetEffect(modifier, value);
+		foreach (Key key in keys) key.SetModifier(modifier, value);
 	}
 
 	// to keycode from single key
@@ -469,6 +461,6 @@ public static class KeyExtensions
 
 	// get a list of keys from a list of keycodes
 	public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyManager.Instance.GetKey(k)).Where(k => k != null).ToList();
-	
+
 	public static List<Key> ToKeys(this string str) => str.ToKeyCodes().ToKeys();
 }

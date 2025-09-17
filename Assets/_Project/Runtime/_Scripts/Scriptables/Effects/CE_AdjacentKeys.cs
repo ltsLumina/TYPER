@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Adjacent Keys", menuName = "Combos/New Adjacent Keys", order = 1)]
-public class KE_AdjacentKeys : KeyEffect
+public class CE_AdjacentKeys : ComboEffect
 {
 	[SerializeField] KeyManager.Direction direction = KeyManager.Direction.Right;
-	
+
 	public override string ToString() => $"Adjacent Keys ({direction})";
 
 	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)

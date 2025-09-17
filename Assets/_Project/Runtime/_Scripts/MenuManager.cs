@@ -33,7 +33,7 @@ public class MenuManager : MonoBehaviour
 	{
 		Cursor.visible = false;
 		Cursor.lockState = CursorLockMode.Locked;
-		
+
 		keyManager = KeyManager.Instance;
 		comboManager = ComboManager.Instance;
 
@@ -43,6 +43,7 @@ public class MenuManager : MonoBehaviour
 			if (IntroSequenceCompleted && comboManager.CompletedCombos.Count > 0)
 			{
 				string comboString = string.Join("", keys.Select(k => k.KeyCode));
+
 				switch (comboString)
 				{
 					case "PLAY":
@@ -79,7 +80,7 @@ public class MenuManager : MonoBehaviour
 			foreach (Key key in keyManager.FlatKeys) key.Disable(false);
 
 			GameManager.Instance.EnterTransition.gameObject.SetActive(true);
-			
+
 			// Dramatic effect
 			yield return new WaitForSeconds(2f);
 
@@ -111,7 +112,7 @@ public class MenuManager : MonoBehaviour
 			foreach (Key titleKey in title.ToKeyCodes().ToKeys())
 			{
 				titleKey.Enable();
-				titleKey.SetEffect(Key.Effects.Combo);
+				titleKey.SetModifier(Key.Modifiers.Combo);
 
 				var sfx = new Sound(SFX.beep);
 				sfx.SetOutput(Output.SFX);
@@ -131,10 +132,11 @@ public class MenuManager : MonoBehaviour
 
 			List<Key> keys = title.ToKeys();
 			comboManager.RemoveCombo(keys);
+
 			foreach (Key k in keyManager.FlatKeys)
 			{
 				k.Enable();
-				k.RemoveEffect(Key.Effects.Combo);
+				k.RemoveModifier(Key.Modifiers.Combo);
 			}
 
 			yield return new WaitForSeconds(1f);
@@ -156,19 +158,21 @@ public class MenuManager : MonoBehaviour
 			           });
 
 			yield return new WaitForSeconds(2.5f);
-			
+
 			Highlight("PLAY");
 			Cursor.visible = true;
 			Cursor.lockState = CursorLockMode.None;
-			
+
 			IntroSequenceCompleted = true;
 		}
 	}
 
 	public void Highlight(string str) => HighlightKeys(str);
+
 	public void EndHighlight(string str) => ResetKeyPositions();
 
 	public void ScaleUp(GameObject obj) => obj.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutCubic);
+
 	public void ScaleDown(GameObject obj) => obj.transform.DOScale(1f, 0.1f).SetEase(Ease.OutCubic);
 
 	Dictionary<Key, Vector3> menuKeyPositions = new ();
@@ -227,8 +231,7 @@ public class MenuManager : MonoBehaviour
 		comboManager.CreateCombo(keysToHighlight);
 
 		// combo markers on highlighted keys
-		foreach (Key highlightKey in keysToHighlight) 
-			highlightKey.SetEffect(Key.Effects.Combo);
+		foreach (Key highlightKey in keysToHighlight) highlightKey.SetModifier(Key.Modifiers.Combo);
 	}
 
 	void ResetKeyPositions(bool tween = false)
@@ -237,10 +240,7 @@ public class MenuManager : MonoBehaviour
 		{
 			key.transform.DOKill();
 
-			if (tween)
-			{
-				key.transform.DOMove(menuKeyPositions[key], 0.5f).SetEase(Ease.InOutCubic);
-			}
+			if (tween) { key.transform.DOMove(menuKeyPositions[key], 0.5f).SetEase(Ease.InOutCubic); }
 			else
 			{
 				if (menuKeyPositions.TryGetValue(key, out Vector3 position)) key.transform.position = position;

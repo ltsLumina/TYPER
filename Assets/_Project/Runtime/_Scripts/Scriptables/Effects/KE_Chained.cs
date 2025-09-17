@@ -4,13 +4,13 @@ using MelenitasDev.SoundsGood;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Chained", menuName = "Combos/New Chained", order = 4)]
-public class KE_Chained : KeyEffect
+public class KE_Chained : KeyModifier
 {
 	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
 	{
 		if (trigger.byKey)
 		{
-			key.RemoveEffect(Key.Effects.Chained);
+			key.RemoveModifier(Key.Modifiers.Chained);
 			key.Enable();
 
 			var chainedSFX = new Sound(SFX.unchained);

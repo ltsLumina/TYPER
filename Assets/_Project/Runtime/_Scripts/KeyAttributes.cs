@@ -14,7 +14,7 @@ public partial class Key // Properties
 	///   The KeyCode this key represents.
 	/// </summary>
 	public KeyCode KeyCode => keyCode;
-	
+
 	/// <summary>
 	/// Represents the index of this key in the current combo, or -1 if not part of a combo.
 	/// </summary>
@@ -39,12 +39,12 @@ public partial class Key // Components
 	public TMP_Text Letter => letter;
 }
 
-public partial class Key // Effects
+public partial class Key // Modifiers
 {
 	[Flags]
-	public enum Effects
+	public enum Modifiers
 	{
-		[UsedImplicitly] 
+		[UsedImplicitly]
 		None = 0,
 		Combo = 1 << 0,
 		Mash = 1 << 1,
@@ -53,117 +53,120 @@ public partial class Key // Effects
 		Thorned = 1 << 4,
 		OffGlobalCooldown = 1 << 5
 	}
-	
+
 	/// <summary>
 	///    Checks if the specified modifier is set for this key.
 	/// </summary>
-	/// <param name="effect"> The modifier to check. </param>
+	/// <param name="modifier"> The modifier to check. </param>
 	/// <returns> True if the modifier is set, false otherwise. </returns>
-	public bool GetEffect(Effects effect) => (effects & effect) == effect;
-	
-	public bool IsCombo => GetEffect(Effects.Combo);
-	public bool IsMash => GetEffect(Effects.Mash);
-	public bool IsChained => GetEffect(Effects.Chained);
-	public bool IsLoose => GetEffect(Effects.Loose);
-	public bool IsThorned => GetEffect(Effects.Thorned);
-	public bool IsOffGCD => GetEffect(Effects.OffGlobalCooldown);
+	public bool HasModifier(Modifiers modifier) => (modifiers & modifier) == modifier;
+
+	public bool HasAnyModifier() => modifiers != Modifiers.None;
+
+	public bool IsCombo => HasModifier(Modifiers.Combo);
+	public bool IsMash => HasModifier(Modifiers.Mash);
+	public bool IsChained => HasModifier(Modifiers.Chained);
+	public bool IsLoose => HasModifier(Modifiers.Loose);
+	public bool IsThorned => HasModifier(Modifiers.Thorned);
+	public bool IsOffGCD => HasModifier(Modifiers.OffGlobalCooldown);
 
 	/// <summary>
 	///     Sets the specified modifier for this key.
 	/// </summary>
-	/// <param name="effect"> The modifier to set. </param>
+	/// <param name="modifier"> The modifier to set. </param>
 	/// <param name="value"> The value to set the modifier to. </param>
 	/// <param name="args">
 	///     Additional arguments for specific modifiers. For example, OffGlobalCooldown can take a float
 	///     argument to set a new cooldown time.
 	/// </param>
-	public void SetEffect(Effects effect, bool value = true, params object[] args)
+	public void SetModifier(Modifiers modifier, bool value = true, params object[] args)
 	{
-		switch (effect)
+		switch (modifier)
 		{
-			case Effects.None:
-				effects = Effects.None;
-				
-				keyEffect = null;
+			case Modifiers.None:
+				modifiers = Modifiers.None;
+
+				keyModifier = null;
 				break;
 
-			case Effects.Combo:
-				effects = value ? effects | Effects.Combo : effects & ~Effects.Combo;
-				
+			case Modifiers.Combo:
+				modifiers = value ? modifiers | Modifiers.Combo : modifiers & ~Modifiers.Combo;
+
 				comboMarker.SetActive(value);
 
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
 
 				// 50/50 chance to get either adjacent keys or surrounding keys effect
-				List<KeyEffect> possibleEffects = new () { KeyEffect.GetEffect<KE_AdjacentKeys>(), KeyEffect.GetEffect<KE_Shockwave>(), KeyEffect.GetEffect<KE_Pulse>(true) };
-				keyEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
+				List<ComboEffect> possibleEffects = new () { Effect.GetEffect<CE_AdjacentKeys>(), Effect.GetEffect<CE_Shockwave>(), Effect.GetEffect<CE_Pulse>(true) };
+
+				comboEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
 				break;
 
-			case Effects.Mash:
-				effects = value ? effects | Effects.Mash : effects & ~Effects.Mash;
-				
+			case Modifiers.Mash:
+				modifiers = value ? modifiers | Modifiers.Mash : modifiers & ~Modifiers.Mash;
+
 				mashMarker.SetActive(value);
 
-				keyEffect = KeyEffect.GetEffect<KE_Wave>();
+				comboEffect = Effect.GetEffect<CE_Wave>();
 				break;
 
-			case Effects.Chained:
-				effects = value ? effects | Effects.Chained : effects & ~Effects.Chained;
-				
+			case Modifiers.Chained:
+				modifiers = value ? modifiers | Modifiers.Chained : modifiers & ~Modifiers.Chained;
+
 				ChainedMarker.SetActive(value);
 				Disable();
 
-				keyEffect = KeyEffect.GetEffect<KE_Chained>();
+				keyModifier = Effect.GetModifier<KE_Chained>();
 				break;
 
-			case Effects.Loose:
-				effects = value ? effects | Effects.Loose : effects & ~Effects.Loose;
-				
+			case Modifiers.Loose:
+				modifiers = value ? modifiers | Modifiers.Loose : modifiers & ~Modifiers.Loose;
+
 				// ReSharper disable once AssignmentInConditionalExpression
 				if (value) transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
 
-				keyEffect = KeyEffect.GetEffect<KE_Loose>();
+				keyModifier = Effect.GetModifier<KE_Loose>();
 				break;
 
-			case Effects.Thorned:
-				effects = value ? effects | Effects.Thorned : effects & ~Effects.Thorned;
-				
+			case Modifiers.Thorned:
+				modifiers = value ? modifiers | Modifiers.Thorned : modifiers & ~Modifiers.Thorned;
+
 				// TODO: add visual indicator for thorned keys. 'thornedMarker' is currently blank
 				thornedMarker.SetActive(value);
 
-				keyEffect = KeyEffect.GetEffect<KE_Thorned>(true);
+				keyModifier = Effect.GetModifier<KE_Thorned>(true);
 				break;
 
-			case Effects.OffGlobalCooldown:
-				effects = value ? effects | Effects.OffGlobalCooldown : effects & ~Effects.OffGlobalCooldown;
-				
+			case Modifiers.OffGlobalCooldown:
+				modifiers = value ? modifiers | Modifiers.OffGlobalCooldown : modifiers & ~Modifiers.OffGlobalCooldown;
+
 				oGCDMarker.SetActive(value);
 				if (args.Length > 0 && args[0] is float newCooldown and > 0f) cooldown = newCooldown;
 				break;
 
 			default:
-				throw new ArgumentOutOfRangeException(nameof(effect), effect, null);
+				throw new ArgumentOutOfRangeException(nameof(modifier), modifier, null);
 		}
 	}
-	
+
 	/// <summary>
-	/// Shorthand for SetEffect(effect, true).
+	/// Shorthand for SetModifier(effect, true).
 	/// </summary>
-	public void AddEffect(Effects effect) => SetEffect(effect, true);
+	public void AddModifier(Modifiers modifier) => SetModifier(modifier, true);
 	/// <summary>
-	/// Shorthand for SetEffect(effect, false).
+	/// Shorthand for SetModifier(effect, false).
 	/// </summary>
-	public void RemoveEffect(Effects effect) => SetEffect(effect, false);
+	public void RemoveModifier(Modifiers modifier) => SetModifier(modifier, false);
 
 	void OnValidate()
 	{
 		// set the keyeffect based on the effects flags
-		if (effects == Effects.None) keyEffect = null;
-		else if (GetEffect(Effects.Combo)) { }
-		else if (GetEffect(Effects.Mash)) keyEffect = KeyEffect.GetEffect<KE_Wave>();
-		else if (GetEffect(Effects.Chained)) keyEffect = KeyEffect.GetEffect<KE_Chained>();
-		else if (GetEffect(Effects.Loose)) keyEffect = KeyEffect.GetEffect<KE_Loose>();
-		else if (GetEffect(Effects.Thorned)) keyEffect = KeyEffect.GetEffect<KE_Thorned>();
-		else if (GetEffect(Effects.OffGlobalCooldown)) { }
+		if (modifiers == Modifiers.None) keyModifier = null;
+		else if (HasModifier(Modifiers.Combo)) { }
+		else if (HasModifier(Modifiers.Mash)) comboEffect = Effect.GetEffect<CE_Wave>();
+		else if (HasModifier(Modifiers.Chained)) keyModifier = Effect.GetModifier<KE_Chained>();
+		else if (HasModifier(Modifiers.Loose)) keyModifier = Effect.GetModifier<KE_Loose>();
+		else if (HasModifier(Modifiers.Thorned)) keyModifier = Effect.GetModifier<KE_Thorned>();
+		else if (HasModifier(Modifiers.OffGlobalCooldown)) { }
 	}
 }

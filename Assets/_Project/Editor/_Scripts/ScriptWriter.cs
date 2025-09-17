@@ -1,14 +1,11 @@
 ﻿#region
-using System;
 using System.IO;
-using System.Linq;
 using UnityEditor;
-using UnityEngine;
 #endregion
 
 public static class ScriptWriter
 {
-	const string templatePath = "Assets/_Project/Runtime/_Scripts/Scriptables/Effects/KE_Default.cs";
+	const string templatePath = "Assets/_Project/Runtime/_Scripts/Scriptables/Effects/CE_Default.cs";
 	const string savePath = "Assets/_Project/Runtime/_Scripts/Scriptables/Effects/";
 
 	public static void CreateComboEffect(string effectName)
@@ -19,7 +16,7 @@ public static class ScriptWriter
 		// Replace class name
 		bool hasPrefix = effectName.StartsWith("KE_");
 		string newClassName = hasPrefix ? effectName : $"KE_{effectName}";
-		template = template.Replace("KE_Default", newClassName);
+		template = template.Replace("CE_Default", newClassName);
 
 		// Write new script
 		string newFilePath = Path.Combine(savePath, newClassName + ".cs");
@@ -35,7 +32,7 @@ public static class ScriptWriter
 		string[] existingFiles = Directory.GetFiles(savePath, "KE_*.cs");
 		int newOrder = existingFiles.Length + 1;
 		template = template.Replace("order = 0", $"order = {newOrder}");
-		
+
 		File.WriteAllText(newFilePath, template);
 
 		AssetDatabase.ImportAsset(newFilePath);

@@ -52,7 +52,7 @@ public class ComboManager : MonoBehaviour
 
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
-	
+
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
@@ -62,10 +62,10 @@ public class ComboManager : MonoBehaviour
 	{
 		Key lastKey = comboKeys.Last();
 		lastKey.LastKeyInCombo = true;
-		
+
 		foreach (Key key in comboKeys)
 		{
-			key.SetEffect(Key.Effects.Combo);
+			key.SetModifier(Key.Modifiers.Combo);
 			key.ComboIndex = comboKeys.IndexOf(key);
 		}
 
@@ -117,7 +117,7 @@ public class ComboManager : MonoBehaviour
 
 			foreach (var key in keys)
 			{
-				key.RemoveEffect(Key.Effects.Combo);
+				key.RemoveModifier(Key.Modifiers.Combo);
 				key.ComboIndex = -1;
 				key.ComboHighlight.gameObject.SetActive(false);
 			}

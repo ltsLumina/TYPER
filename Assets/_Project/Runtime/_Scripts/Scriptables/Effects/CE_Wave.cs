@@ -1,15 +1,11 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Wave", menuName = "Combos/New Wave", order = 3)]
-public class KE_Wave : KeyEffect
+public class CE_Wave : ComboEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
-	{
-		Wave(key, 1, 1, 0.5f);
-	}
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger) { Wave(key, 1, 1, 0.5f); }
 
 	void Wave(Key initialKey, int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
 	{
@@ -17,6 +13,7 @@ public class KE_Wave : KeyEffect
 		initialKey.StartCoroutine(WaveCoroutine(initialKey, wave, cycles, maxCycles, delayBetweenColumns));
 
 		return;
+
 		IEnumerator WaveCoroutine(Key initialKey, List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
 		{
 			for (int i = 0; i < cycles; i++)
