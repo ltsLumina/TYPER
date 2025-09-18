@@ -131,8 +131,16 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		var prefab = Resources.Load<Tooltip>("PREFABS/Tooltip");
 		tooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
 
-		(string title, string description) = (currentKey.keyModifier.EffectName, currentKey.keyModifier.Description);
-		tooltip.SetText(title, description);
+		if (currentKey.keyModifier)
+		{
+			(string title, string description) = (currentKey.keyModifier.EffectName, currentKey.keyModifier.Description);
+			tooltip.SetText(title, description);
+		}
+		else if (currentKey.comboEffect)
+		{
+			(string title, string description) = (currentKey.comboEffect.EffectName, currentKey.comboEffect.Description);
+			tooltip.SetText(title, description);
+		}
 	}
 
 	GameObject GetPointerGameObject(PointerEventData pointerEventData)

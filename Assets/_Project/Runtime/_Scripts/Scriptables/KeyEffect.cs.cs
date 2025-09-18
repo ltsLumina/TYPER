@@ -3,4 +3,5 @@
 /// </summary>
 public abstract class KeyModifier : Effect
 {
+	// Marker class, so far
 }

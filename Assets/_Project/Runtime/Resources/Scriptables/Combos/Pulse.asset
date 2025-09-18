@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1158f3a42ae3e344f910030d1c5a5343, type: 3}
+  m_Name: Pulse
+  m_EditorClassIdentifier: Assembly-CSharp::KE_Pulse
+  effectName: Pulse
+  effectID: pulse
+  description: Pulses outward from a center key, activating every subsequent key
+    until it reaches the edges of the keyboard.
+  level: 0
+  maxLevel: 2
+  levels:
+  - rid: 5492189630153883723
+  - rid: 5492189630153883725
+  - rid: 5492189630153883726
+  references:
+    version: 2
+    RefIds:
+    - rid: 5492189630153883723
+      type: {class: PulseLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 1
+        maxLayers: 2
+        delayBetweenLayers: 0.1
+    - rid: 5492189630153883725
+      type: {class: PulseLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 2
+        maxLayers: 3
+        delayBetweenLayers: 0.075
+    - rid: 5492189630153883726
+      type: {class: PulseLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 3
+        maxLayers: 5
+        delayBetweenLayers: 0.025

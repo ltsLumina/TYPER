@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d97d9cee9e50264e98d740545e0bb63, type: 3}
+  m_Name: Wave
+  m_EditorClassIdentifier: Assembly-CSharp::KE_Wave
+  effectName: Wave
+  effectID: wave
+  description: Sweeps over the keyboard in a wave, activating each column one by
+    one.
+  level: 0
+  maxLevel: 2
+  levels:
+  - rid: 5492189631572607062
+  - rid: 5492189631572607063
+  - rid: 5492189631572607064
+  references:
+    version: 2
+    RefIds:
+    - rid: 5492189631572607062
+      type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 1
+        cycles: 1
+        delayBetweenColumns: 1
+    - rid: 5492189631572607063
+      type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 2
+        cycles: 2
+        delayBetweenColumns: 0.5
+    - rid: 5492189631572607064
+      type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 3
+        cycles: 3
+        delayBetweenColumns: 0.5

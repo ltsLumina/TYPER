@@ -97,9 +97,8 @@ public partial class Key // Modifiers
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
 
 				// 50/50 chance to get either adjacent keys or surrounding keys effect
-				List<ComboEffect> possibleEffects = new () { Effect.GetEffect<CE_AdjacentKeys>(), Effect.GetEffect<CE_Shockwave>(), Effect.GetEffect<CE_Pulse>(true) };
-
-				comboEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
+				List<ComboEffect> possibleEffects = new () { /*Effect.GetEffect<CE_Adjacent>(), */ Effect.GetEffect<CE_Shockwave>(), /*Effect.GetEffect<CE_Pulse>() */};
+				//comboEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
 				break;
 
 			case Modifiers.Mash:

@@ -1,7 +1,7 @@
 using DG.Tweening;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Thorned", menuName = "Combos/New Thorned", order = 8)]
+[CreateAssetMenu(fileName = "Thorned", menuName = "Modifiers/New Thorned", order = 8)]
 public class KE_Thorned : KeyModifier
 {
 	[SerializeField] float cooldown = 3f;

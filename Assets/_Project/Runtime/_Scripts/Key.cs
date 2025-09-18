@@ -10,6 +10,7 @@ using MelenitasDev.SoundsGood;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using VInspector;
 #endregion
 
@@ -177,12 +178,22 @@ public partial class Key : MonoBehaviour
 
 	void Update()
 	{
+		if (Keyboard.current.digit1Key.wasPressedThisFrame)
+		{
+			comboEffect?.SetLevel(comboEffect.Level - 1);
+		}
+
+		if (Keyboard.current.digit2Key.wasPressedThisFrame)
+		{
+			comboEffect?.SetLevel(comboEffect.Level + 1);
+		}
+		
 		if (!isActive || IsChained) return;
 
 		// Handle per-key cooldown timer
 		if (remainingCooldown > 0f)
 		{
-			remainingCooldown = remainingCooldown - Time.deltaTime;
+			remainingCooldown -= Time.deltaTime;
 
 			if (remainingCooldown <= 0f)
 			{
@@ -262,8 +273,8 @@ public partial class Key : MonoBehaviour
 			StartCoroutine(StackOverflowProtection());
 		}
 		#endregion
-
-		if (IsChained) { keyModifier?.Invoke(this, triggerKey); }
+		
+		if (IsChained) keyModifier?.Invoke(this, triggerKey);
 
 		if (!isActive) return;
 
@@ -326,7 +337,7 @@ public partial class Key : MonoBehaviour
 			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
 			if (triggerKey == this) { }
 			else
-			{
+			{	
 				mashCount++;
 
 				mashText.text = mashCount.ToString();

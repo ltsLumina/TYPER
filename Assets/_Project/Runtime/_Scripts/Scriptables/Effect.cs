@@ -1,5 +1,7 @@
 #region
+using System;
 using JetBrains.Annotations;
+using Mono.Cecil;
 using UnityEngine;
 using Random = UnityEngine.Random;
 #endregion
@@ -45,7 +47,7 @@ public abstract class Effect : ScriptableObject
 
 	public static Effect GetEffectByID(string identifier)
 	{
-		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+		Effect[] effects = Resources.LoadAll<Effect>(ResourcePaths.Modifiers);
 
 		foreach (var e in effects)
 		{
@@ -56,41 +58,40 @@ public abstract class Effect : ScriptableObject
 		return null;
 	}
 
-	public static T GetEffect<T>(bool instanced = false)
-			where T : ComboEffect
+	/// <summary>
+	///  Get an instance of a ComboEffect of type T from the <see cref="ResourcePaths.Modifiers"/> folder.
+	/// </summary>
+	/// <typeparam name="T"> The type of ComboEffect to retrieve. Must inherit from ComboEffect. </typeparam>
+	/// <returns> An instance of the requested ComboEffect type, or null if not found. </returns>
+	/// <remarks> ComboEffects are always instanced to allow for unique state per key. </remarks>
+	public static T GetEffect<T>() where T : ComboEffect
 	{
-		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Combos");
 
-		foreach (var e in effects)
+		foreach (Effect e in effects)
 		{
 			if (e is not T effect) continue;
 
-			if (instanced)
-			{
-				var instance = Instantiate(e);
-				instance.name = $"{effect.name} (Instance #{Random.Range(1000, 9999)})";
-				return instance as T;
-			}
-
-			return effect;
+			Effect instance = Instantiate(e);
+			instance.name = $"{effect.name} (Instance #{Random.Range(1000, 9999)})";
+			return instance as T;
 		}
 
 		Debug.LogWarning($"No KeyModifier found of type: {typeof(T)}");
 		return null;
 	}
 
-	public static T GetModifier<T>(bool instanced = false)
-			where T : KeyModifier
+	public static T GetModifier<T>(bool instanced = false) where T : KeyModifier
 	{
-		Effect[] effects = Resources.LoadAll<Effect>("Scriptables/Effects");
+		Effect[] effects = Resources.LoadAll<Effect>(ResourcePaths.Modifiers);
 
-		foreach (var e in effects)
+		foreach (Effect e in effects)
 		{
 			if (e is not T modifier) continue;
 
 			if (instanced)
 			{
-				var instance = Instantiate(e);
+				Effect instance = Instantiate(e);
 				instance.name = $"{modifier.name} (Instance #{Random.Range(1000, 9999)})";
 				return instance as T;
 			}
@@ -101,4 +102,12 @@ public abstract class Effect : ScriptableObject
 		Debug.LogWarning($"No KeyModifier found of type: {typeof(T)}");
 		return null;
 	}
+}
+
+public struct ResourcePaths
+{
+	[Obsolete("Use ResourcePaths.Modifiers instead.")]
+	public const string Effects = "Scriptables/Effects";
+	public const string Modifiers = "Scriptables/Modifiers";
+	public const string Combos = "Scriptables/Combos";
 }

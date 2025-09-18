@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27c3d398d5034999a340747e20852bff, type: 3}
+  m_Name: Adjacent
+  m_EditorClassIdentifier: Assembly-CSharp::CE_AdjacentKeys
+  effectName: Adjacent Keys
+  effectID: adjacent_keys
+  description: Activates an adjacent key in the specified direction, or alternatively
+    all keys in every cardinal direction.
+  level: 0
+  maxLevel: 3
+  levels:
+  - rid: 5492189630153883738
+  - rid: 5492189630153883739
+  - rid: 5492189630153883740
+  - rid: 5492189630153883743
+  references:
+    version: 2
+    RefIds:
+    - rid: 5492189630153883738
+      type: {class: AdjacentLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 1
+        direction: 8
+    - rid: 5492189630153883739
+      type: {class: AdjacentLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 2
+        direction: 12
+    - rid: 5492189630153883740
+      type: {class: AdjacentLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 3
+        direction: 13
+    - rid: 5492189630153883743
+      type: {class: AdjacentLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 4
+        direction: -1

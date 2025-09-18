@@ -161,8 +161,8 @@ public class FrenzyManager : MonoBehaviour
 
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.Alpha1)) GameManager.Instance.AddScore(25);
-		if (Input.GetKeyDown(KeyCode.Alpha2)) GameManager.Instance.AddScore(frenzyThreshold);
+		if (Input.GetKeyDown(KeyCode.Alpha3)) GameManager.Instance.AddScore(25);
+		if (Input.GetKeyDown(KeyCode.Alpha4)) GameManager.Instance.AddScore(frenzyThreshold);
 
 		if (GameManager.Instance.Score >= frenzyThreshold)
 		{

@@ -3,7 +3,7 @@ using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Chained", menuName = "Combos/New Chained", order = 4)]
+[CreateAssetMenu(fileName = "Chained", menuName = "Modifiers/New Chained", order = 4)]
 public class KE_Chained : KeyModifier
 {
 	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)

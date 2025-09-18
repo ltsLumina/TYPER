@@ -9,66 +9,65 @@ using Random = UnityEngine.Random;
 
 public partial class KeyManager
 {
+	[Flags]
 	public enum Direction
 	{
-		Up,
-		Down,
-		Left,
-		Right,
-		All
+		Up = 1 << 0,
+		Down = 1 << 1,
+		Left = 1 << 2,
+		Right = 1 << 3,
 	}
 
 	#region Adjacent/Surrounding Keys
 	/// <param name="keycode"> The key to look from. </param>
 	/// <param name="direction"> Direction to look for an adjacent key. </param>
-	/// <param name="adjacentKeys">
-	///     If direction is All, this will be populated with all adjacent keys found. Otherwise, it
-	///     will be null.
-	/// </param>
 	/// <returns>
 	///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns 'self' (the provided keycode) and
 	///     populates adjacentKeys with all found adjacent keys.
 	/// </returns>
-	public Key GetAdjacentKey(KeyCode keycode, Direction direction, out List<Key> adjacentKeys)
+	public List<Key> GetAdjacentKey(KeyCode keycode, Direction direction)
 	{
 		(bool found, int row, int col) = FindKey(keycode);
 
-		if (!found)
+		if (!found) return null;
+
+		if (direction == (Direction.Up | Direction.Down | Direction.Left | Direction.Right))
 		{
-			adjacentKeys = null;
-			return null;
+			return AllAdjacentKeys(keycode);
 		}
 
-		switch (direction) // super fancy math or something
+		var foundKeys = new List<Key>();
+
+		if ((direction & Direction.Up) == Direction.Up)
 		{
-			case Direction.Up:
-				adjacentKeys = null;
-				return row > 0 ? Keys[row - 1][Mathf.Min(col, Keys[row - 1].Count - 1)] : null;
-
-			case Direction.Down:
-				adjacentKeys = null;
-				return row < Keys.Count - 1 ? Keys[row + 1][Mathf.Min(col, Keys[row + 1].Count - 1)] : null;
-
-			case Direction.Left:
-				adjacentKeys = null;
-				return col > 0 ? Keys[row][col - 1] : null;
-
-			case Direction.Right:
-				adjacentKeys = null;
-				return col < Keys[row].Count - 1 ? Keys[row][col + 1] : null;
-
-			case Direction.All: // return the first adjacent key found in every direction
-				adjacentKeys = AllAdjacentKeys(keycode);
-				return GetKey(keycode);
-
-			default:
-				throw new ArgumentOutOfRangeException(nameof(direction));
+			var upKey = row > 0 ? Keys[row - 1][Mathf.Min(col, Keys[row - 1].Count - 1)] : null;
+			if (upKey != null) foundKeys.Add(upKey);
 		}
+
+		if ((direction & Direction.Down) == Direction.Down)
+		{
+			var downKey = row < Keys.Count - 1 ? Keys[row + 1][Mathf.Min(col, Keys[row + 1].Count - 1)] : null;
+			if (downKey != null) foundKeys.Add(downKey);
+		}
+
+		if ((direction & Direction.Left) == Direction.Left)
+		{
+			var leftKey = col > 0 ? Keys[row][col - 1] : null;
+			if (leftKey != null) foundKeys.Add(leftKey);
+		}
+
+		if ((direction & Direction.Right) == Direction.Right)
+		{
+			var rightKey = col < Keys[row].Count - 1 ? Keys[row][col + 1] : null;
+			if (rightKey != null) foundKeys.Add(rightKey);
+		}
+		
+		return foundKeys.Count > 0 ? foundKeys : null;
 
 		List<Key> AllAdjacentKeys(KeyCode keyCode)
 		{
 			var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
-			return directions.Select(dir => GetAdjacentKey(keyCode, dir, out _)).Where(adjacent => adjacent != null).ToList();
+			return directions.SelectMany(dir => GetAdjacentKey(keyCode, dir) ?? new List<Key>()).ToList();
 		}
 	}
 

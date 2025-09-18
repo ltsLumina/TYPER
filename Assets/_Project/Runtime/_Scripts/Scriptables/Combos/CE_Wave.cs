@@ -1,29 +1,39 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[Serializable]
+public class WaveLevelSettings : LevelSettings
+{
+	public int cycles = 1;
+	public float delayBetweenColumns = 0.25f;
+}
+
 [CreateAssetMenu(fileName = "Wave", menuName = "Combos/New Wave", order = 3)]
 public class CE_Wave : ComboEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger) { Wave(key, 1, 1, 0.5f); }
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	{
+		var settings = GetLevelSettings<WaveLevelSettings>();
+		Wave(key, settings.cycles, settings.delayBetweenColumns);
+	}
 
-	void Wave(Key initialKey, int cycles, int maxCycles, float delayBetweenColumns = 0.25f)
+	void Wave(Key initialKey, int cycles, float delayBetweenColumns = 0.25f)
 	{
 		List<List<Key>> wave = KeyManager.Instance.GetWaveKeys();
-		initialKey.StartCoroutine(WaveCoroutine(initialKey, wave, cycles, maxCycles, delayBetweenColumns));
+		initialKey.StartCoroutine(WaveCoroutine());
 
 		return;
-
-		IEnumerator WaveCoroutine(Key initialKey, List<List<Key>> wave, int cycles, int maxCycles, float delayBetweenColumns)
+		IEnumerator WaveCoroutine()
 		{
 			for (int i = 0; i < cycles; i++)
 			{
-				if (i >= maxCycles) break;
-				yield return ActivateColumn(initialKey, wave, delayBetweenColumns);
+				yield return ActivateColumn();
 			}
 		}
 
-		IEnumerator ActivateColumn(Key initialKey, List<List<Key>> wave, float delayBetweenColumns)
+		IEnumerator ActivateColumn()
 		{
 			foreach (List<Key> column in wave)
 			{

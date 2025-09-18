@@ -49,6 +49,11 @@ public class GameManager : MonoBehaviour
 		music.SetVolume(0.65f);
 		music.SetLoop(true);
 		music.Play();
+
+		ComboManager.Instance.OnCompleteCombo += combo =>
+		{
+			TriggerHitStop();
+		};
 	}
 
 	public void TakeDamage(int damage)

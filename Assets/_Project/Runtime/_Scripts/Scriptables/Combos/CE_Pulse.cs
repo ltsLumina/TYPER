@@ -1,14 +1,27 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+[Serializable]
+//[MovedFrom(true, "Lumina", "Lumina.Essentials", "PulseLevelSettings")]
+public class PulseLevelSettings : LevelSettings
+{
+	public int maxLayers;
+	public float delayBetweenLayers;
+}
 
 [CreateAssetMenu(fileName = "Pulse", menuName = "Combos/New Pulse", order = 7)]
 public class CE_Pulse : ComboEffect
 {
 	Coroutine pulseCoroutine;
 
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger) { Pulse(key, 3, 0.1f); }
+	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	{
+		var settings = GetLevelSettings<PulseLevelSettings>();
+		Pulse(key, settings.maxLayers, settings.delayBetweenLayers);
+	}
 
 	/// <summary>
 	/// Pulse effect that activates keys in expanding layers from a central key.
@@ -16,7 +29,7 @@ public class CE_Pulse : ComboEffect
 	/// <param name="centerKey"> The key to start the pulse from. </param>
 	/// <param name="maxLayers"> Maximum number of layers to pulse outwards. This limits how far the pulse spreads. To cover the whole keyboard, set this to a high number like 10. </param>
 	/// <param name="delayBetweenLayers"> Delay in seconds between activating each layer of keys. </param>
-	public void Pulse(Key centerKey, int maxLayers = 3, float delayBetweenLayers = 0.1f)
+	void Pulse(Key centerKey, int maxLayers, float delayBetweenLayers)
 	{
 		if (pulseCoroutine != null) return;
 
@@ -25,8 +38,7 @@ public class CE_Pulse : ComboEffect
 
 	IEnumerator PulseCoroutine(Key centerKey, int maxLayers, float delayBetweenLayers)
 	{
-		(bool found, int row, int col) = KeyManager.Instance.FindKey(centerKey.ToKeyCode());
-
+		(bool found, int _, int _) = KeyManager.Instance.FindKey(centerKey.ToKeyCode());
 		if (!found)
 		{
 			pulseCoroutine = null;
@@ -57,7 +69,7 @@ public class CE_Pulse : ComboEffect
 
 			currentLayerKeys = nextLayerKeys;
 			layers++;
-			yield return new WaitForSeconds(layers == 1 ? 0.1f : delayBetweenLayers);
+			yield return new WaitForSeconds(delayBetweenLayers);
 		}
 
 		pulseCoroutine = null;
