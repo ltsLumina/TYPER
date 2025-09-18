@@ -75,7 +75,7 @@ public abstract class ComboEffect : Effect
 	void OnValidate()
 	{
 		// ensure Asset is not null
-		Debug.Assert(Asset != null, "Asset is null in CE_Pulse OnValidate");
+		Debug.Assert(Asset != null, "ComboEffect asset is null!", this);
 
 		for (int i = 0; i < levels.Count; i++)
 		{

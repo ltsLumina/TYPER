@@ -404,8 +404,8 @@ public class DebugWindow : EditorWindow
 				using (new EditorGUI.DisabledScope(!disabled))
 				{
 					string nicified = effectName.Replace(" ", "_").Replace("(", string.Empty).Replace(")", string.Empty);
-					if (!nicified.StartsWith("KE_")) nicified = $"KE_{nicified}";
-					CreateButtonWithAction($"Create Key Effect Script ({nicified})", () => ScriptWriter.CreateComboEffect(nicified));
+					if (!nicified.StartsWith("CE_")) nicified = $"CE_{nicified}";
+					CreateButtonWithAction($"Create Combo Effect Script ({nicified})", () => ScriptWriter.CreateComboEffect(nicified));
 				}
 			}
 

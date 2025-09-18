@@ -1,6 +1,5 @@
 #region
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,13 +8,29 @@ using Random = UnityEngine.Random;
 
 public partial class KeyManager
 {
+	/// <summary>
+	///     Flags enum representing multiple directions for adjacent key lookup.
+	///     Can combine multiple directions using bitwise.
+	/// </summary>
 	[Flags]
-	public enum Direction
+	public enum FDirection
 	{
 		Up = 1 << 0,
 		Down = 1 << 1,
 		Left = 1 << 2,
 		Right = 1 << 3,
+	}
+
+	/// <summary>
+	///     Simple enum representing a single direction for effects like railgun.
+	///     Doesn't use flags, only one direction at a time.
+	/// </summary>
+	public enum Direction
+	{
+		Up,
+		Down,
+		Left,
+		Right,
 	}
 
 	#region Adjacent/Surrounding Keys
@@ -25,38 +40,38 @@ public partial class KeyManager
 	///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns 'self' (the provided keycode) and
 	///     populates adjacentKeys with all found adjacent keys.
 	/// </returns>
-	public List<Key> GetAdjacentKey(KeyCode keycode, Direction direction)
+	public List<Key> GetAdjacentKey(KeyCode keycode, FDirection direction)
 	{
 		(bool found, int row, int col) = FindKey(keycode);
 
 		if (!found) return null;
 
-		if (direction == (Direction.Up | Direction.Down | Direction.Left | Direction.Right))
+		if (direction == (FDirection.Up | FDirection.Down | FDirection.Left | FDirection.Right))
 		{
 			return AllAdjacentKeys(keycode);
 		}
 
 		var foundKeys = new List<Key>();
 
-		if ((direction & Direction.Up) == Direction.Up)
+		if ((direction & FDirection.Up) == FDirection.Up)
 		{
 			var upKey = row > 0 ? Keys[row - 1][Mathf.Min(col, Keys[row - 1].Count - 1)] : null;
 			if (upKey != null) foundKeys.Add(upKey);
 		}
 
-		if ((direction & Direction.Down) == Direction.Down)
+		if ((direction & FDirection.Down) == FDirection.Down)
 		{
 			var downKey = row < Keys.Count - 1 ? Keys[row + 1][Mathf.Min(col, Keys[row + 1].Count - 1)] : null;
 			if (downKey != null) foundKeys.Add(downKey);
 		}
 
-		if ((direction & Direction.Left) == Direction.Left)
+		if ((direction & FDirection.Left) == FDirection.Left)
 		{
 			var leftKey = col > 0 ? Keys[row][col - 1] : null;
 			if (leftKey != null) foundKeys.Add(leftKey);
 		}
 
-		if ((direction & Direction.Right) == Direction.Right)
+		if ((direction & FDirection.Right) == FDirection.Right)
 		{
 			var rightKey = col < Keys[row].Count - 1 ? Keys[row][col + 1] : null;
 			if (rightKey != null) foundKeys.Add(rightKey);
@@ -66,7 +81,7 @@ public partial class KeyManager
 
 		List<Key> AllAdjacentKeys(KeyCode keyCode)
 		{
-			var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
+			var directions = new[] { FDirection.Up, FDirection.Down, FDirection.Left, FDirection.Right };
 			return directions.SelectMany(dir => GetAdjacentKey(keyCode, dir) ?? new List<Key>()).ToList();
 		}
 	}
@@ -179,4 +194,76 @@ public partial class KeyManager
 		return vfx;
 	}
 	#endregion
+
+	public List<Key> GetWallKeys(Key centerKey, FDirection direction, int range)
+	{
+		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
+		if (!found) return null;
+	
+		List<Key> wallKeys = new ();
+	
+		switch (direction)
+		{
+			case FDirection.Right: {
+				for (int r = -1; r <= 1; r++)
+				{
+					int targetRow = row + r;
+					if (targetRow < 0 || targetRow >= Keys.Count) continue;
+					for (int offset = 1; offset <= range; offset++)
+					{
+						int targetCol = col + offset;
+						if (targetCol < Keys[targetRow].Count)
+							wallKeys.Add(Keys[targetRow][targetCol]);
+					}
+				}
+				break;
+			}
+	
+			case FDirection.Left: {
+				for (int r = -1; r <= 1; r++)
+				{
+					int targetRow = row + r;
+					if (targetRow < 0 || targetRow >= Keys.Count) continue;
+					for (int offset = 1; offset <= range; offset++)
+					{
+						int targetCol = col - offset;
+						if (targetCol >= 0)
+							wallKeys.Add(Keys[targetRow][targetCol]);
+					}
+				}
+				break;
+			}
+	
+			default:
+				Debug.LogWarning("Invalid wall direction specified. Use Left or Right.");
+				return null;
+		}
+	
+		return wallKeys.Count > 0 ? wallKeys : null;
+	}
+
+	public List<Key> GetRailgunKeys(Key centerKey, Direction direction)
+	{
+		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
+		if (!found) return null;
+
+		List<Key> railgunKeys = new ();
+
+		switch (direction)
+		{
+			case Direction.Left:
+				for (int c = 0; c < col; c++) railgunKeys.Add(Keys[row][c]);
+				break;
+
+			case Direction.Right:
+				for (int c = col + 1; c < Keys[row].Count; c++) railgunKeys.Add(Keys[row][c]);
+				break;
+
+			default:
+				Debug.LogWarning("Invalid wall direction specified. Use Up, Down, Left, or Right.");
+				return null;
+		}
+
+		return railgunKeys.Count > 0 ? railgunKeys : null;
+	}
 }

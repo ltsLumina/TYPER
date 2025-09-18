@@ -21,8 +21,9 @@ public partial class Key : MonoBehaviour
 	[Header("Attributes")]
 	[SerializeField, ReadOnly] KeyCode keyCode = KeyCode.Q;
 	[SerializeField] Modifiers modifiers;
-	[SerializeField] KeyModifier keyModifier;
-	[SerializeField] ComboEffect comboEffect;
+	[SerializeField] public KeyModifier KeyModifier; // TODO: Needs to have priority/layers so that you can stack multiple modifiers on one key. Currently only one modifier can be active at a time, and it removes the previous one.
+														// E.g. if you set a key to be Frozen when its already Chained, it will remove the Chained modifier.
+	[SerializeField] public ComboEffect ComboEffect;
 
 	[Header("Stats")]
 	[SerializeField] int damage;
@@ -180,12 +181,12 @@ public partial class Key : MonoBehaviour
 	{
 		if (Keyboard.current.digit1Key.wasPressedThisFrame)
 		{
-			comboEffect?.SetLevel(comboEffect.Level - 1);
+			ComboEffect?.SetLevel(ComboEffect.Level - 1);
 		}
 
 		if (Keyboard.current.digit2Key.wasPressedThisFrame)
 		{
-			comboEffect?.SetLevel(comboEffect.Level + 1);
+			ComboEffect?.SetLevel(ComboEffect.Level + 1);
 		}
 		
 		if (!isActive || IsChained) return;
@@ -213,12 +214,23 @@ public partial class Key : MonoBehaviour
 
 	void OnTriggerEnter2D(Collider2D other)
 	{
-		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy)) overlappingEnemies.Add(enemy);
+		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy))
+		{
+			overlappingEnemies.Add(enemy);
+			if (IsFrozen)
+			{
+				enemy.Speed *= 0.5f; // slow enemy speed if key is frozen
+			}
+		}
 	}
 
 	void OnTriggerExit2D(Collider2D other)
 	{
-		if (other.TryGetComponent(out Enemy enemy)) overlappingEnemies.Remove(enemy);
+		if (other.TryGetComponent(out Enemy enemy))
+		{
+			overlappingEnemies.Remove(enemy);
+			if (IsFrozen) enemy.Speed *= 2f; // reset enemy speed if key is frozen
+		}
 	}
 
 	Coroutine mashTimerCoroutine;
@@ -273,9 +285,9 @@ public partial class Key : MonoBehaviour
 			StartCoroutine(StackOverflowProtection());
 		}
 		#endregion
-		
-		if (IsChained) keyModifier?.Invoke(this, triggerKey);
 
+		if (IsChained) KeyModifier?.Invoke(this, triggerKey);
+		
 		if (!isActive) return;
 
 		// Prevent activation if the key is still on cooldown and global cooldown override is not requested.
@@ -314,7 +326,7 @@ public partial class Key : MonoBehaviour
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) comboEffect?.Invoke(this, triggerKey);
+					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) ComboEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
@@ -347,7 +359,7 @@ public partial class Key : MonoBehaviour
 
 				if (mashCount % 5 == 0) // every 5th mash
 				{
-					comboEffect?.Invoke(this, triggerKey);
+					ComboEffect?.Invoke(this, triggerKey);
 					StartLocalCooldown(5f);
 					SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 					OnActivated?.Invoke(hitEnemy, triggerKey);
@@ -361,11 +373,11 @@ public partial class Key : MonoBehaviour
 			return;
 		}
 
-		// If the key is loose, it will fall off the keyboard when pressed by the player (not triggered by another key)
-		if (IsLoose) keyModifier?.Invoke(this, triggerKey);
-
-		if (IsThorned) keyModifier?.Invoke(this, triggerKey);
-
+		if (HasAnyModifier())
+		{
+			KeyModifier?.Invoke(this, triggerKey);
+		}
+		
 		if (IsOffGCD)
 		{
 			StartLocalCooldown(cooldown + 2.5f); // note: temporary

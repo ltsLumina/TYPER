@@ -13,7 +13,7 @@ public class WaveLevelSettings : LevelSettings
 [CreateAssetMenu(fileName = "Wave", menuName = "Combos/New Wave", order = 3)]
 public class CE_Wave : ComboEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<WaveLevelSettings>();
 		Wave(key, settings.cycles, settings.delayBetweenColumns);

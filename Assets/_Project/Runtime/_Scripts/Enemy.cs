@@ -32,6 +32,11 @@ public class Enemy : MonoBehaviour, IDamageable
 		get => health;
 		private set => health = value;
 	}
+	public float Speed
+	{
+		get => speed;
+		set => speed = value;
+	}
 
 	public override string ToString() => name = $"Enemy (#{GetInstanceID()}) (on Lane {Lane + 1} | Health: {Health})";
 
@@ -52,8 +57,8 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		// random size and speed based on health
 		// larger enemies are slower
-		speed -= Health * 0.2f;
-		speed = Mathf.Max(1f, speed);
+		Speed -= Health * 0.2f;
+		Speed = Mathf.Max(1f, Speed);
 
 		Vector3 size = transform.localScale;
 		size.x = 0.5f + Health * 0.1f;
@@ -75,7 +80,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 	void Update()
 	{
-		transform.Translate(Vector3.left * (speed * Time.deltaTime));
+		transform.Translate(Vector3.left * (Speed * Time.deltaTime));
 
 		// damage is proportional to size (health)
 		// damage is half of health rounded up, minimum 1
@@ -205,22 +210,22 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		IEnumerator Slow(float duration, float amount)
 		{
-			float originalSpeed = speed;
-			speed = Mathf.Max(1f, speed - amount);
+			float originalSpeed = Speed;
+			Speed = Mathf.Max(1f, Speed - amount);
 
 			yield return new WaitForSeconds(duration);
 
-			speed = originalSpeed;
+			Speed = originalSpeed;
 		}
 
 		IEnumerator Stun(float duration)
 		{
-			float originalSpeed = speed;
-			speed = 0f;
+			float originalSpeed = Speed;
+			Speed = 0f;
 
 			yield return new WaitForSeconds(duration);
 
-			speed = originalSpeed;
+			Speed = originalSpeed;
 
 			consecutiveHits = 0;
 		}

@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Loose", menuName = "Modifiers/New Loose", order = 5)]
 public class KE_Loose : KeyModifier
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger) { ActivatedWhileLoose(key, trigger.byKey); }
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger) { ActivatedWhileLoose(key, trigger.byKey); }
 
 	static void ActivatedWhileLoose(Key key, bool triggeredByKey)
 	{

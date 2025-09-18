@@ -9,19 +9,19 @@ using UnityEngine.Scripting.APIUpdating;
 [Serializable] [MovedFrom(true, "Lumina", "Lumina.Essentials", "AdjacentLevelSettings")]
 public class AdjacentLevelSettings : LevelSettings
 {
-	public KeyManager.Direction direction = KeyManager.Direction.Right;
+	public KeyManager.FDirection direction = KeyManager.FDirection.Right;
 }
 
 [CreateAssetMenu(fileName = "Adjacent", menuName = "Combos/New Adjacent", order = 1)]
 public class CE_Adjacent : ComboEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<AdjacentLevelSettings>();
-		key.StartCoroutine(Adjacent(keyCode, key, settings.direction));
+		key.StartCoroutine(Adjacent(key.ToKeyCode(), key, settings.direction));
 	}
 
-	IEnumerator Adjacent(KeyCode keyCode, Key key, KeyManager.Direction direction)
+	IEnumerator Adjacent(KeyCode keyCode, Key key, KeyManager.FDirection direction)
 	{
 		List<Key> adjacentKeys = KeyManager.Instance.GetAdjacentKey(keyCode, direction);
 

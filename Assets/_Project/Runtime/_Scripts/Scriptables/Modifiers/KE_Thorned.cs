@@ -7,11 +7,11 @@ public class KE_Thorned : KeyModifier
 	[SerializeField] float cooldown = 3f;
 	bool isActive = true;
 
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		if (isActive && !trigger.byKey) // Doesn't deal damage if triggered by a key, but still activates the thorned effect.
 		{
-			Debug.Log($"Key {keyCode} activated while thorned! Player takes damage.");
+			Debug.Log($"Key {key.ToKeyCode()} activated while thorned! Player takes damage.");
 			GameManager.Instance.TakeDamage(1);
 			KeyManager.SpawnVFX(KeyManager.CommonVFX.Death, key.transform.position, Color.red);
 		}

@@ -1,6 +1,7 @@
 #region
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using JetBrains.Annotations;
 using TMPro;
@@ -48,10 +49,11 @@ public partial class Key // Modifiers
 		None = 0,
 		Combo = 1 << 0,
 		Mash = 1 << 1,
-		Chained = 1 << 2,
-		Loose = 1 << 3,
-		Thorned = 1 << 4,
-		OffGlobalCooldown = 1 << 5
+		Frozen = 1 << 2,
+		Chained = 1 << 3,
+		Loose = 1 << 4,
+		Thorned = 1 << 5,
+		OffGlobalCooldown = 1 << 6
 	}
 
 	/// <summary>
@@ -65,6 +67,7 @@ public partial class Key // Modifiers
 
 	public bool IsCombo => HasModifier(Modifiers.Combo);
 	public bool IsMash => HasModifier(Modifiers.Mash);
+	public bool IsFrozen => HasModifier(Modifiers.Frozen);
 	public bool IsChained => HasModifier(Modifiers.Chained);
 	public bool IsLoose => HasModifier(Modifiers.Loose);
 	public bool IsThorned => HasModifier(Modifiers.Thorned);
@@ -85,8 +88,8 @@ public partial class Key // Modifiers
 		{
 			case Modifiers.None:
 				modifiers = Modifiers.None;
-
-				keyModifier = null;
+				
+				KeyModifier = null;
 				break;
 
 			case Modifiers.Combo:
@@ -97,8 +100,10 @@ public partial class Key // Modifiers
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
 
 				// 50/50 chance to get either adjacent keys or surrounding keys effect
-				List<ComboEffect> possibleEffects = new () { /*Effect.GetEffect<CE_Adjacent>(), */ Effect.GetEffect<CE_Shockwave>(), /*Effect.GetEffect<CE_Pulse>() */};
+				//List<ComboEffect> possibleEffects = new () { /*Effect.GetEffect<CE_Adjacent>(), */ Effect.GetEffect<CE_Shockwave>(), /*Effect.GetEffect<CE_Pulse>() */};
 				//comboEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
+				ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
+				ComboEffect = effects.Where(e => e is not CE_Wave).OrderBy(_ => Random.value).FirstOrDefault();
 				break;
 
 			case Modifiers.Mash:
@@ -106,7 +111,16 @@ public partial class Key // Modifiers
 
 				mashMarker.SetActive(value);
 
-				comboEffect = Effect.GetEffect<CE_Wave>();
+				ComboEffect = Effect.GetEffect<CE_Wave>();
+				break;
+			
+			case Modifiers.Frozen:
+				modifiers = value ? modifiers | Modifiers.Frozen : modifiers & ~Modifiers.Frozen;
+				
+				//frozenMarker.SetActive(value);
+				
+				KeyModifier = Effect.GetModifier<KE_Frozen>();
+				if (!value) KeyModifier = null;
 				break;
 
 			case Modifiers.Chained:
@@ -115,7 +129,7 @@ public partial class Key // Modifiers
 				ChainedMarker.SetActive(value);
 				Disable();
 
-				keyModifier = Effect.GetModifier<KE_Chained>();
+				KeyModifier = Effect.GetModifier<KE_Chained>();
 				break;
 
 			case Modifiers.Loose:
@@ -124,7 +138,7 @@ public partial class Key // Modifiers
 				// ReSharper disable once AssignmentInConditionalExpression
 				if (value) transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
 
-				keyModifier = Effect.GetModifier<KE_Loose>();
+				KeyModifier = Effect.GetModifier<KE_Loose>();
 				break;
 
 			case Modifiers.Thorned:
@@ -133,7 +147,7 @@ public partial class Key // Modifiers
 				// TODO: add visual indicator for thorned keys. 'thornedMarker' is currently blank
 				thornedMarker.SetActive(value);
 
-				keyModifier = Effect.GetModifier<KE_Thorned>(true);
+				KeyModifier = Effect.GetModifier<KE_Thorned>(true);
 				break;
 
 			case Modifiers.OffGlobalCooldown:
@@ -156,16 +170,4 @@ public partial class Key // Modifiers
 	/// Shorthand for SetModifier(effect, false).
 	/// </summary>
 	public void RemoveModifier(Modifiers modifier) => SetModifier(modifier, false);
-
-	void OnValidate()
-	{
-		// set the keyeffect based on the effects flags
-		if (modifiers == Modifiers.None) keyModifier = null;
-		else if (HasModifier(Modifiers.Combo)) { }
-		else if (HasModifier(Modifiers.Mash)) comboEffect = Effect.GetEffect<CE_Wave>();
-		else if (HasModifier(Modifiers.Chained)) keyModifier = Effect.GetModifier<KE_Chained>();
-		else if (HasModifier(Modifiers.Loose)) keyModifier = Effect.GetModifier<KE_Loose>();
-		else if (HasModifier(Modifiers.Thorned)) keyModifier = Effect.GetModifier<KE_Thorned>();
-		else if (HasModifier(Modifiers.OffGlobalCooldown)) { }
-	}
 }

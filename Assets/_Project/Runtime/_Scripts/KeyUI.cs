@@ -22,7 +22,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		Sequence sequence = DOTween.Sequence();
 
 		// Highlight if it has a key or combo effect (key effect takes precedence)
-		if (currentKey.keyModifier || currentKey.comboEffect)
+		if (currentKey.KeyModifier || currentKey.ComboEffect)
 		{
 			ShowTooltip();
 
@@ -41,7 +41,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		sequence.OnKill
 		(() =>
 		{
-			if (currentKey.comboEffect || currentKey.keyModifier)
+			if (currentKey.ComboEffect || currentKey.KeyModifier)
 			{
 				// Only disable if it's not the next key in the combo, otherwise it will flicker off when hovering over it
 				if (comboManager.NextKey != currentKey) currentKey.comboHighlight.SetActive(false);
@@ -98,17 +98,17 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 			tooltip.gameObject.SetActive(true);
 			tooltip.transform.position = Input.mousePosition;
 
-			if (currentKey?.keyModifier)
+			if (currentKey?.KeyModifier)
 			{
-				(string title, string description) = (currentKey.keyModifier.EffectName, currentKey.keyModifier.Description);
+				(string title, string description) = (currentKey.KeyModifier.EffectName, currentKey.KeyModifier.Description);
 				tooltip.SetText(title, description);
 				tooltip.SetOpacity(0.85f);
 				return;
 			}
 
-			if (currentKey?.comboEffect)
+			if (currentKey?.ComboEffect)
 			{
-				(string title, string description) = (currentKey.comboEffect.EffectName, currentKey.comboEffect.Description);
+				(string title, string description) = (currentKey.ComboEffect.EffectName, currentKey.ComboEffect.Description);
 				tooltip.SetText(title, description);
 				tooltip.SetOpacity(0.85f);
 				return;
@@ -131,14 +131,14 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		var prefab = Resources.Load<Tooltip>("PREFABS/Tooltip");
 		tooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
 
-		if (currentKey.keyModifier)
+		if (currentKey.KeyModifier)
 		{
-			(string title, string description) = (currentKey.keyModifier.EffectName, currentKey.keyModifier.Description);
+			(string title, string description) = (currentKey.KeyModifier.EffectName, currentKey.KeyModifier.Description);
 			tooltip.SetText(title, description);
 		}
-		else if (currentKey.comboEffect)
+		else if (currentKey.ComboEffect)
 		{
-			(string title, string description) = (currentKey.comboEffect.EffectName, currentKey.comboEffect.Description);
+			(string title, string description) = (currentKey.ComboEffect.EffectName, currentKey.ComboEffect.Description);
 			tooltip.SetText(title, description);
 		}
 	}

@@ -17,7 +17,7 @@ public class CE_Pulse : ComboEffect
 {
 	Coroutine pulseCoroutine;
 
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<PulseLevelSettings>();
 		Pulse(key, settings.maxLayers, settings.delayBetweenLayers);

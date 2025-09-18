@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86572aa8a29f402db83d77254238daae, type: 3}
+  m_Name: Railgun
+  m_EditorClassIdentifier: Assembly-CSharp::CE_Railgun
+  effectName: Railgun
+  effectID: railgun
+  description: Effect Description
+  level: 0
+  maxLevel: 2
+  levels:
+  - rid: 5492189631572607077
+  - rid: 5492189631572607078
+  - rid: 5492189631572607079
+  references:
+    version: 2
+    RefIds:
+    - rid: 5492189631572607077
+      type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 1
+        direction: 3
+    - rid: 5492189631572607078
+      type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 2
+        direction: 3
+    - rid: 5492189631572607079
+      type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 3
+        direction: 3

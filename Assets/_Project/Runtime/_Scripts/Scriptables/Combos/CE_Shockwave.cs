@@ -12,15 +12,15 @@ public class ShockwaveLevelSettings : LevelSettings
 [CreateAssetMenu(fileName = "Shockwave", menuName = "Combos/New Shockwave", order = 2)]
 public class CE_Shockwave : ComboEffect
 {
-	protected override void Invoke(KeyCode keyCode, Key key, (bool byKey, Key key) trigger)
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<ShockwaveLevelSettings>();
-		key.StartCoroutine(Shockwave(keyCode, key, settings.aftershocks));
+		key.StartCoroutine(Shockwave(key, settings.aftershocks));
 	}
 	
-	IEnumerator Shockwave(KeyCode keyCode, Key key, int aftershocks)
+	IEnumerator Shockwave(Key key, int aftershocks)
 	{
-		List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(keyCode);
+		List<Key> surroundingKeys = KeyManager.Instance.GetSurroundingKeys(key.ToKeyCode());
 
 		foreach (Key k in surroundingKeys)
 		{
@@ -34,7 +34,7 @@ public class CE_Shockwave : ComboEffect
 		if (aftershocks > 0)
 		{
 			yield return new WaitForSecondsRealtime(0.5f * aftershocks / (aftershocks + 1f));
-			key.StartCoroutine(Shockwave(keyCode, key, aftershocks - 1));
+			key.StartCoroutine(Shockwave(key, aftershocks - 1));
 		}
 	}
 }

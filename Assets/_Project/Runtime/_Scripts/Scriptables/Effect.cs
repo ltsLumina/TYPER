@@ -29,12 +29,11 @@ public abstract class Effect : ScriptableObject
 	/// <summary>
 	///   Invoke the effect using a KeyCode and optional Key reference.
 	/// </summary>
-	/// <param name="keyCode"> The KeyCode that triggered this effect. </param>
 	/// <param name="key"> The Key reference that triggered this effect. </param>
 	/// <param name="trigger"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
 	///     <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
 	/// </param>
-	protected abstract void Invoke(KeyCode keyCode, [NotNull] Key key, (bool byKey, Key key) trigger);
+	protected abstract void Invoke([NotNull] Key key, (bool byKey, Key key) trigger);
 
 	/// <summary>
 	///    Invoke the effect using a Key reference.
@@ -43,7 +42,7 @@ public abstract class Effect : ScriptableObject
 	/// <param name="triggerKey"> (bool triggeredByKey, Key triggerKey) where trigger.byKey is true if triggered by another key (often by an effect), and trigger.key is the Key that triggered this effect (null if not triggered by another key)
 	/// <para> triggeredByKey provides an easy shorthand for checking if the effect was triggered by another key.</para>
 	/// </param>
-	public void Invoke(Key key, Key triggerKey) => Invoke(key.ToKeyCode(), key, (triggerKey != null, triggerKey));
+	public void Invoke(Key key, Key triggerKey) => Invoke(key, (triggerKey != null, triggerKey));
 
 	public static Effect GetEffectByID(string identifier)
 	{
