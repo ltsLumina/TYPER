@@ -199,19 +199,19 @@ public partial class KeyManager : MonoBehaviour
 
 		#region Modifiers
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
-		List<KeyCode> qweCombo = "QWE".ToKeyCodes();
+		List<Key> qweCombo = "QWE".ToKeys();
 		comboManager.CreateCombo(qweCombo);
 
-		List<KeyCode> asdfCombo = "ASDF".ToKeyCodes();
+		List<Key> asdfCombo = "ASDF".ToKeys();
 		comboManager.CreateCombo(asdfCombo);
 
-		List<KeyCode> rtyCombo = "RTY".ToKeyCodes();
+		List<Key> rtyCombo = "RTY".ToKeys();
 		comboManager.CreateCombo(rtyCombo);
 
-		List<KeyCode> cvbCombo = "CVB".ToKeyCodes();
+		List<Key> cvbCombo = "CVB".ToKeys();
 		comboManager.CreateCombo(cvbCombo);
 
-		List<Key> oGCD_Keys = "PLM".ToKeyCodes().ToKeys();
+		List<Key> oGCD_Keys = "PLM".ToKeys();
 		oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
 
 		const float cooldown = 10f;

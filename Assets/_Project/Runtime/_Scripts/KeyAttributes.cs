@@ -33,6 +33,7 @@ public partial class Key // Properties
 
 public partial class Key // Components
 {
+	public GameObject FrozenMarker => frozenMarker;
 	public GameObject ChainedMarker => chainedMarker;
 	public GameObject ThornedMarker => thornedMarker;
 	public GameObject ComboHighlight => comboHighlight;
@@ -98,10 +99,7 @@ public partial class Key // Modifiers
 				comboMarker.SetActive(value);
 
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
-
-				// 50/50 chance to get either adjacent keys or surrounding keys effect
-				//List<ComboEffect> possibleEffects = new () { /*Effect.GetEffect<CE_Adjacent>(), */ Effect.GetEffect<CE_Shockwave>(), /*Effect.GetEffect<CE_Pulse>() */};
-				//comboEffect = possibleEffects[Random.Range(0, possibleEffects.Count)];
+				
 				ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
 				ComboEffect = effects.Where(e => e is not CE_Wave).OrderBy(_ => Random.value).FirstOrDefault();
 				break;
@@ -117,9 +115,9 @@ public partial class Key // Modifiers
 			case Modifiers.Frozen:
 				modifiers = value ? modifiers | Modifiers.Frozen : modifiers & ~Modifiers.Frozen;
 				
-				//frozenMarker.SetActive(value);
+				if (value) frozenMarker.SetActive(true);
 				
-				KeyModifier = Effect.GetModifier<KE_Frozen>();
+				KeyModifier = Effect.GetEffect<KE_Frozen>(true);
 				if (!value) KeyModifier = null;
 				break;
 
@@ -129,7 +127,7 @@ public partial class Key // Modifiers
 				ChainedMarker.SetActive(value);
 				Disable();
 
-				KeyModifier = Effect.GetModifier<KE_Chained>();
+				KeyModifier = Effect.GetEffect<KE_Chained>();
 				break;
 
 			case Modifiers.Loose:
@@ -138,7 +136,7 @@ public partial class Key // Modifiers
 				// ReSharper disable once AssignmentInConditionalExpression
 				if (value) transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
 
-				KeyModifier = Effect.GetModifier<KE_Loose>();
+				KeyModifier = Effect.GetEffect<KE_Loose>();
 				break;
 
 			case Modifiers.Thorned:
@@ -147,7 +145,7 @@ public partial class Key // Modifiers
 				// TODO: add visual indicator for thorned keys. 'thornedMarker' is currently blank
 				thornedMarker.SetActive(value);
 
-				KeyModifier = Effect.GetModifier<KE_Thorned>(true);
+				KeyModifier = Effect.GetEffect<KE_Thorned>(true);
 				break;
 
 			case Modifiers.OffGlobalCooldown:

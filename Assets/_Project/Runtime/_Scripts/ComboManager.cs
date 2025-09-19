@@ -31,7 +31,7 @@ public class ComboManager : MonoBehaviour
 	[SerializeField, ReadOnly] int recentComboIndex;
 	[SerializeField, ReadOnly] Key nextComboKey;
 	[SerializeField, ReadOnly] int nextComboIndex;
-	[SerializeField] bool loops; // TODO: implement looping combos
+	[SerializeField, ReadOnly] bool loops; // TODO: implement looping combos
 	[Space(10)]
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
@@ -60,6 +60,27 @@ public class ComboManager : MonoBehaviour
 	/// <param name="loops"> Whether the combo should loop back to the start after completion.</param>
 	public void CreateCombo(List<Key> comboKeys, bool loops = false)
 	{
+		// min length of 3 keys
+		if (comboKeys.Count < 3)
+		{
+			Debug.LogError("Combo must be at least 3 keys long.");
+			return;
+		}
+
+		// if the combo already exists, do not create the combo
+		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
+		{
+			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}");
+			return;
+		}
+
+		// if any key is already in a combo, do not create the combo
+		if (comboKeys.Any(k => k.IsCombo))
+		{
+			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.IsCombo).Select(k => k.KeyCode))}");
+			return;
+		}
+
 		Key lastKey = comboKeys.Last();
 		lastKey.LastKeyInCombo = true;
 
@@ -77,34 +98,6 @@ public class ComboManager : MonoBehaviour
 
 		//string comboString = string.Join(" -> ", keys.Select(k => k.KeyboardLetter));
 		//Debug.Log($"Created new combo: {comboString} (Loops: {loops})");
-	}
-
-	public void CreateCombo(List<KeyCode> keycodes, bool loops = false)
-	{
-		// min length of 3 keys
-		if (keycodes.Count < 3)
-		{
-			Debug.LogError("Combo must be at least 3 keys long.");
-			return;
-		}
-
-		List<Key> comboKeys = keycodes.ToKeys();
-
-		// if the combo already exists, do not create the combo
-		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
-		{
-			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}");
-			return;
-		}
-
-		// if any key is already in a combo, do not create the combo
-		if (comboKeys.Any(k => k.IsCombo))
-		{
-			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.IsCombo).Select(k => k.KeyCode))}");
-			return;
-		}
-
-		CreateCombo(comboKeys, loops);
 	}
 
 	public void RemoveCombo(List<Key> keys)

@@ -56,10 +56,8 @@ public abstract class ComboEffect : Effect
 	}
 
 	#region Utility / Setup
-	protected override void Awake()
+	void Awake()
 	{
-		base.Awake();
-
 		// Reset level to default in case it was changed at runtime
 		Asset.level = Level.I;
 		level = Level.I;

@@ -49,6 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   health: 1
   speed: 5
+  damage: 0
   deathVFX: {fileID: 5085238160546886701, guid: 1a507847573f07d439e3c2fd96304868, type: 3}
   hitVFX: {fileID: 5085238160546886701, guid: 498ca23f5166028478b3657390bcd54c, type: 3}
 --- !u!61 &8660029645839287300
@@ -95,7 +96,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.25, y: 1.25}
+  m_Size: {x: 1, y: 0.9}
   m_EdgeRadius: 0
 --- !u!50 &2827261457459062664
 Rigidbody2D:

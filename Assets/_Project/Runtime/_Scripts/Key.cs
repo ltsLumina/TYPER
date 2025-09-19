@@ -34,6 +34,7 @@ public partial class Key : MonoBehaviour
 	[SerializeField, ReadOnly] float currentCooldown;
 
 	[Tab("References")]
+	[SerializeField] GameObject frozenMarker;
 	[SerializeField] GameObject chainedMarker;
 	[SerializeField] GameObject thornedMarker;
 	[SerializeField] GameObject comboHighlight;
@@ -93,6 +94,7 @@ public partial class Key : MonoBehaviour
 		cooldownSprite.flipX = true;
 		#endregion
 
+		frozenMarker.SetActive(false);
 		chainedMarker.SetActive(false);
 		thornedMarker.SetActive(false);
 		comboHighlight.SetActive(false);
@@ -147,6 +149,7 @@ public partial class Key : MonoBehaviour
 
 	void Assert()
 	{
+		Debug.Assert(frozenMarker != null, $"{name} is missing a reference to its FrozenSprite!");
 		Debug.Assert(ChainedMarker != null, $"{name} is missing a reference to its ChainedSprite!");
 		Debug.Assert(thornedMarker != null, $"{name} is missing a reference to its ThornedMarker!");
 		Debug.Assert(ComboHighlight != null, $"{name} is missing a reference to its ComboHighlight!");
@@ -217,10 +220,6 @@ public partial class Key : MonoBehaviour
 		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy))
 		{
 			overlappingEnemies.Add(enemy);
-			if (IsFrozen)
-			{
-				enemy.Speed *= 0.5f; // slow enemy speed if key is frozen
-			}
 		}
 	}
 
@@ -229,7 +228,6 @@ public partial class Key : MonoBehaviour
 		if (other.TryGetComponent(out Enemy enemy))
 		{
 			overlappingEnemies.Remove(enemy);
-			if (IsFrozen) enemy.Speed *= 2f; // reset enemy speed if key is frozen
 		}
 	}
 

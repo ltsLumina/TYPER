@@ -1,6 +1,7 @@
 #region
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
@@ -12,6 +13,7 @@ interface IDamageable
 	void TakeDamage(int damage);
 }
 
+[SelectionBase]
 public class Enemy : MonoBehaviour, IDamageable
 {
 	[SerializeField] int health = 1;
@@ -27,43 +29,51 @@ public class Enemy : MonoBehaviour, IDamageable
 
 	public int Lane { get; set; }
 
-	public int Health
-	{
-		get => health;
-		private set => health = value;
-	}
-	public float Speed
-	{
-		get => speed;
-		set => speed = value;
-	}
-
-	public override string ToString() => name = $"Enemy (#{GetInstanceID()}) (on Lane {Lane + 1} | Health: {Health})";
+	public override string ToString() => name = $"Enemy (#{GetInstanceID()}) (on Lane {Lane + 1} | Health: {health})";
 
 	void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+	void OnEnable() => OnDeath += Reset;
+	void OnDisable() => OnDeath -= Reset;
+
+	void Reset()
+	{
+		health = 1;
+		speed = 5f;
+		damage = 1;
+		consecutiveHits = 0;
+		pendingDamage = 0;
+		isFrozenSlowed = false;
+		touchingKeys.Clear();
+		
+		transform.localScale = new (0.5f, 0.5f, 1f);
+		
+		Start();
+	}
 
 	void Start()
 	{
 		// randomize health
-		Health += WeightedRandomHealth();
-		Health = Mathf.Max(1, Health);
+		health += WeightedRandomHealth();
+		health = Mathf.Max(1, health);
 
 		if (Random.value < 0.1f) // 10% chance to be a tank enemy
-			Health = 10;
+			health = 10;
 
-		if (Health >= 10) spriteRenderer.color = Color.red;
+		if (health >= 10) spriteRenderer.color = Color.red;
 
-		scoreValue = Health * 10;
-
-		// random size and speed based on health
-		// larger enemies are slower
-		Speed -= Health * 0.2f;
-		Speed = Mathf.Max(1f, Speed);
+		scoreValue = health * 10;
 
 		Vector3 size = transform.localScale;
-		size.x = 0.5f + Health * 0.1f;
-		size.y = 0.5f + Health * 0.1f;
+		size.x = 0.5f + health * 0.1f;
+		size.y = 0.5f + health * 0.1f;
 		transform.localScale = size;
+		
+		// random size and speed based on health
+		// larger enemies are slower
+		speed -= health * 0.2f;
+		speed = Mathf.Max(1f, speed);
+		originalSpeed = speed;
 
 		name = ToString();
 	}
@@ -80,29 +90,62 @@ public class Enemy : MonoBehaviour, IDamageable
 
 	void Update()
 	{
-		transform.Translate(Vector3.left * (Speed * Time.deltaTime));
+		transform.Translate(Vector3.left * (speed * Time.deltaTime));
 
 		// damage is proportional to size (health)
 		// damage is half of health rounded up, minimum 1
-		damage = Mathf.Max(1, Mathf.RoundToInt(Health / 2f));
+		damage = Mathf.Max(1, Mathf.RoundToInt(health / 2f));
 	}
 
+	float originalSpeed;
+	bool isFrozenSlowed;
+	
 	void OnTriggerEnter2D(Collider2D other)
 	{
 		if (other.TryGetComponent(out Key key))
 		{
-			if (!key.IsActive) return;
-			Color color = key.SpriteRenderer.color;
-			color.a -= 0.3f;
-			key.SetColour(color);
+			if (key.IsActive)
+			{
+				Color color = key.SpriteRenderer.color;
+				color.a -= 0.3f;
+				key.SetColour(color);
+			}
 		}
-
+	
 		if (other.CompareTag("Finish"))
 		{
 			Debug.LogWarning("An enemy has reached the end!");
 			TakeDamage(999);
-
+	
 			GameManager.Instance.TakeDamage(damage);
+		}
+	}
+
+	readonly List<Key> touchingKeys = new ();
+
+	void OnTriggerStay2D(Collider2D other)
+	{
+		// Continuously check if the key is frozen while inside the trigger
+		if (other.TryGetComponent(out Key key))
+		{
+			if (!touchingKeys.Contains(key)) touchingKeys.Add(key);
+
+			bool anyFrozen = touchingKeys.Exists(k => k.IsFrozen);
+
+			switch (anyFrozen)
+			{
+				case true when !isFrozenSlowed:
+					speed = Mathf.Max(0.1f, speed * 0.1f);
+					isFrozenSlowed = true;
+					Debug.Log($"{name} is frozen! Speed reduced to {speed}");
+					break;
+
+				case false when isFrozenSlowed: {
+					if (gameObject.activeSelf) StartCoroutine(LerpSpeed());
+					isFrozenSlowed = false;
+					break;
+				}
+			}
 		}
 	}
 
@@ -110,11 +153,39 @@ public class Enemy : MonoBehaviour, IDamageable
 	{
 		if (other.TryGetComponent(out Key key))
 		{
-			if (!key.IsActive) return;
-			Color color = key.SpriteRenderer.color;
-			color.a = 1f;
-			key.SetColour(color);
+			if (key.IsActive)
+			{
+				Color color = key.SpriteRenderer.color;
+				color.a = 1f;
+				key.SetColour(color);
+			}
+
+			touchingKeys.Remove(key);
+
+			bool anyFrozen = touchingKeys.Exists(k => k.IsFrozen);
+
+			if (!anyFrozen && isFrozenSlowed)
+			{
+				if (gameObject.activeSelf) StartCoroutine(LerpSpeed());
+				isFrozenSlowed = false;
+			}
+			
 		}
+	}
+
+	IEnumerator LerpSpeed()
+	{
+		float elapsed = 0f;
+		float duration = 0.25f;
+
+		while (elapsed < duration)
+		{
+			elapsed += Time.deltaTime;
+			speed = Mathf.Lerp(speed, originalSpeed, elapsed / duration);
+			yield return null;
+		}
+
+		speed = originalSpeed;
 	}
 
 	int consecutiveHits;
@@ -128,8 +199,8 @@ public class Enemy : MonoBehaviour, IDamageable
 		// This is due to each key applying damage once each, so the enemy takes damage multiple times per frame from different keys.
 		if (pendingDamage > 0)
 		{
-			Health = Mathf.Max(0, Health - pendingDamage);
-			Debug.Log($"{name} took {pendingDamage} damage." + $"\nRemaining health: {Health}");
+			health = Mathf.Max(0, health - pendingDamage);
+			Debug.Log($"{name} took {pendingDamage} damage." + $"\nRemaining health: {health}");
 			pendingDamage = 0;
 		}
 	}
@@ -142,11 +213,11 @@ public class Enemy : MonoBehaviour, IDamageable
 		StartCoroutine(PendingDamage());
 		name = ToString();
 
-		switch (Health - pendingDamage)
+		switch (health - pendingDamage)
 		{
 			// death
 			case <= 0: {
-				name = $"\"Enemy\" on Lane {Lane + 1} | Dead ({-Health})";
+				name = $"\"Enemy\" on Lane {Lane + 1} | Dead ({-health})";
 
 				//Debug.Log($"{name} has Died!");
 
@@ -172,7 +243,7 @@ public class Enemy : MonoBehaviour, IDamageable
 				consecutiveHits++;
 
 				// shrink a bit based on remaining health using DOTween
-				int newHealth = Health - pendingDamage;
+				int newHealth = health - pendingDamage;
 				var targetSize = new Vector3(0.5f + newHealth * 0.1f, 0.5f + newHealth * 0.1f, transform.localScale.z);
 				transform.DOScale(targetSize, 0.2f).SetEase(Ease.OutFlash, 1f, 0f).SetLink(gameObject);
 
@@ -210,22 +281,22 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		IEnumerator Slow(float duration, float amount)
 		{
-			float originalSpeed = Speed;
-			Speed = Mathf.Max(1f, Speed - amount);
+			float originalSpeed = speed;
+			speed = Mathf.Max(1f, speed - amount);
 
 			yield return new WaitForSeconds(duration);
 
-			Speed = originalSpeed;
+			speed = originalSpeed;
 		}
 
 		IEnumerator Stun(float duration)
 		{
-			float originalSpeed = Speed;
-			Speed = 0f;
+			float originalSpeed = speed;
+			speed = 0f;
 
 			yield return new WaitForSeconds(duration);
 
-			Speed = originalSpeed;
+			speed = originalSpeed;
 
 			consecutiveHits = 0;
 		}

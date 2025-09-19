@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: Wave
   m_EditorClassIdentifier: Assembly-CSharp::KE_Wave
   effectName: Wave
-  effectID: wave
   description: Sweeps over the keyboard in a wave, activating each column one by
     one.
   level: 0

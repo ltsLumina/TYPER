@@ -99,7 +99,7 @@ public class MenuManager : MonoBehaviour
 			#region Swap positions of title keys with random keys
 			// Center the title "TYPER" in the middle of the middle row
 			string title = GameManager.TYPER;
-			comboManager.CreateCombo(title.ToKeyCodes());
+			comboManager.CreateCombo(title.ToKeys());
 
 			// Doesn't use the 'interactable' parameter since we want to animate the markers separately
 			HighlightKeys(title);

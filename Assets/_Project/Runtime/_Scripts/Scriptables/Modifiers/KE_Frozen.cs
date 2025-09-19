@@ -9,22 +9,36 @@ public class KE_Frozen : KeyModifier
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		key.StartCoroutine(Freeze());
-		Debug.Log($"Key Effect: {name} applied to {key.name}");
+		//Debug.Log($"Key Effect: {name} applied to {key.name}");
 		
 		return;
 		IEnumerator Freeze()
 		{
-			// Apply a blue tint to the key and make it unpressable for a short duration
-			var originalColor = key.SpriteRenderer.color;
-			var frozenColor = Color.cyan;
-			frozenColor.a = originalColor.a; // Preserve original alpha
-			key.SpriteRenderer.DOColor(frozenColor, 0.2f).SetEase(Ease.OutQuad);
+			key.FrozenMarker.SetActive(true);
 			key.Disable(false);
 
-			yield return new WaitUntil(() => !key.IsFrozen);
+			if (DOTween.IsTweening("Loose")) DOTween.TogglePause("Loose");
 			
-			key.SpriteRenderer.DOColor(originalColor, 0.2f).SetEase(Ease.OutQuad);
+			yield return new WaitUntil(() => !key.IsFrozen);
+
+			// Immediately re-enable the key to prevent player confusion
 			key.Enable(false);
+			
+			// fade out frozen marker alpha then reset the alpha to 1
+			var spriteRenderer = key.FrozenMarker.GetComponent<SpriteRenderer>();
+			var originalAlpha = spriteRenderer.color.a;
+			spriteRenderer.DOFade(0f, 0.5f)
+			              .OnComplete
+			               (() =>
+			               {
+				               Color color = spriteRenderer.color;
+				               color.a = originalAlpha;
+				               spriteRenderer.color = color;
+				               
+				               key.FrozenMarker.SetActive(false);
+
+				               DOTween.TogglePause("Loose");
+			               });
 		}
 	}
 }
