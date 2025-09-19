@@ -1,8 +1,6 @@
 #region
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
@@ -64,7 +62,11 @@ public partial class Key // Modifiers
 	/// <returns> True if the modifier is set, false otherwise. </returns>
 	public bool HasModifier(Modifiers modifier) => (modifiers & modifier) == modifier;
 
-	public bool HasAnyModifier() => modifiers != Modifiers.None;
+	public bool HasAnyModifier(params Modifiers[] excluding)
+	{
+		var combinedExclusions = excluding.Aggregate(Modifiers.None, (current, mod) => current | mod);
+		return (modifiers & ~combinedExclusions) != Modifiers.None;
+	}
 
 	public bool IsCombo => HasModifier(Modifiers.Combo);
 	public bool IsMash => HasModifier(Modifiers.Mash);
@@ -73,6 +75,8 @@ public partial class Key // Modifiers
 	public bool IsLoose => HasModifier(Modifiers.Loose);
 	public bool IsThorned => HasModifier(Modifiers.Thorned);
 	public bool IsOffGCD => HasModifier(Modifiers.OffGlobalCooldown);
+
+	KeyModifier previousKeyModifier;
 
 	/// <summary>
 	///     Sets the specified modifier for this key.
@@ -89,7 +93,7 @@ public partial class Key // Modifiers
 		{
 			case Modifiers.None:
 				modifiers = Modifiers.None;
-				
+
 				KeyModifier = null;
 				break;
 
@@ -99,9 +103,11 @@ public partial class Key // Modifiers
 				comboMarker.SetActive(value);
 
 				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
-				
+
 				ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
-				ComboEffect = effects.Where(e => e is not CE_Wave).OrderBy(_ => Random.value).FirstOrDefault();
+				ComboEffect = effects.Where(e => e is not CE_Wave && e is not CE_Freeze).OrderBy(_ => Random.value).FirstOrDefault();
+
+				//ComboEffect = Effect.GetEffect<CE_Freeze>();
 				break;
 
 			case Modifiers.Mash:
@@ -111,41 +117,77 @@ public partial class Key // Modifiers
 
 				ComboEffect = Effect.GetEffect<CE_Wave>();
 				break;
-			
+
 			case Modifiers.Frozen:
 				modifiers = value ? modifiers | Modifiers.Frozen : modifiers & ~Modifiers.Frozen;
-				
-				if (value) frozenMarker.SetActive(true);
-				
-				KeyModifier = Effect.GetEffect<KE_Frozen>(true);
-				if (!value) KeyModifier = null;
+
+				if (value)
+				{
+					previousKeyModifier = KeyModifier;
+					KeyModifier = Effect.GetEffect<KE_Frozen>(true);
+					KeyModifier.OnEffectAdded(this);
+				}
+				else
+				{
+					KeyModifier.OnEffectRemoved(this);
+					KeyModifier = previousKeyModifier;
+					previousKeyModifier = null;
+				}
+
 				break;
 
 			case Modifiers.Chained:
 				modifiers = value ? modifiers | Modifiers.Chained : modifiers & ~Modifiers.Chained;
 
-				ChainedMarker.SetActive(value);
-				Disable();
+				if (value)
+				{
+					previousKeyModifier = KeyModifier;
+					KeyModifier = Effect.GetEffect<KE_Chained>(true);
+					KeyModifier.OnEffectAdded(this);
+				}
+				else
+				{
+					KeyModifier.OnEffectRemoved(this);
+					KeyModifier = previousKeyModifier;
+					previousKeyModifier = null;
+				}
 
-				KeyModifier = Effect.GetEffect<KE_Chained>();
 				break;
 
 			case Modifiers.Loose:
 				modifiers = value ? modifiers | Modifiers.Loose : modifiers & ~Modifiers.Loose;
 
-				// ReSharper disable once AssignmentInConditionalExpression
-				if (value) transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetDelay(0.5f).SetId("Loose");
+				if (value)
+				{
+					previousKeyModifier = KeyModifier;
+					KeyModifier = Effect.GetEffect<KE_Loose>(true);
+					KeyModifier.OnEffectAdded(this);
+				}
+				else
+				{
+					KeyModifier.OnEffectRemoved(this);
+					KeyModifier = previousKeyModifier;
+					previousKeyModifier = null;
+				}
 
-				KeyModifier = Effect.GetEffect<KE_Loose>();
 				break;
 
 			case Modifiers.Thorned:
 				modifiers = value ? modifiers | Modifiers.Thorned : modifiers & ~Modifiers.Thorned;
 
-				// TODO: add visual indicator for thorned keys. 'thornedMarker' is currently blank
-				thornedMarker.SetActive(value);
+				if (value)
+				{
+					previousKeyModifier = KeyModifier;
+					KeyModifier = Effect.GetEffect<KE_Thorned>(true);
+					KeyModifier.OnEffectAdded(this);
+				}
+				else
+				{
+					KeyModifier.OnEffectRemoved(this);
+					KeyModifier = previousKeyModifier;
+					previousKeyModifier = null;
+				}
 
-				KeyModifier = Effect.GetEffect<KE_Thorned>(true);
 				break;
 
 			case Modifiers.OffGlobalCooldown:

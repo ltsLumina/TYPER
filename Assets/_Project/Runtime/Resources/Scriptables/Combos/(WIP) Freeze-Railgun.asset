@@ -12,32 +12,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df4f398210ea9364bbcd7aa00230cfd5, type: 3}
   m_Name: (WIP) Freeze-Railgun
   m_EditorClassIdentifier: Assembly-CSharp::CE_FreezeRailgun
-  effectName: Effect Name
-  description: Effect Description
+  effectName: Freeze Railgun
+  description: Freezes all keys in a given lane, starting from this key.
   level: 0
-  maxLevel: 2
+  maxLevel: 4
   levels:
   - rid: 5492189642854498587
   - rid: 5492189642854498588
   - rid: 5492189642854498589
+  - rid: 5456594075331854612
+  - rid: 5456594075331854613
   references:
     version: 2
     RefIds:
+    - rid: 5456594075331854612
+      type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 4
+        duration: 5
+        direction: 3
+        rows: 2
+    - rid: 5456594075331854613
+      type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 5
+        duration: 5
+        direction: 3
+        rows: 3
     - rid: 5492189642854498587
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 1
-        duration: 5
+        duration: 1.5
         direction: 3
+        rows: 1
     - rid: 5492189642854498588
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 2
-        duration: 5
+        duration: 3
         direction: 3
+        rows: 1
     - rid: 5492189642854498589
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 3
         duration: 5
         direction: 3
+        rows: 1

@@ -9,6 +9,18 @@ using Random = UnityEngine.Random;
 public partial class KeyManager
 {
 	/// <summary>
+	///     Simple enum representing a single direction for effects like railgun.
+	///     Doesn't use flags, only one direction at a time.
+	/// </summary>
+	public enum Direction
+	{
+		Up,
+		Down,
+		Left,
+		Right,
+	}
+
+	/// <summary>
 	///     Flags enum representing multiple directions for adjacent key lookup.
 	///     Can combine multiple directions using bitwise.
 	/// </summary>
@@ -22,15 +34,19 @@ public partial class KeyManager
 	}
 
 	/// <summary>
-	///     Simple enum representing a single direction for effects like railgun.
+	///     Simple enum representing a single direction including diagonals.
 	///     Doesn't use flags, only one direction at a time.
 	/// </summary>
-	public enum Direction
+	public enum DDirection
 	{
-		Up,
-		Down,
+		Top,
+		Bottom,
 		Left,
 		Right,
+		TopLeft,
+		TopRight,
+		BottomLeft,
+		BottomRight
 	}
 
 	#region Adjacent/Surrounding Keys
@@ -46,10 +62,7 @@ public partial class KeyManager
 
 		if (!found) return null;
 
-		if (direction == (FDirection.Up | FDirection.Down | FDirection.Left | FDirection.Right))
-		{
-			return AllAdjacentKeys(keycode);
-		}
+		if (direction == (FDirection.Up | FDirection.Down | FDirection.Left | FDirection.Right)) { return AllAdjacentKeys(keycode); }
 
 		var foundKeys = new List<Key>();
 
@@ -76,7 +89,7 @@ public partial class KeyManager
 			var rightKey = col < Keys[row].Count - 1 ? Keys[row][col + 1] : null;
 			if (rightKey != null) foundKeys.Add(rightKey);
 		}
-		
+
 		return foundKeys.Count > 0 ? foundKeys : null;
 
 		List<Key> AllAdjacentKeys(KeyCode keyCode)
@@ -85,6 +98,41 @@ public partial class KeyManager
 			return directions.SelectMany(dir => GetAdjacentKey(keyCode, dir) ?? new List<Key>()).ToList();
 		}
 	}
+
+	public List<Key> GetAdjacentKey(Key key, FDirection direction) => GetAdjacentKey(key.ToKeyCode(), direction);
+
+	/// <summary>
+	/// Returns the adjacent key in the specified direction, including diagonals.
+	/// </summary>
+	/// <param name="keycode">The key to look from.</param>
+	/// <param name="direction">The direction to look for an adjacent key (supports diagonals).</param>
+	/// <returns>The adjacent key in the specified direction, or null if none exists.</returns>
+	public Key GetAdjacentKey(KeyCode keycode, DDirection direction)
+	{
+		(bool found, int row, int col) = FindKey(keycode);
+		if (!found) return null;
+
+		var offsets = new Dictionary<DDirection, (int dr, int dc)>
+		{ { DDirection.Top, (-1, 0) },
+		  { DDirection.Bottom, (1, 0) },
+		  { DDirection.Left, (0, -1) },
+		  { DDirection.Right, (0, 1) },
+		  { DDirection.TopLeft, (-1, -1) },
+		  { DDirection.TopRight, (-1, 1) },
+		  { DDirection.BottomLeft, (1, -1) },
+		  { DDirection.BottomRight, (1, 1) } };
+
+		if (!offsets.TryGetValue(direction, out (int dr, int dc) offset)) return null;
+
+		int targetRow = row + offset.dr;
+		int targetCol = col + offset.dc;
+
+		if (targetRow >= 0 && targetRow < Keys.Count && targetCol >= 0 && targetCol < Keys[targetRow].Count) return Keys[targetRow][targetCol];
+
+		return null;
+	}
+
+	public Key GetSingleAdjacentKey(Key key, DDirection direction) => GetAdjacentKey(key.ToKeyCode(), direction);
 
 	/// <param name="keycode"></param>
 	/// <param name="includeSelf"> Whether to include the specified key in the returned list. </param>
@@ -100,8 +148,7 @@ public partial class KeyManager
 		{
 			for (int c = col - 1; c <= col + 1; c++)
 			{
-				if (r >= 0 && r < Keys.Count && c >= 0 && c < Keys[r].Count && (r != row || c != col)) 
-					surroundingKeys.Add(Keys[r][c]);
+				if (r >= 0 && r < Keys.Count && c >= 0 && c < Keys[r].Count && (r != row || c != col)) surroundingKeys.Add(Keys[r][c]);
 			}
 		}
 
@@ -127,7 +174,7 @@ public partial class KeyManager
 		return wave;
 	}
 	#endregion
-	
+
 	#region VFX
 	public enum CommonVFX
 	{
@@ -135,18 +182,17 @@ public partial class KeyManager
 		Hit,
 		Death,
 	}
-	
+
 	static ObjectPool GetCommonVFXPool(CommonVFX type)
 	{
 		string path = type switch
-		{
-			CommonVFX.Combo => "PREFABS/VFX/Combo VFX",
-			CommonVFX.Hit   => "PREFABS/VFX/Enemy Hit VFX",
-			CommonVFX.Death => "PREFABS/VFX/Enemy Death VFX",
-			_               => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-		};
-		
+		{ CommonVFX.Combo => "PREFABS/VFX/Combo VFX",
+		  CommonVFX.Hit   => "PREFABS/VFX/Enemy Hit VFX",
+		  CommonVFX.Death => "PREFABS/VFX/Enemy Death VFX",
+		  _               => throw new ArgumentOutOfRangeException(nameof(type), type, null) };
+
 		var prefab = Resources.Load<ParticleSystem>(path);
+
 		if (!prefab)
 		{
 			Debug.LogWarning($"No ParticleSystem prefab found at path: {path}");
@@ -187,7 +233,7 @@ public partial class KeyManager
 	{
 		var pool = GetCommonVFXPool(type);
 		if (pool == null) return null;
-		
+
 		var vfx = pool.GetPooledObject<ParticleSystem>(true, position);
 		ParticleSystem.MainModule main = vfx.main;
 		main.startColor = colour == default ? Random.ColorHSV(0f, 1f, 1f, 1f, 1f, 1f) : colour;
@@ -199,9 +245,9 @@ public partial class KeyManager
 	{
 		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
 		if (!found) return null;
-	
+
 		List<Key> wallKeys = new ();
-	
+
 		switch (direction)
 		{
 			case FDirection.Right: {
@@ -209,61 +255,83 @@ public partial class KeyManager
 				{
 					int targetRow = row + r;
 					if (targetRow < 0 || targetRow >= Keys.Count) continue;
+
 					for (int offset = 1; offset <= range; offset++)
 					{
 						int targetCol = col + offset;
-						if (targetCol < Keys[targetRow].Count)
-							wallKeys.Add(Keys[targetRow][targetCol]);
+						if (targetCol < Keys[targetRow].Count) wallKeys.Add(Keys[targetRow][targetCol]);
 					}
 				}
+
 				break;
 			}
-	
+
 			case FDirection.Left: {
 				for (int r = -1; r <= 1; r++)
 				{
 					int targetRow = row + r;
 					if (targetRow < 0 || targetRow >= Keys.Count) continue;
+
 					for (int offset = 1; offset <= range; offset++)
 					{
 						int targetCol = col - offset;
-						if (targetCol >= 0)
-							wallKeys.Add(Keys[targetRow][targetCol]);
+						if (targetCol >= 0) wallKeys.Add(Keys[targetRow][targetCol]);
 					}
 				}
+
 				break;
 			}
-	
+
 			default:
 				Debug.LogWarning("Invalid wall direction specified. Use Left or Right.");
 				return null;
 		}
-	
+
 		return wallKeys.Count > 0 ? wallKeys : null;
 	}
 
-	public List<Key> GetRailgunKeys(Key centerKey, Direction direction)
+	public (List<Key> centerLane, List<Key> upperLane, List<Key> lowerLane) GetRailgunKeys(Key centerKey, Direction direction, int lanes)
 	{
 		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
-		if (!found) return null;
+		if (!found) return (null, null, null);
 
-		List<Key> railgunKeys = new ();
+		List<Key> centerLane = new ();
+		List<Key> upperLane = new ();
+		List<Key> lowerLane = new ();
 
 		switch (direction)
 		{
 			case Direction.Left:
-				for (int c = 0; c < col; c++) railgunKeys.Add(Keys[row][c]);
+				for (int c = 0; c < col; c++) centerLane.Add(Keys[row][c]);
+
+				if (lanes >= 2 && row > 0)
+					for (int c = 0; c < col; c++)
+						upperLane.Add(Keys[row - 1][c]);
+
+				if (lanes >= 3 && row < Keys.Count - 1)
+					for (int c = 0; c < col; c++)
+						lowerLane.Add(Keys[row + 1][c]);
+
 				break;
 
 			case Direction.Right:
-				for (int c = col + 1; c < Keys[row].Count; c++) railgunKeys.Add(Keys[row][c]);
+				for (int c = col + 1; c < Keys[row].Count; c++) centerLane.Add(Keys[row][c]);
+
+				if (lanes >= 2 && row > 0)
+					for (int c = col + 1; c < Keys[row - 1].Count; c++)
+						upperLane.Add(Keys[row - 1][c]);
+
+				if (lanes >= 3 && row < Keys.Count - 1)
+					for (int c = col + 1; c < Keys[row + 1].Count; c++)
+						lowerLane.Add(Keys[row + 1][c]);
+
 				break;
 
 			default:
-				Debug.LogWarning("Invalid wall direction specified. Use Up, Down, Left, or Right.");
-				return null;
+				Debug.LogWarning("Invalid wall direction specified. Use \"Left\", or \"Right\".");
+				return (null, null, null);
 		}
 
-		return railgunKeys.Count > 0 ? railgunKeys : null;
+		return (centerLane.Count > 0 ? centerLane : null, upperLane.Count > 0 ? upperLane : null, lowerLane.Count > 0 ? lowerLane : null);
 	}
 }

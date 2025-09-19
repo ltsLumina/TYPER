@@ -91,7 +91,7 @@ public class FrenzyManager : MonoBehaviour
 		yield return new WaitForSeconds(duration);
 
 		// if the score is above the frenzy threshold, stay in frenzy mode
-		if (GameManager.Instance.Score > frenzyThreshold) yield break;
+		if (GameManager.Instance.Score >= frenzyThreshold) yield break;
 
 		Frenzied = false;
 

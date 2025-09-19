@@ -1,11 +1,15 @@
 using DG.Tweening;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Thorned", menuName = "Modifiers/New Thorned", order = 8)]
+[CreateAssetMenu(fileName = "Thorned", menuName = "Modifiers/Thorned", order = 8)]
 public class KE_Thorned : KeyModifier
 {
 	[SerializeField] float cooldown = 3f;
 	bool isActive = true;
+
+	public override void OnEffectAdded(Key key) => key.ThornedMarker.SetActive(true);
+
+	public override void OnEffectRemoved(Key key) => key.ThornedMarker.SetActive(false);
 
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{

@@ -13,5 +13,4 @@ MonoBehaviour:
   m_Name: Frozen
   m_EditorClassIdentifier: Assembly-CSharp::KE_Frozen
   effectName: Frozen
-  effectID: frozen
-  description: Effect Description
+  description: The key is frozen solid and cannot be interacted with.

@@ -13,29 +13,45 @@ MonoBehaviour:
   m_Name: Railgun
   m_EditorClassIdentifier: Assembly-CSharp::CE_Railgun
   effectName: Railgun
-  effectID: railgun
-  description: Effect Description
+  description: Fire a beam across the lane, starting from this key.
   level: 0
-  maxLevel: 2
+  maxLevel: 4
   levels:
   - rid: 5492189631572607077
   - rid: 5492189631572607078
   - rid: 5492189631572607079
+  - rid: 5456594075331854614
+  - rid: 5456594075331854615
   references:
     version: 2
     RefIds:
+    - rid: 5456594075331854614
+      type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 4
+        direction: 3
+        rows: 2
+    - rid: 5456594075331854615
+      type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 5
+        direction: 3
+        rows: 3
     - rid: 5492189631572607077
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 1
         direction: 3
+        rows: 1
     - rid: 5492189631572607078
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 2
         direction: 3
+        rows: 1
     - rid: 5492189631572607079
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 3
         direction: 3
+        rows: 1

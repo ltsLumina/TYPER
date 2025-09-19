@@ -34,6 +34,7 @@ public class Enemy : MonoBehaviour, IDamageable
 	void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
 	void OnEnable() => OnDeath += Reset;
+
 	void OnDisable() => OnDeath -= Reset;
 
 	void Reset()
@@ -45,9 +46,9 @@ public class Enemy : MonoBehaviour, IDamageable
 		pendingDamage = 0;
 		isFrozenSlowed = false;
 		touchingKeys.Clear();
-		
+
 		transform.localScale = new (0.5f, 0.5f, 1f);
-		
+
 		Start();
 	}
 
@@ -68,7 +69,7 @@ public class Enemy : MonoBehaviour, IDamageable
 		size.x = 0.5f + health * 0.1f;
 		size.y = 0.5f + health * 0.1f;
 		transform.localScale = size;
-		
+
 		// random size and speed based on health
 		// larger enemies are slower
 		speed -= health * 0.2f;
@@ -99,24 +100,51 @@ public class Enemy : MonoBehaviour, IDamageable
 
 	float originalSpeed;
 	bool isFrozenSlowed;
-	
+
 	void OnTriggerEnter2D(Collider2D other)
 	{
 		if (other.TryGetComponent(out Key key))
 		{
+			// do something
 			if (key.IsActive)
 			{
 				Color color = key.SpriteRenderer.color;
 				color.a -= 0.3f;
 				key.SetColour(color);
 			}
+
+			// randomly decide to apply a negative modifier to the key
+			float rand = Random.value;
+
+			if (rand < 0.2f && !key.HasModifier(Key.Modifiers.Chained)) // 20% chance to freeze
+			{
+				DOVirtual.DelayedCall
+				(0.35f, () =>
+				{
+					speed = 0;
+
+					transform.DOPunchPosition(new (0.2f, 0f, 0f), 0.5f, 10)
+					         .SetEase(Ease.OutElastic)
+					         .OnComplete
+					          (() =>
+					          {
+						          // make sure again that the key doesn't already have the modifier
+						          if (key.HasModifier(Key.Modifiers.Frozen) || health <= 0) return;
+
+						          key.AddModifier(Key.Modifiers.Chained);
+						          Debug.Log($"{name} has chained Key {key.ToKeyCode()}!");
+						          OnDeath?.Invoke();
+						          ObjectPoolManager.ReturnToPool(gameObject);
+					          });
+				});
+			}
 		}
-	
+
 		if (other.CompareTag("Finish"))
 		{
 			Debug.LogWarning("An enemy has reached the end!");
 			TakeDamage(999);
-	
+
 			GameManager.Instance.TakeDamage(damage);
 		}
 	}
@@ -169,7 +197,6 @@ public class Enemy : MonoBehaviour, IDamageable
 				if (gameObject.activeSelf) StartCoroutine(LerpSpeed());
 				isFrozenSlowed = false;
 			}
-			
 		}
 	}
 

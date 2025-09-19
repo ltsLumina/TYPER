@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
@@ -22,7 +23,8 @@ public partial class Key : MonoBehaviour
 	[SerializeField, ReadOnly] KeyCode keyCode = KeyCode.Q;
 	[SerializeField] Modifiers modifiers;
 	[SerializeField] public KeyModifier KeyModifier; // TODO: Needs to have priority/layers so that you can stack multiple modifiers on one key. Currently only one modifier can be active at a time, and it removes the previous one.
-														// E.g. if you set a key to be Frozen when its already Chained, it will remove the Chained modifier.
+
+	// E.g. if you set a key to be Frozen when its already Chained, it will remove the Chained modifier.
 	[SerializeField] public ComboEffect ComboEffect;
 
 	[Header("Stats")]
@@ -134,6 +136,15 @@ public partial class Key : MonoBehaviour
 			}
 		};
 
+		comboManager.OnCompleteCombo += keys =>
+		{
+			// var lastKey = keys.Last();
+			// List<Key> newKeys = keys;
+			// newKeys.Remove(lastKey);
+
+			foreach (var key in keys) { key.StartLocalCooldown(3); }
+		};
+
 		// Calculate damage based on indexInRow (more damage for keys further to the right)
 		// Minimum damage is 2, maximum is roughly half the number of keys in the row, e.g. for 10 keys in a row, max damage is 5
 		int min = 2;
@@ -150,11 +161,11 @@ public partial class Key : MonoBehaviour
 	void Assert()
 	{
 		Debug.Assert(frozenMarker != null, $"{name} is missing a reference to its FrozenSprite!");
-		Debug.Assert(ChainedMarker != null, $"{name} is missing a reference to its ChainedSprite!");
+		Debug.Assert(chainedMarker != null, $"{name} is missing a reference to its ChainedSprite!");
 		Debug.Assert(thornedMarker != null, $"{name} is missing a reference to its ThornedMarker!");
-		Debug.Assert(ComboHighlight != null, $"{name} is missing a reference to its ComboHighlight!");
-		Debug.Assert(SpriteRenderer != null, $"{name} is missing a reference to its SpriteRenderer!");
-		Debug.Assert(Letter != null, $"{name} is missing a reference to its Letter TMP_Text!");
+		Debug.Assert(comboHighlight != null, $"{name} is missing a reference to its ComboHighlight!");
+		Debug.Assert(spriteRenderer != null, $"{name} is missing a reference to its SpriteRenderer!");
+		Debug.Assert(letter != null, $"{name} is missing a reference to its Letter TMP_Text!");
 		Debug.Assert(cooldownSprite != null, $"{name} is missing a reference to its CooldownSprite!");
 		Debug.Assert(homingBar != null, $"{name} is missing a reference to its HomingBar!");
 		Debug.Assert(oGCDMarker != null, $"{name} is missing a reference to its offGCDMarker!");
@@ -182,16 +193,10 @@ public partial class Key : MonoBehaviour
 
 	void Update()
 	{
-		if (Keyboard.current.digit1Key.wasPressedThisFrame)
-		{
-			ComboEffect?.SetLevel(ComboEffect.Level - 1);
-		}
+		if (Keyboard.current.digit1Key.wasPressedThisFrame) { ComboEffect.SetLevel(ComboEffect.Level - 1); }
 
-		if (Keyboard.current.digit2Key.wasPressedThisFrame)
-		{
-			ComboEffect?.SetLevel(ComboEffect.Level + 1);
-		}
-		
+		if (Keyboard.current.digit2Key.wasPressedThisFrame) { ComboEffect.SetLevel(ComboEffect.Level + 1); }
+
 		if (!isActive || IsChained) return;
 
 		// Handle per-key cooldown timer
@@ -217,18 +222,12 @@ public partial class Key : MonoBehaviour
 
 	void OnTriggerEnter2D(Collider2D other)
 	{
-		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy))
-		{
-			overlappingEnemies.Add(enemy);
-		}
+		if (other.TryGetComponent(out Enemy enemy) && !overlappingEnemies.Contains(enemy)) { overlappingEnemies.Add(enemy); }
 	}
 
 	void OnTriggerExit2D(Collider2D other)
 	{
-		if (other.TryGetComponent(out Enemy enemy))
-		{
-			overlappingEnemies.Remove(enemy);
-		}
+		if (other.TryGetComponent(out Enemy enemy)) { overlappingEnemies.Remove(enemy); }
 	}
 
 	Coroutine mashTimerCoroutine;
@@ -284,12 +283,19 @@ public partial class Key : MonoBehaviour
 		}
 		#endregion
 
-		if (IsChained) KeyModifier?.Invoke(this, triggerKey);
-		
+		if (IsFrozen) return;
+
+		if (IsChained)
+		{
+			KeyModifier?.Invoke(this, triggerKey);
+			return;
+		}
+
 		if (!isActive) return;
 
 		// Prevent activation if the key is still on cooldown and global cooldown override is not requested.
-		if (remainingCooldown > 0f && !overrideGlobalCooldown) return;
+		// TODO: keeping the override check here makes the game more fun, but things trigger each other en masse and repeatably, which can be chaotic.
+		if (remainingCooldown > 0f /* && !overrideGlobalCooldown*/) return;
 
 		// Reset combo if:
 		// (1) combo in progress and this key is not part of the combo, or...
@@ -347,7 +353,7 @@ public partial class Key : MonoBehaviour
 			// Don't increment mash count if the key is triggered by itself (e.g., through its own effect)
 			if (triggerKey == this) { }
 			else
-			{	
+			{
 				mashCount++;
 
 				mashText.text = mashCount.ToString();
@@ -355,10 +361,10 @@ public partial class Key : MonoBehaviour
 				if (mashTimerCoroutine != null) StopCoroutine(mashTimerCoroutine);
 				mashTimerCoroutine = StartCoroutine(MashTimer());
 
-				if (mashCount % 5 == 0) // every 5th mash
+				if (mashCount % 10 == 0) // every 10th mash
 				{
 					ComboEffect?.Invoke(this, triggerKey);
-					StartLocalCooldown(5f);
+					StartLocalCooldown(10f);
 					SetColour(hitEnemy ? Color.green : Color.orange, 0.25f);
 					OnActivated?.Invoke(hitEnemy, triggerKey);
 					return;
@@ -371,11 +377,8 @@ public partial class Key : MonoBehaviour
 			return;
 		}
 
-		if (HasAnyModifier())
-		{
-			KeyModifier?.Invoke(this, triggerKey);
-		}
-		
+		if (HasAnyModifier()) KeyModifier?.Invoke(this, triggerKey);
+
 		if (IsOffGCD)
 		{
 			StartLocalCooldown(cooldown + 2.5f); // note: temporary
@@ -443,7 +446,9 @@ public partial class Key : MonoBehaviour
 	{
 		SpriteRenderer.color = colour;
 		yield return new WaitForSeconds(duration);
-		SpriteRenderer.color = remainingCooldown > 0f ? Color.grey : Color.white;
+
+		if (!IsMash) SpriteRenderer.DOColor(remainingCooldown > 0f ? Color.grey : Color.white, 0.25f);
+		else SpriteRenderer.color = remainingCooldown > 0f ? Color.grey : Color.white;
 	}
 }
 

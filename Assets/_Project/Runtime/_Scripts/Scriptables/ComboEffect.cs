@@ -47,8 +47,7 @@ public abstract class ComboEffect : Effect
 			if (cachedAsset == null)
 			{
 				cachedAsset = Resources.Load<ComboEffect>($"Scriptables/Combos/{name.Replace("(Clone)", string.Empty)}");
-				if (cachedAsset == null)
-					Logger.LogError($"ComboEffect asset not found in \"{ResourcePaths.Combos}/{name}\"!", this);
+				if (cachedAsset == null) Logger.LogError($"ComboEffect asset not found in \"{ResourcePaths.Combos}/{name}\"!", this);
 			}
 
 			return cachedAsset;
@@ -86,16 +85,16 @@ public abstract class ComboEffect : Effect
 		// Set maxLevel based on levels count
 		maxLevel = (Level) Mathf.Clamp(levels.Count - 1, 0, Enum.GetValues(typeof(Level)).Length - 1);
 	}
-	
-	protected T GetLevelSettings<T>() where T : LevelSettings
+
+	public T GetLevelSettings<T>()
+			where T : LevelSettings
 	{
 		int levelIndex = Mathf.Clamp((int) Asset.level, 0, Asset.levels.Count - 1);
 		var settings = (T) Asset.levels[levelIndex];
 		return settings;
 	}
 	#endregion
-	
-	
+
 	public void SetLevel(Level newLevel)
 	{
 		int maxIndex = levels.Count - 1;

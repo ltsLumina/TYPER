@@ -1,9 +1,20 @@
 using DG.Tweening;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Loose", menuName = "Modifiers/New Loose", order = 5)]
+[CreateAssetMenu(fileName = "Loose", menuName = "Modifiers/Loose", order = 5)]
 public class KE_Loose : KeyModifier
 {
+	public override void OnEffectAdded(Key key)
+	{
+		// Equivalent to "Loose Marker"
+		key.transform.DOShakeRotation(0.4f, new Vector3(10, 0, 10), 10, 90, false, ShakeRandomnessMode.Harmonic).SetLoops(-1, LoopType.Yoyo).SetId("Loose");
+	}
+	public override void OnEffectRemoved(Key key)
+	{
+		DOTween.Kill("Loose");
+		key.transform.rotation = Quaternion.identity;
+	}
+
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger) { ActivatedWhileLoose(key, trigger.byKey); }
 
 	static void ActivatedWhileLoose(Key key, bool triggeredByKey)

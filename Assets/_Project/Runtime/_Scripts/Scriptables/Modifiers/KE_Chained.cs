@@ -1,4 +1,3 @@
-using System;
 using DG.Tweening;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
@@ -6,6 +5,14 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Chained", menuName = "Modifiers/Chained", order = 4)]
 public class KE_Chained : KeyModifier
 {
+	public override void OnEffectAdded(Key key)
+	{
+		key.ChainedMarker.SetActive(true);
+		key.Disable();
+	}
+
+	public override void OnEffectRemoved(Key key) { key.ChainedMarker.SetActive(true); }
+
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		if (trigger.byKey)
@@ -51,15 +58,13 @@ public class KE_Chained : KeyModifier
 			chainedSFX.Play();
 		}
 	}
-	
+
 	// get or add component
-	static T GetOrAddComponent<T>(GameObject obj) where T : Component
+	static T GetOrAddComponent<T>(GameObject obj)
+			where T : Component
 	{
 		var component = obj.GetComponent<T>();
-		if (component == null)
-		{
-			component = obj.AddComponent<T>();
-		}
+		if (component == null) { component = obj.AddComponent<T>(); }
 		return component;
 	}
 }

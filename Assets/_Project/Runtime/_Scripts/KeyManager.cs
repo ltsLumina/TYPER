@@ -42,7 +42,7 @@ public partial class KeyManager : MonoBehaviour
 
 	[Header("Global Cooldown Settings")]
 	[SerializeField] float globalCooldown = 1f;
-	[SerializeField] [ReadOnly] float currentCooldown;
+	[SerializeField, ReadOnly] float currentCooldown;
 
 	ComboManager comboManager;
 
@@ -63,8 +63,21 @@ public partial class KeyManager : MonoBehaviour
 	public float CurrentCooldown => currentCooldown;
 	public bool OnCooldown => currentCooldown > 0;
 
+	/// <summary>
+	///     2D List of keys organized by rows and columns.
+	///     <remarks> Keys[0] = QWERTY row, Keys[1] = ASDFG row, Keys[2] = ZXCVB row. </remarks>
+	/// </summary>
 	public List<List<Key>> Keys { get; } = new ();
+
+	/// <summary>
+	///     Flat list (1D) of all keys for easy iteration.
+	///     <remarks> This is automatically populated when the keyboard is initialized. </remarks>
+	/// </summary>
 	public List<Key> FlatKeys { get; private set; } = new ();
+
+	/// <summary>
+	///    Y positions of each lane (row) on the keyboard.
+	/// </summary>
 	public float[] Lanes { get; } = new float[3];
 
 	/// <summary>
@@ -214,8 +227,8 @@ public partial class KeyManager : MonoBehaviour
 		List<Key> oGCD_Keys = "PLM".ToKeys();
 		oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
 
-		const float cooldown = 10f;
-		KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
+		//const float cooldown = 10f;
+		//KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
 
 		// set G key to be a mash key
 		Key mashKey = GetKey(KeyCode.G);

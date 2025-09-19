@@ -12,24 +12,26 @@ public class AdjacentLevelSettings : LevelSettings
 	public KeyManager.FDirection direction = KeyManager.FDirection.Right;
 }
 
-[CreateAssetMenu(fileName = "Adjacent", menuName = "Combos/New Adjacent", order = 1)]
+[CreateAssetMenu(fileName = "Adjacent", menuName = "Combos/Adjacent", order = 1)]
 public class CE_Adjacent : ComboEffect
 {
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<AdjacentLevelSettings>();
-		key.StartCoroutine(Adjacent(key.ToKeyCode(), key, settings.direction));
-	}
+		key.StartCoroutine(Adjacent(settings.direction));
 
-	IEnumerator Adjacent(KeyCode keyCode, Key key, KeyManager.FDirection direction)
-	{
-		List<Key> adjacentKeys = KeyManager.Instance.GetAdjacentKey(keyCode, direction);
+		return;
 
-		foreach (Key adjacentKey in adjacentKeys)
+		IEnumerator Adjacent(KeyManager.FDirection direction)
 		{
-			KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-			adjacentKey.Activate(true, 0.5f, key);
-			yield return new WaitForSecondsRealtime(0.02f);
+			List<Key> adjacentKeys = KeyManager.Instance.GetAdjacentKey(key, direction);
+
+			foreach (Key adjacentKey in adjacentKeys)
+			{
+				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
+				adjacentKey.Activate(true, 0.5f, key);
+				yield return new WaitForSecondsRealtime(0.02f);
+			}
 		}
 	}
 }
