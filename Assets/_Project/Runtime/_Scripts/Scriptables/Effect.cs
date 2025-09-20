@@ -118,6 +118,8 @@ public abstract class Effect : ScriptableObject
 
 public struct ResourcePaths
 {
+	/// <remarks>  Does not include a trailing slash. </remarks>
 	public const string Modifiers = "Scriptables/Modifiers";
+	/// <remarks>  Does not include a trailing slash. </remarks>
 	public const string Combos = "Scriptables/Combos";
 }

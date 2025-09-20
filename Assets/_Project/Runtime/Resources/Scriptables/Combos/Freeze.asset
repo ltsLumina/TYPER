@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Freeze
   m_EditorClassIdentifier: Assembly-CSharp::CE_Freeze
   effectName: Freeze
-  effectID: freeze
-  description: Effect Description
+  description: Freezes the keys in front of this key for a duration, preventing them
+    from being activated, but slowing enemies that move over it.
   level: 0
   maxLevel: 2
   levels:
@@ -27,21 +27,21 @@ MonoBehaviour:
     - rid: 5492189631572607082
       type: {class: FreezeLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 2
+        level: Level II
         duration: 3
         direction: 8
         range: 2
     - rid: 5492189631572607083
       type: {class: FreezeLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 1
+        level: Level I
         duration: 1.5
         direction: 8
         range: 1
     - rid: 5492189631572607085
       type: {class: FreezeLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 3
+        level: Level III
         duration: 5
         direction: 8
         range: 3

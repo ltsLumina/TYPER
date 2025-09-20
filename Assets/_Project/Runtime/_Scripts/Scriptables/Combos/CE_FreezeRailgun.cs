@@ -7,9 +7,9 @@ using UnityEngine;
 [Serializable]
 public class FreezeRailgunLevelSettings : LevelSettings
 {
-	public float duration = 5f;
+	public float freezeDuration = 5f;
 	public KeyManager.Direction direction = KeyManager.Direction.Right;
-	public int rows = 1;
+	public Rows rows = Rows.Middle;
 }
 
 [CreateAssetMenu(fileName = "(WIP) Freeze-Railgun", menuName = "Combos/(WIP) Freeze-Railgun", order = 7)]
@@ -18,14 +18,13 @@ public class CE_FreezeRailgun : ComboEffect
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
 	{
 		var settings = GetLevelSettings<FreezeRailgunLevelSettings>();
-		var railgunKeys = KeyManager.Instance.GetRailgunKeys(key, settings.direction, settings.rows);
+		var railgunKeys = KeyManager.Instance.GetRailgunKeys(key, settings.direction);
 
-		if (railgunKeys.upperLane != null && railgunKeys.upperLane.Any()) key.StartCoroutine(FreezeLane(railgunKeys.upperLane, settings.duration));
-		if (railgunKeys.centerLane != null && railgunKeys.centerLane.Any()) key.StartCoroutine(FreezeLane(railgunKeys.centerLane, settings.duration));
-		if (railgunKeys.lowerLane != null && railgunKeys.lowerLane.Any()) key.StartCoroutine(FreezeLane(railgunKeys.lowerLane, settings.duration));
+		if (railgunKeys.upperLane != null && railgunKeys.upperLane.Any() && settings.rows.HasFlag(Rows.Top)) key.StartCoroutine(FreezeLane(railgunKeys.upperLane, settings.freezeDuration));
+		if (railgunKeys.centerLane != null && railgunKeys.centerLane.Any() && settings.rows.HasFlag(Rows.Middle)) key.StartCoroutine(FreezeLane(railgunKeys.centerLane, settings.freezeDuration));
+		if (railgunKeys.lowerLane != null && railgunKeys.lowerLane.Any() && settings.rows.HasFlag(Rows.Bottom)) key.StartCoroutine(FreezeLane(railgunKeys.lowerLane, settings.freezeDuration));
 
 		return;
-
 		IEnumerator FreezeLane(IEnumerable<Key> lane, float duration)
 		{
 			IEnumerable<Key> keys = lane.ToList();
@@ -44,7 +43,7 @@ public class CE_FreezeRailgun : ComboEffect
 			{
 				//KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
 				k.RemoveModifier(Key.Modifiers.Frozen);
-				k.KeyModifier?.Invoke(k, null);
+				//k.KeyModifier?.Invoke(k, null);
 				yield return new WaitForSecondsRealtime(0.05f);
 			}
 		}

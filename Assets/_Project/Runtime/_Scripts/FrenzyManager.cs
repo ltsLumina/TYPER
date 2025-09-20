@@ -6,31 +6,36 @@ using MelenitasDev.SoundsGood;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 using VInspector;
+using Random = System.Random;
 #endregion
 
-// game starts with nearly no post process effects, but when frenzy mode is activated, the effects ramp up to a maximum intensity.
+// game starts with nearly no post process effects, but when Frenzy mode is activated, the effects ramp up to a maximum intensity.
 // the desired final intensity is set on the volume itself, rather than in this script/on this object
 public class FrenzyManager : MonoBehaviour
 {
-	[Header("Frenzy State")]
+	[Header("Frenzy"), Tooltip("\"Frenzy\" is a score that builds up. When it reaches the Frenzy Threshold, you enter Frenzy mode, which multiplies score gain and activates post-processing effects.")]
+	[SerializeField] int frenzy;
 	[SerializeField, ReadOnly] bool frenzied;
 	[SerializeField, ReadOnly] float frenzyTime;
+	[SerializeField, ReadOnly] float totalFrenzyTime;
 
 	[Tab("Frenzy Settings")]
-	[Tooltip("Score threshold to enter a permanent frenzy mode.")]
-	[SerializeField] int frenzyThreshold = 50;
-	[Tooltip("Frenzy multiplies score gain by this amount.")]
+	[Tooltip("Frenzy threshold to enter a permanent Frenzy mode.")]
+	[SerializeField] int frenzyThreshold = 500;
+	[Tooltip("Frenzy multiplies XP gain by this amount.")]
 	[SerializeField] float frenzyMultiplier = 1.2f;
 
 	[Header("Effect Ramping")]
-	[Tooltip(" How much faster the effects ramp up for each point above the frenzy threshold. " + "E.g., if set to 0.05, then each point above the threshold increases the speed by 5%.")]
+	[Tooltip(" How much faster the effects ramp up for each point above the Frenzy threshold. " + "E.g., if set to 0.05, then each point above the threshold increases the speed by 5%.")]
 	[SerializeField] float speedMultiplier = 0.05f;
 	[Tooltip("Base lerp multiplier at the threshold. Lower values make the initial ramp slower.")]
 	[SerializeField] float baseLerpMultiplier = 0.15f;
 
 	[Tab("Settings")]
 	[SerializeField] Volume volume;
+	[SerializeField] Image frenzySlider;
 
 	Bloom bloom;
 	ChromaticAberration chromaticAberration;
@@ -44,6 +49,12 @@ public class FrenzyManager : MonoBehaviour
 	public static FrenzyManager Instance { get; private set; }
 
 	#region Frenzy
+	public int Frenzy
+	{
+		get => frenzy;
+		private set => frenzy = Mathf.Clamp(value, 0, frenzyThreshold);
+	}
+	
 	public bool Frenzied
 	{
 		get => frenzied;
@@ -51,7 +62,7 @@ public class FrenzyManager : MonoBehaviour
 		{
 			switch (value)
 			{
-				// start or stop frenzy
+				// start or stop Frenzy
 				case true when !frenzied:
 					frenzied = true;
 					frenzyTime = 0f;
@@ -72,13 +83,19 @@ public class FrenzyManager : MonoBehaviour
 		}
 	}
 
-	public void TriggerFrenzy(float duration, bool instant = false) => frenzyCoroutine = StartCoroutine(Frenzy(duration, instant));
+	/// <summary>
+	/// Triggers Frenzy mode for the given duration.
+	/// </summary>
+	/// <param name="duration"> The duration of the Frenzy mode in seconds. </param>
+	/// <param name="instant"> If true, the effects will ramp up instantly, otherwise they will ramp up over time, increasingly faster the higher the Frenzy score is above the threshold. </param>
+	public void TriggerFrenzy(float duration, bool instant = false) => frenzyCoroutine = StartCoroutine(FrenzyRoutine(duration, instant));
 
 	public void EndFrenzy() => Frenzied = false;
 
-	IEnumerator Frenzy(float duration, bool instant = false)
+	IEnumerator FrenzyRoutine(float duration, bool instant = false)
 	{
-		Vector2 oldValues = new (speedMultiplier, baseLerpMultiplier);
+		(float speedMultiplier, float baseLerpMultiplier) 
+				oldValues = new (speedMultiplier, baseLerpMultiplier);
 
 		Frenzied = true;
 
@@ -88,17 +105,35 @@ public class FrenzyManager : MonoBehaviour
 			baseLerpMultiplier = 1;
 		}
 
-		yield return new WaitForSeconds(duration);
+		float startFrenzy = Frenzy;
+		float elapsed = 0f;
+		while (elapsed < duration && Frenzied)
+		{
+			elapsed += Time.deltaTime;
+			Frenzy = Mathf.RoundToInt(Mathf.Lerp(startFrenzy, 0, elapsed / duration));
+			frenzyFillAmount = Mathf.Lerp(frenzyFillAmount, 0, Time.deltaTime / duration);
+			frenzySlider.fillAmount = frenzyFillAmount;
+			AddFrenzy(0); // update score text
+			yield return null;
+		}
+		
+		Frenzy = 0;
+		frenzyFillAmount = 0;
+		frenzySlider.fillAmount = 0;
+		AddFrenzy(0); // update score text
 
-		// if the score is above the frenzy threshold, stay in frenzy mode
-		if (GameManager.Instance.Score >= frenzyThreshold) yield break;
+		yield return new WaitForSeconds(duration - duration);
+
+		// if the score is above the Frenzy threshold, stay in Frenzy mode
+		if (Frenzy >= frenzyThreshold) yield break;
 
 		Frenzied = false;
 
-		speedMultiplier = oldValues.x;
-		baseLerpMultiplier = oldValues.y;
+		speedMultiplier = oldValues.speedMultiplier;
+		baseLerpMultiplier = oldValues.baseLerpMultiplier;
 	}
 
+	/// <summary> A multiplier for XP gains. </summary>
 	public float FrenzyMultiplier => frenzyMultiplier;
 	#endregion
 
@@ -159,24 +194,34 @@ public class FrenzyManager : MonoBehaviour
 		#endregion
 	}
 
+	float frenzyFillAmount;
+
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.Alpha3)) GameManager.Instance.AddScore(25);
-		if (Input.GetKeyDown(KeyCode.Alpha4)) GameManager.Instance.AddScore(frenzyThreshold);
+		if (Input.GetKeyDown(KeyCode.Alpha3)) AddFrenzy(25);
+		if (Input.GetKeyDown(KeyCode.Alpha4)) AddFrenzy(frenzyThreshold);
 
-		if (GameManager.Instance.Score >= frenzyThreshold)
+		if (Frenzy >= frenzyThreshold)
 		{
-			// enter permanent frenzy
-			Frenzied = true;
+			TriggerFrenzy(10, true);
 		}
-
-		if (Frenzied) { Time.timeScale = 1.1f * frenzyTime / 60f + 1f; }
+		else
+		{
+			frenzyFillAmount = Mathf.Lerp(frenzyFillAmount, (float)Frenzy / frenzyThreshold, Time.deltaTime * 5f);
+			frenzySlider.fillAmount = frenzyFillAmount;
+		}
+		
+		// Slightly increase timescale when in Frenzy, up to a max of 2x at 60 seconds of Frenzy time.
+		// Begins scaling after 1 minute to avoid making the game too fast quickly.
+		// The check for > 0.9f prevents slowing down time if hit stop is active.
+		if (Frenzied && Time.timeScale > 0.9f) Time.timeScale = 1f + Mathf.Clamp01((totalFrenzyTime - 30f) / 60f);
 
 		if (Frenzied)
 		{
 			frenzyTime += Time.deltaTime;
+			totalFrenzyTime += Time.deltaTime;
 
-			float lerpSpeed = Time.deltaTime * (baseLerpMultiplier + Mathf.Max(0, GameManager.Instance.Score - frenzyThreshold) * speedMultiplier);
+			float lerpSpeed = Time.deltaTime * (baseLerpMultiplier + Mathf.Max(0, Frenzy - frenzyThreshold) * speedMultiplier);
 
 			#region Bloom
 			// set the three properties to defualt/zero
@@ -222,7 +267,7 @@ public class FrenzyManager : MonoBehaviour
 		}
 		else
 		{
-			// Ramp down effects to their default values when frenzy ends
+			// Ramp down effects to their default values when Frenzy ends
 			float lerpSpeed = Time.deltaTime * 1f;
 
 			#region Bloom
@@ -274,6 +319,21 @@ public class FrenzyManager : MonoBehaviour
 			SetOverrideState(Override.Vignette, vignetteComplete);
 			#endregion
 		}
+	}
+
+	/// <summary>
+	/// Add frenzy points. If in Frenzy mode, XP is multiplied by the Frenzy multiplier.
+	/// </summary>
+	/// <param name="points"> The points of frenzy points to add. </param>
+	public void AddFrenzy(int points)
+	{
+		int pointsWithMult = Mathf.CeilToInt(points * FrenzyMultiplier);
+		frenzy += Frenzied ? pointsWithMult : points;
+
+		//TODO: very temporary way of doing this
+		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(0).GetComponent<TMPro.TextMeshProUGUI>();
+		string text = $"{frenzy}\npts" + (Frenzied ? $"\n({FrenzyMultiplier}x)" : string.Empty) + (Time.timeScale >= 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
+		scoreText.text = text;
 	}
 
 	enum Override

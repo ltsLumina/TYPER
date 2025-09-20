@@ -9,7 +9,7 @@ public class ShockwaveLevelSettings : LevelSettings
 	public int aftershocks;
 }
 
-[CreateAssetMenu(fileName = "Shockwave", menuName = "Combos/New Shockwave", order = 2)]
+[CreateAssetMenu(fileName = "Shockwave", menuName = "Combos/Shockwave", order = 2)]
 public class CE_Shockwave : ComboEffect
 {
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
@@ -25,7 +25,7 @@ public class CE_Shockwave : ComboEffect
 		foreach (Key k in surroundingKeys)
 		{
 			KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-			k.Activate(true, 0.5f, key);
+			k.Activate(0.5f, key);
 			yield return new WaitForSecondsRealtime(0.02f);
 		}
 		

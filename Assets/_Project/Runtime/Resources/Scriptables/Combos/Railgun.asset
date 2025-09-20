@@ -30,28 +30,28 @@ MonoBehaviour:
       data:
         level: Level 4
         direction: 3
-        rows: 2
+        rows: 3
     - rid: 5456594075331854615
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 5
         direction: 3
-        rows: 3
+        rows: -1
     - rid: 5492189631572607077
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 1
         direction: 3
-        rows: 1
+        rows: 2
     - rid: 5492189631572607078
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 2
         direction: 3
-        rows: 1
+        rows: 2
     - rid: 5492189631572607079
       type: {class: RailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
         level: Level 3
         direction: 3
-        rows: 1
+        rows: 2

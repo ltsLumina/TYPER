@@ -12,7 +12,7 @@ public class PulseLevelSettings : LevelSettings
 	public float delayBetweenLayers;
 }
 
-[CreateAssetMenu(fileName = "Pulse", menuName = "Combos/New Pulse", order = 7)]
+[CreateAssetMenu(fileName = "Pulse", menuName = "Combos/Pulse", order = 7)]
 public class CE_Pulse : ComboEffect
 {
 	Coroutine pulseCoroutine;
@@ -56,7 +56,7 @@ public class CE_Pulse : ComboEffect
 			foreach (Key key in currentLayerKeys)
 			{
 				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-				key.Activate(true, 0.5f, centerKey);
+				key.Activate(0.5f, centerKey);
 
 				List<Key> adjacentKeys = KeyManager.Instance.GetSurroundingKeys(key.ToKeyCode());
 

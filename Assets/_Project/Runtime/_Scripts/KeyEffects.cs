@@ -290,7 +290,7 @@ public partial class KeyManager
 		return wallKeys.Count > 0 ? wallKeys : null;
 	}
 
-	public (List<Key> centerLane, List<Key> upperLane, List<Key> lowerLane) GetRailgunKeys(Key centerKey, Direction direction, int lanes)
+	public (List<Key> centerLane, List<Key> upperLane, List<Key> lowerLane) GetRailgunKeys(Key centerKey, Direction direction)
 	{
 		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
 		if (!found) return (null, null, null);
@@ -304,26 +304,34 @@ public partial class KeyManager
 			case Direction.Left:
 				for (int c = 0; c < col; c++) centerLane.Add(Keys[row][c]);
 
-				if (lanes >= 2 && row > 0)
+				if (row > 0)
+				{
 					for (int c = 0; c < col; c++)
 						upperLane.Add(Keys[row - 1][c]);
+				}
 
-				if (lanes >= 3 && row < Keys.Count - 1)
+				if (row < Keys.Count - 1)
+				{
 					for (int c = 0; c < col; c++)
 						lowerLane.Add(Keys[row + 1][c]);
+				}
 
 				break;
 
 			case Direction.Right:
 				for (int c = col + 1; c < Keys[row].Count; c++) centerLane.Add(Keys[row][c]);
 
-				if (lanes >= 2 && row > 0)
+				if (row > 0)
+				{
 					for (int c = col + 1; c < Keys[row - 1].Count; c++)
 						upperLane.Add(Keys[row - 1][c]);
+				}
 
-				if (lanes >= 3 && row < Keys.Count - 1)
+				if (row < Keys.Count - 1)
+				{
 					for (int c = col + 1; c < Keys[row + 1].Count; c++)
 						lowerLane.Add(Keys[row + 1][c]);
+				}
 
 				break;
 

@@ -1,4 +1,5 @@
 #region
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using DG.Tweening;
 using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
 using UnityEngine;
+using VInspector;
 using Random = UnityEngine.Random;
 #endregion
 
@@ -31,9 +33,16 @@ public partial class KeyManager : MonoBehaviour
 	[Header("Keyboard Settings")]
 	[Tooltip("List of keys to instantiate on the keyboard. If empty, defaults to all alphabetic keys.")]
 	[SerializeField] List<KeyCode> overrideKeys = new ();
-	[SerializeField] List<KeyCode> currentlyValidKeys = new ();
+	[SerializeField] List<KeyCode> currentKeys = new ();
 	[SerializeField] KeyboardLayout keyboardLayout = KeyboardLayout.QWERTY;
 	[SerializeField] KeySet keySet = KeySet.Alphabetic;
+	[SerializeField] bool randomizeComboEffects = true;
+	[ShowIf(nameof(randomizeComboEffects), true)]
+	[SerializeField] List<ComboEffect> excludedComboEffects = new ();
+	[EndIf]
+	[ShowIf(nameof(randomizeComboEffects), false)]
+	[SerializeField] SerializedDictionary<string, string> presetComboEffects = new ();
+	[EndIf]
 
 	[Header("Key Settings")]
 	[Tooltip("Determines the spacing between each key object")]
@@ -81,22 +90,22 @@ public partial class KeyManager : MonoBehaviour
 	public float[] Lanes { get; } = new float[3];
 
 	/// <summary>
-	///     List of keys that are currently valid to press.
+	/// A flat list (1D) of all current KeyCodes based on the selected layout and key set.
 	///     <remarks> By default, this contains all alphabetic keyboard keys.</remarks>
 	/// </summary>
-	List<KeyCode> CurrentlyValidKeys
+	List<KeyCode> CurrentKeys
 	{
 		get
 		{
-			if (currentlyValidKeys.Count > 0) return currentlyValidKeys;
+			if (currentKeys.Count > 0) return currentKeys;
 
 			// if override keys are set, use those
 			if (overrideKeys.Count > 0) return overrideKeys;
 
 			// Uses the selected layout and key set to determine valid keys. E.g., QWERTY + Alphabetic = A-Z keys.
-			currentlyValidKeys = GetKeySetByLayout();
+			currentKeys = GetKeySetByLayout();
 
-			return currentlyValidKeys;
+			return currentKeys;
 		}
 	}
 
@@ -245,7 +254,59 @@ public partial class KeyManager : MonoBehaviour
 		// thorn K key
 		Key thornKey = GetKey(KeyCode.K);
 		thornKey.SetModifier(Key.Modifiers.Thorned);
+
+		if (randomizeComboEffects) RandomizeComboEffects(FlatKeys, excludedComboEffects.Select(e => e.GetType()).Distinct().ToArray());
+		else SelectPresetComboEffects();
 		#endregion
+	}
+
+	void RandomizeComboEffects(List<Key> keys, params Type[] exclude)
+	{
+		// remove excluded effects from the list
+		ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
+		effects = effects.Where(e => !exclude.Contains(e.GetType())).ToArray();
+		
+		foreach (var key in keys)
+		{
+			if (!key.LastKeyInCombo) continue; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
+
+			// randomly select a combo effect, and call GetEffect
+			key.ComboEffect = effects.Length > 0 ? Effect.GetEffect<ComboEffect>(effects[Random.Range(0, effects.Length)].GetType()) : key.ComboEffect = Effect.GetEffect<CE_Railgun>();
+		}
+	}
+
+	void SelectPresetComboEffects()
+	{
+		foreach (var kvp in presetComboEffects)
+		{
+			// split the value by comma to separate effect from desired level (if any)
+			string[] parts = kvp.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			// part 0 is the effect name, part 1 is the level (if any)
+			string effectName = parts[0].Trim();
+			string level = parts.Length > 1 ? parts[1].Trim() : null;
+			
+			// add the prefix if it's not already there
+			string prefixed = effectName.StartsWith("CE_") ? effectName : "CE_" + effectName;
+
+			Key key = GetKey((KeyCode) Enum.Parse(typeof(KeyCode), kvp.Key));
+
+			if (!key.LastKeyInCombo)
+			{
+				Logger.LogWarning($"Key '{kvp.Key}' is not marked as the last key in a combo. Combo effects only apply to the last key in a combo.");
+				continue;
+			}
+
+			var effectType = Type.GetType(prefixed);
+
+			if (key != null && effectType != null && effectType.IsSubclassOf(typeof(Effect)))
+			{
+				key.ComboEffect = Effect.GetEffect<ComboEffect>(effectType);
+				key.ComboEffect.SetLevel(Enum.TryParse(level, out Level lvl) ? lvl : Level.I, true);
+				Logger.Log($"Assigned preset combo effect '{effectName}' to key '{kvp.Key}' at level {key.ComboEffect.Level}.", this, "KeyManager");
+			}
+			else if (key == null) Logger.LogWarning($"Key '{kvp.Key}' not found. Check if the key name is valid.", this, "KeyManager");
+			else Logger.LogWarning($"Failed to assign preset combo effect '{prefixed}' to key '{kvp.Key}'. Check if the key and effect type are valid.", this, "KeyManager");
+		}
 	}
 
 	void Update()
@@ -253,7 +314,7 @@ public partial class KeyManager : MonoBehaviour
 		#region Input Handling
 		if (!Input.anyKeyDown) return;
 
-		KeyCode pressedKey = CurrentlyValidKeys.FirstOrDefault(Input.GetKeyDown);
+		KeyCode pressedKey = CurrentKeys.FirstOrDefault(Input.GetKeyDown);
 		if (pressedKey == KeyCode.None) return;
 
 		KeyPressed = pressedKey;
@@ -269,7 +330,7 @@ public partial class KeyManager : MonoBehaviour
 		if (Keyboard != null) Destroy(Keyboard);
 		Keyboard = new ("Keyboard");
 
-		currentlyValidKeys.Clear();
+		currentKeys.Clear();
 
 		// create rows' parent objects
 		GenerateRows();
@@ -311,9 +372,9 @@ public partial class KeyManager : MonoBehaviour
 
 		List<Key> GenerateKeys()
 		{
-			for (int i = 0; i < CurrentlyValidKeys.Count; i++)
+			for (int i = 0; i < CurrentKeys.Count; i++)
 			{
-				KeyCode keycode = CurrentlyValidKeys[i];
+				KeyCode keycode = CurrentKeys[i];
 
 				// Declare start positions for each row
 				Vector2 firstRow = new (-8.5f, 3.5f);
@@ -382,9 +443,9 @@ public partial class KeyManager : MonoBehaviour
 		#endregion
 	}
 
-	public void StartGlobalCooldown()
+	public void StartGlobalCooldown(float overrideCooldown = -1f)
 	{
-		foreach (Key key in FlatKeys.Where(k => !k.IsOffGCD)) key.StartLocalCooldown(globalCooldown);
+		foreach (Key key in FlatKeys.Where(k => !k.IsOffGCD)) key.StartLocalCooldown(overrideCooldown > 0 ? overrideCooldown : globalCooldown);
 	}
 
 	IEnumerator HandleNonComboKey(Key key)
@@ -443,7 +504,7 @@ public partial class KeyManager : MonoBehaviour
 
 	void HandleComboCompleted(List<Key> comboKeys)
 	{
-		var prefab = Resources.Load<ParticleSystem>("PREFABS/Combo VFX");
+		var prefab = Resources.Load<ParticleSystem>("PREFABS/VFX/Combo VFX");
 		ObjectPool pool = ObjectPoolManager.FindObjectPool(prefab.gameObject);
 
 		foreach (Key key in comboHighwayKeys)

@@ -9,6 +9,7 @@ using UnityEngine.Scripting.APIUpdating;
 [Serializable] [MovedFrom(true, "Lumina", "Lumina.Essentials", "AdjacentLevelSettings")]
 public class AdjacentLevelSettings : LevelSettings
 {
+	[InspectorName("Flagged Direction")]
 	public KeyManager.FDirection direction = KeyManager.FDirection.Right;
 }
 
@@ -29,7 +30,7 @@ public class CE_Adjacent : ComboEffect
 			foreach (Key adjacentKey in adjacentKeys)
 			{
 				KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-				adjacentKey.Activate(true, 0.5f, key);
+				adjacentKey.Activate(0.5f, key);
 				yield return new WaitForSecondsRealtime(0.02f);
 			}
 		}

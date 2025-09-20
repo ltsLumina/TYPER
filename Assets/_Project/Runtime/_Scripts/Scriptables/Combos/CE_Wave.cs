@@ -10,7 +10,7 @@ public class WaveLevelSettings : LevelSettings
 	public float delayBetweenColumns = 0.25f;
 }
 
-[CreateAssetMenu(fileName = "Wave", menuName = "Combos/New Wave", order = 3)]
+[CreateAssetMenu(fileName = "Wave", menuName = "Combos/Wave", order = 3)]
 public class CE_Wave : ComboEffect
 {
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)
@@ -40,7 +40,7 @@ public class CE_Wave : ComboEffect
 				foreach (Key key in column)
 				{
 					KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
-					key.Activate(true, 0.5f, initialKey);
+					key.Activate(0.5f, initialKey);
 
 					// slight delay between keys in the same column. Helps with combos and sounds.
 					// affects the way combos are hit during the wave, however. First row will always be first, so any combos on lower rows may not have their combo triggered.

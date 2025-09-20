@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4640d1980b96214193da3e1917c4a6b, type: 3}
+  m_Name: Chomper
+  m_EditorClassIdentifier: Assembly-CSharp::CE_Chomper
+  effectName: Chomper
+  description: Chomps on the current enemy (increases the damage dealt by this key
+    by a flat amount per level)
+  level: 0
+  maxLevel: 5
+  levels:
+  - rid: 5492189674257514609
+  - rid: 5492189674257514610
+  - rid: 5492189674257514611
+  - rid: 5492189674257514612
+  - rid: 5492189674257514613
+  - rid: 5492189674257514614
+  - rid: 5492189674257514615
+  - rid: 5492189674257514616
+  - rid: 5492189674257514617
+  - rid: 5492189674257514618
+  references:
+    version: 2
+    RefIds:
+    - rid: 5492189674257514609
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 1
+        damage: 1
+    - rid: 5492189674257514610
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 2
+        damage: 2
+    - rid: 5492189674257514611
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 3
+        damage: 3
+    - rid: 5492189674257514612
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 4
+        damage: 4
+    - rid: 5492189674257514613
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 5
+        damage: 5
+    - rid: 5492189674257514614
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 6
+        damage: 6
+    - rid: 5492189674257514615
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 7
+        damage: 7
+    - rid: 5492189674257514616
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 8
+        damage: 8
+    - rid: 5492189674257514617
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 9
+        damage: 9
+    - rid: 5492189674257514618
+      type: {class: ChomperLevelSettings, ns: , asm: Assembly-CSharp}
+      data:
+        level: Level 10
+        damage: 10

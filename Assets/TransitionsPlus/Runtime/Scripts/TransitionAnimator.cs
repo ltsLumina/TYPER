@@ -26,6 +26,9 @@ namespace TransitionsPlus {
 
         [Tooltip("Starts the transition effect when game starts or gameobject becomes activated. Use SetProgress method to set the current animation progress")]
         public bool autoPlay = true;
+        
+        [Tooltip("If enabled, the transition gameobject will be enabled when autoPlay is true")]
+        public bool activateOnPlay = true;
 
         [Tooltip("Delay to start the transition")]
         public float playDelay;

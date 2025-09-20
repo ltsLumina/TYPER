@@ -381,7 +381,7 @@ public class DebugWindow : EditorWindow
 		}
 	}
 
-	const string defaultText = "Default Key Effect (None)";
+	const string defaultText = "New Combo Effect";
 	static string effectName = defaultText;
 
 	static void DrawConsoleCommandMenu()

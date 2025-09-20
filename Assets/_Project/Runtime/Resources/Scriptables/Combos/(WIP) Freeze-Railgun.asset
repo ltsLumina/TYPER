@@ -28,35 +28,35 @@ MonoBehaviour:
     - rid: 5456594075331854612
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 4
-        duration: 5
+        level: Level IV
+        freezeDuration: 5
         direction: 3
-        rows: 2
+        rows: 3
     - rid: 5456594075331854613
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 5
-        duration: 5
+        level: Level V
+        freezeDuration: 5
         direction: 3
-        rows: 3
+        rows: -1
     - rid: 5492189642854498587
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 1
-        duration: 1.5
+        level: Level I
+        freezeDuration: 5
         direction: 3
         rows: 1
     - rid: 5492189642854498588
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 2
-        duration: 3
+        level: Level II
+        freezeDuration: 5
         direction: 3
         rows: 1
     - rid: 5492189642854498589
       type: {class: FreezeRailgunLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 3
-        duration: 5
+        level: Level III
+        freezeDuration: 5
         direction: 3
         rows: 1

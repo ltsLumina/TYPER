@@ -25,7 +25,7 @@ public class Enemy : MonoBehaviour, IDamageable
 	[SerializeField] ParticleSystem hitVFX;
 
 	SpriteRenderer spriteRenderer;
-	int scoreValue;
+	int frenzyValue;
 
 	public int Lane { get; set; }
 
@@ -63,7 +63,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		if (health >= 10) spriteRenderer.color = Color.red;
 
-		scoreValue = health * 10;
+		frenzyValue = health * 10;
 
 		Vector3 size = transform.localScale;
 		size.x = 0.5f + health * 0.1f;
@@ -114,30 +114,30 @@ public class Enemy : MonoBehaviour, IDamageable
 			}
 
 			// randomly decide to apply a negative modifier to the key
-			float rand = Random.value;
-
-			if (rand < 0.2f && !key.HasModifier(Key.Modifiers.Chained)) // 20% chance to freeze
-			{
-				DOVirtual.DelayedCall
-				(0.35f, () =>
-				{
-					speed = 0;
-
-					transform.DOPunchPosition(new (0.2f, 0f, 0f), 0.5f, 10)
-					         .SetEase(Ease.OutElastic)
-					         .OnComplete
-					          (() =>
-					          {
-						          // make sure again that the key doesn't already have the modifier
-						          if (key.HasModifier(Key.Modifiers.Frozen) || health <= 0) return;
-
-						          key.AddModifier(Key.Modifiers.Chained);
-						          Debug.Log($"{name} has chained Key {key.ToKeyCode()}!");
-						          OnDeath?.Invoke();
-						          ObjectPoolManager.ReturnToPool(gameObject);
-					          });
-				});
-			}
+			// float rand = Random.value;
+			//
+			// if (rand < 0.2f && !key.HasModifier(Key.Modifiers.Chained)) // 20% chance to freeze
+			// {
+			// 	DOVirtual.DelayedCall
+			// 	(0.35f, () =>
+			// 	{
+			// 		speed = 0;
+			//
+			// 		transform.DOPunchPosition(new (0.2f, 0f, 0f), 0.5f, 10)
+			// 		         .SetEase(Ease.OutElastic)
+			// 		         .OnComplete
+			// 		          (() =>
+			// 		          {
+			// 			          // make sure again that the key doesn't already have the modifier
+			// 			          if (key.HasModifier(Key.Modifiers.Frozen) || health <= 0) return;
+			//
+			// 			          key.AddModifier(Key.Modifiers.Chained);
+			// 			          Debug.Log($"{name} has chained Key {key.ToKeyCode()}!");
+			// 			          OnDeath?.Invoke();
+			// 			          ObjectPoolManager.ReturnToPool(gameObject);
+			// 		          });
+			// 	});
+			// }
 		}
 
 		if (other.CompareTag("Finish"))
@@ -248,8 +248,8 @@ public class Enemy : MonoBehaviour, IDamageable
 
 				//Debug.Log($"{name} has Died!");
 
-				// add score. Score is calculated as 10 points per health at spawn time
-				GameManager.Instance.AddScore(scoreValue);
+				// add score. Frenzy is calculated as 10 points per health at spawn time
+				FrenzyManager.Instance.AddFrenzy(frenzyValue);
 
 				// VFX
 				DeathVFX();
@@ -257,6 +257,7 @@ public class Enemy : MonoBehaviour, IDamageable
 				// SFX
 				var deathSFX = new Sound(SFX.deathSFX);
 				deathSFX.SetOutput(Output.SFX);
+				deathSFX.SetVolume(0.5f);
 				deathSFX.SetRandomPitch(new (0.9f, 1.05f));
 				deathSFX.Play();
 

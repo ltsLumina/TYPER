@@ -8,7 +8,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
 	[SerializeField] int health = 10;
-	[SerializeField] int score;
+	[SerializeField] int frenzy;
 
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
@@ -22,12 +22,6 @@ public class GameManager : MonoBehaviour
 	{
 		get => health;
 		private set => health = Mathf.Clamp(health, 0, value);
-	}
-
-	public int Score
-	{
-		get => score;
-		private set => score = value;
 	}
 
 	public TransitionAnimator EnterTransition => enterTransition;
@@ -49,11 +43,6 @@ public class GameManager : MonoBehaviour
 		music.SetVolume(0.65f);
 		music.SetLoop(true);
 		music.Play();
-
-		ComboManager.Instance.OnCompleteCombo += combo =>
-		{
-			TriggerHitStop();
-		};
 	}
 
 	public void TakeDamage(int damage)
@@ -87,7 +76,7 @@ public class GameManager : MonoBehaviour
 		hitStopCoroutine = StartCoroutine(HitStop(duration, slowdownFactor));
 	}
 
-	IEnumerator HitStop(float duration, float slowdownFactor = 0f)
+	IEnumerator HitStop(float duration, float slowdownFactor)
 	{
 		// Clamp the values to avoid extreme cases
 		duration = Mathf.Max(0.01f, duration);
@@ -102,20 +91,5 @@ public class GameManager : MonoBehaviour
 		Time.fixedDeltaTime = 0.02f;
 
 		hitStopCoroutine = null;
-	}
-
-	public void AddScore(int points)
-	{
-		var frenzyManager = FrenzyManager.Instance;
-
-		int pointsWithMult = Mathf.CeilToInt(points * frenzyManager.FrenzyMultiplier);
-		Score += frenzyManager.Frenzied ? pointsWithMult : points;
-		
-		//TODO: very temporary way of doing this
-		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(0).GetComponent<TMPro.TextMeshProUGUI>();
-	string text = $"{Score} pts"
-			+ (frenzyManager.Frenzied ? $" ({frenzyManager.FrenzyMultiplier}x)" : string.Empty)
-			+ (Time.timeScale >= 1.1f ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
-		scoreText.text = text;
 	}
 }

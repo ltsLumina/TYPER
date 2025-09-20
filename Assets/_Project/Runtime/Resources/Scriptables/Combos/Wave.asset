@@ -16,29 +16,22 @@ MonoBehaviour:
   description: Sweeps over the keyboard in a wave, activating each column one by
     one.
   level: 0
-  maxLevel: 2
+  maxLevel: 1
   levels:
   - rid: 5492189631572607062
   - rid: 5492189631572607063
-  - rid: 5492189631572607064
   references:
     version: 2
     RefIds:
     - rid: 5492189631572607062
       type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 1
+        level: Level I
         cycles: 1
-        delayBetweenColumns: 1
+        delayBetweenColumns: 0.5
     - rid: 5492189631572607063
       type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
       data:
-        level: Level 2
-        cycles: 2
-        delayBetweenColumns: 0.5
-    - rid: 5492189631572607064
-      type: {class: WaveLevelSettings, ns: , asm: Assembly-CSharp}
-      data:
-        level: Level 3
-        cycles: 3
-        delayBetweenColumns: 0.5
+        level: Level II
+        cycles: 1
+        delayBetweenColumns: 0.1

@@ -6,11 +6,12 @@ using UnityEngine;
 public class FreezeLevelSettings : LevelSettings
 {
 	public float duration = 5f;
+	[InspectorName("Flagged Direction")]
 	public KeyManager.FDirection direction = KeyManager.FDirection.Right;
 	public int range = 1;
 }
 
-[CreateAssetMenu(fileName = "Freeze", menuName = "Combos/New Freeze", order = 7)]
+[CreateAssetMenu(fileName = "Freeze", menuName = "Combos/Freeze", order = 7)]
 public class CE_Freeze : ComboEffect
 {
 	protected override void Invoke(Key key, (bool byKey, Key key) trigger)

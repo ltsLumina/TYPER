@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
+using VInspector;
 #endregion
 
 public class ComboManager : MonoBehaviour
@@ -34,7 +36,12 @@ public class ComboManager : MonoBehaviour
 	[SerializeField, ReadOnly] bool loops; // TODO: implement looping combos
 	[Space(10)]
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
+	[Space(10)]
+	[Header("Statistics")]
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
+	[Space(5), UsedImplicitly]
+	[SerializeField, ReadOnly] int totalCombosCompleted;
+	[SerializeField, UsedImplicitly] SerializedDictionary<string, int> comboFrequency = new ();
 
 	readonly List<Dictionary<Key, (int, bool)>> combos = new ();
 
@@ -215,6 +222,9 @@ public class ComboManager : MonoBehaviour
 		sfx.Play();
 
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
+		totalCombosCompleted++;
+		if (!comboFrequency.TryAdd(currentCombo, 1))
+			comboFrequency[currentCombo]++;
 
 		if (CompletedCombos.Count > 5)
 		{

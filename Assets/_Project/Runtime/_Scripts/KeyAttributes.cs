@@ -14,6 +14,12 @@ public partial class Key // Properties
 	/// </summary>
 	public KeyCode KeyCode => keyCode;
 
+	public int Damage
+	{
+		get => damage;
+		set => damage = value;
+	}
+
 	/// <summary>
 	/// Represents the index of this key in the current combo, or -1 if not part of a combo.
 	/// </summary>
@@ -101,13 +107,6 @@ public partial class Key // Modifiers
 				modifiers = value ? modifiers | Modifiers.Combo : modifiers & ~Modifiers.Combo;
 
 				comboMarker.SetActive(value);
-
-				if (!LastKeyInCombo) return; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
-
-				ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
-				ComboEffect = effects.Where(e => e is not CE_Wave && e is not CE_Freeze).OrderBy(_ => Random.value).FirstOrDefault();
-
-				//ComboEffect = Effect.GetEffect<CE_Freeze>();
 				break;
 
 			case Modifiers.Mash:

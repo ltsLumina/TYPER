@@ -91,7 +91,8 @@ public static class Logger
     /// </summary>
     /// <param name="message"> The message to be logged. </param>
     /// <param name="context"> Object to which the message applies. </param>
-    public static void LogError(string message = default, Object context = default) => LogMessage(Debug.LogError, message, context);
+    /// <param name="prefix"> An optional prefix for the message. By default uses the [Logger] prefix. </param>
+    public static void LogError(string message = default, Object context = default, string prefix = default) => LogMessage(Debug.LogError, message, context, prefix);
 
     public static void LogError(bool message = default, Object context = default) => LogMessage(Debug.LogError, message.ToString(), context);
 

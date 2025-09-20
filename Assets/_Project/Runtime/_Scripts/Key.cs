@@ -193,9 +193,17 @@ public partial class Key : MonoBehaviour
 
 	void Update()
 	{
-		if (Keyboard.current.digit1Key.wasPressedThisFrame) { ComboEffect.SetLevel(ComboEffect.Level - 1); }
+		if (Keyboard.current.digit1Key.wasPressedThisFrame)
+		{
+			// ? because sometimes ComboEffect is null
+			ComboEffect?.SetLevel(ComboEffect.Level - 1);
+		}
 
-		if (Keyboard.current.digit2Key.wasPressedThisFrame) { ComboEffect.SetLevel(ComboEffect.Level + 1); }
+		if (Keyboard.current.digit2Key.wasPressedThisFrame)
+		{
+			// ? because sometimes ComboEffect is null
+			ComboEffect?.SetLevel(ComboEffect.Level + 1);
+		}
 
 		if (!isActive || IsChained) return;
 
@@ -252,17 +260,13 @@ public partial class Key : MonoBehaviour
 	/// <summary>
 	///     Activates the key, dealing damage to the current enemy if one is present.
 	/// </summary>
-	/// <param name="overrideGlobalCooldown">
-	///     If true, the key will not trigger the global cooldown when pressed. (Overrides
-	///     the OffGlobalCooldown property)
-	/// </param>
 	/// <param name="cooldownOverride">
 	///     If greater than 0, this value will be used as the cooldown instead of the key's default
 	///     cooldown.
 	/// </param>
 	/// <param name="triggerKey"> The key that triggered this key, if any. Null if triggered by player input. (false) </param>
 	/// <returns> True if an enemy was hit, false otherwise. </returns>
-	public void Activate(bool overrideGlobalCooldown = false, float cooldownOverride = -1f, Key triggerKey = null) // false by default
+	public void Activate(float cooldownOverride = -1f, Key triggerKey = null) // false by default
 	{
 		bool triggeredByKey = triggerKey != null;
 		#region Infnite Loop Protection - only allow 1 activation per frame per key
@@ -293,16 +297,41 @@ public partial class Key : MonoBehaviour
 
 		if (!isActive) return;
 
-		// Prevent activation if the key is still on cooldown and global cooldown override is not requested.
+		// Prevent activation if the key is still on cooldown and cooldown override is not requested.
 		// TODO: keeping the override check here makes the game more fun, but things trigger each other en masse and repeatably, which can be chaotic.
-		if (remainingCooldown > 0f /* && !overrideGlobalCooldown*/) return;
+		if (remainingCooldown > 0f && cooldownOverride < 0f) return;
 
-		// Reset combo if:
-		// (1) combo in progress and this key is not part of the combo, or...
-		// (2) combo in progress, not triggered by key, this key is part of the combo but is not the next key
-		if (comboManager.InProgress && !triggeredByKey && (!comboManager.CurrentComboKeys.Contains(this) || (comboManager.CurrentComboKeys.Contains(this) && comboIndex != comboManager.NextComboIndex))) comboManager.ResetCombo();
+		if (comboManager.InProgress)
+		{
+		    bool isComboKey = comboManager.CurrentComboKeys.Contains(this);
+		    bool isNextComboKey = comboIndex == comboManager.NextComboIndex;
+		
+		    if (!isComboKey)
+		    {
+		        if (!triggeredByKey)
+		        {
+		            Debug.LogWarning("Wrong key pressed by player, resetting combo");
+		            comboManager.ResetCombo();
+		        }
+		    }
+		    else if (!isNextComboKey)
+		    {
+		        if (!triggeredByKey)
+		        {
+		            Debug.LogWarning("Out-of-order combo key by player, resetting combo");
+		            comboManager.ResetCombo();
+		            return;
+		        }
+		    }
+		
+		    // Allow chain activation to start a new combo if this is the first key in a combo
+		    if (triggeredByKey && isComboKey && comboIndex == 0)
+		    {
+		        Debug.LogWarning("Key activation by another key, starting new combo");
+		        comboManager.BeginCombo(keyCode);
+		    }
+		}
 
-		//TODO: removing "!triggeredbyKey" changes the behaviour of combos being reset when certain effects are running, e.g. wave, pulse. This may or may not be desirable.
 
 		bool hitEnemy = DealDamage();
 
@@ -330,7 +359,8 @@ public partial class Key : MonoBehaviour
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) ComboEffect?.Invoke(this, triggerKey);
+					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
+						ComboEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
@@ -387,15 +417,18 @@ public partial class Key : MonoBehaviour
 			return;
 		}
 
-		if (overrideGlobalCooldown)
+		if (cooldownOverride > 0f)
 		{
-			StartLocalCooldown(cooldownOverride > -1f ? cooldownOverride : cooldown);
+			StartLocalCooldown(cooldownOverride);
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
 			OnActivated?.Invoke(hitEnemy, triggerKey);
 		}
 		else
 		{
+			
 			KeyManager.Instance.StartGlobalCooldown();
+			// TODO Interesting idea:
+			// comboManager.OnCompleteCombo += _ => KeyManager.Instance.StartGlobalCooldown(0.25f); 
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
 			OnActivated?.Invoke(hitEnemy, triggerKey);
 		}
@@ -447,6 +480,7 @@ public partial class Key : MonoBehaviour
 		SpriteRenderer.color = colour;
 		yield return new WaitForSeconds(duration);
 
+		// Mash needs a special case because it can be activated multiple times rapidly
 		if (!IsMash) SpriteRenderer.DOColor(remainingCooldown > 0f ? Color.grey : Color.white, 0.25f);
 		else SpriteRenderer.color = remainingCooldown > 0f ? Color.grey : Color.white;
 	}
