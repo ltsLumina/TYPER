@@ -1,3 +1,6 @@
+//#define LOG_KEY_ACTIVATION_INFO
+#define LOG_KEY_ACTIVATION_ERROR
+
 #region
 using System;
 using System.Collections;
@@ -202,7 +205,7 @@ public partial class Key : MonoBehaviour
 		if (Keyboard.current.digit2Key.wasPressedThisFrame)
 		{
 			// ? because sometimes ComboEffect is null
-			ComboEffect?.SetLevel(ComboEffect.Level + 1);
+			ComboEffect?.GainLevel();
 		}
 
 		if (!isActive || IsChained) return;
@@ -240,14 +243,20 @@ public partial class Key : MonoBehaviour
 
 	Coroutine mashTimerCoroutine;
 
-	int timesActivatedByKey;
-	const int MAX_ACTIVATIONS_PER_FRAME = 5; // arbitrary limit to prevent infinite loops
+	/// <summary>
+	///     An arbitrary limit to prevent infinite loops.
+	///     <para>'3' seems reasonable, because I doubt more than three separate combos would trigger in a single frame.</para>
+	/// </summary>
+	const int MAX_ACTIVATIONS_PER_FRAME = 3;
 
-	IEnumerator StackOverflowProtection()
-	{
-		yield return null;
-		timesActivatedByKey = 0;
-	}
+	/// <summary>
+	///     Tracks the number of activations in the current frame to prevent infinite activation loops.
+	///     <para>T1: List of keys that triggered this key, for debugging purposes.</para>
+	///     <para>T2: Number of activations in the current frame.</para>
+	///     <para>T3: The frame number of the current frame.</para>
+	/// </summary>
+	/// <remarks> Reset at the end of each frame. </remarks>
+	(List<Key> triggerKeys, int activations, int? currentFrame) activationInfo;
 
 	/// <summary>
 	///     Event triggered when the key is activated.
@@ -256,6 +265,8 @@ public partial class Key : MonoBehaviour
 	///     (null).
 	/// </summary>
 	public event Action<bool, Key> OnActivated;
+
+	public override string ToString() => keyCode.ToString();
 
 	/// <summary>
 	///     Activates the key, dealing damage to the current enemy if one is present.
@@ -269,21 +280,53 @@ public partial class Key : MonoBehaviour
 	public void Activate(float cooldownOverride = -1f, Key triggerKey = null) // false by default
 	{
 		bool triggeredByKey = triggerKey != null;
-		#region Infnite Loop Protection - only allow 1 activation per frame per key
+		
+		#region Stack Overflow Protection - only allow MAX_ACTIVATIONS_PER_FRAME activations per frame if triggered by another key
 		if (triggeredByKey)
 		{
-			timesActivatedByKey++;
+			activationInfo.triggerKeys ??= new ();
+			activationInfo.triggerKeys.Add(triggerKey);
+			activationInfo.activations++;
+			activationInfo.currentFrame = Time.frameCount;
 
-			if (timesActivatedByKey > MAX_ACTIVATIONS_PER_FRAME)
+			switch (activationInfo.activations)
 			{
-#if false
-                Debug.LogError($"Potential infinite activation loop detected on key {name}. Activation aborted.");
+				case > MAX_ACTIVATIONS_PER_FRAME: {
+#if LOG_KEY_ACTIVATION_ERROR
+					string msg1 = $"Potential infinite activation loop detected on key {name}. ";
+					string msg2 = "\n" + $"Called by {activationInfo.triggerKeys.Select(k => k.name).Distinct().Aggregate((a, b) => a + ", " + b)} on frame {activationInfo.currentFrame}. ";
+					const string msg3 = "\n" + "<color=Orange>Activation aborted to prevent <i>potential</i> stack overflow.</color>";
+					string msg = msg1 + msg2 + msg3;
+					Logger.LogError(msg, this, "Overflow Protection");
+				
 #endif
-				timesActivatedByKey = 0;
-				return;
+					activationInfo.triggerKeys.Clear();
+					activationInfo.activations = 0;
+					activationInfo.currentFrame = null;
+					return;
+				}
+
+#if LOG_KEY_ACTIVATION_INFO
+				case 2: {
+					// log an info message, as this is allowed but might indicate a problem
+					string msg1 = $"Key {name} activated twice in a single frame. ";
+					string msg2 = "\n" + $"Called by {activationInfo.triggerKeys.Select(k => k.name).Distinct().Aggregate((a, b) => a + " and " + b)} on frame {activationInfo.currentFrame}. ";
+					const string msg3 = "<color=Orange>(Multiple activations in a single frame)</color>";
+					string msg = msg1 + msg2 + msg3;
+					Logger.Log(msg, this, "Overflow Protection");
+					break;
+				}
+#endif
 			}
 
 			StartCoroutine(StackOverflowProtection());
+			IEnumerator StackOverflowProtection()
+			{
+				yield return null;
+				activationInfo.triggerKeys.Clear();
+				activationInfo.activations = 0;
+				activationInfo.currentFrame = null;
+			}
 		}
 		#endregion
 
@@ -305,6 +348,16 @@ public partial class Key : MonoBehaviour
 		{
 		    bool isComboKey = comboManager.CurrentComboKeys.Contains(this);
 		    bool isNextComboKey = comboIndex == comboManager.NextComboIndex;
+		    bool isSameKeyTwice = comboManager.RecentKey == this;
+		    
+		    if (isSameKeyTwice)
+		    {
+		        if (!triggeredByKey)
+		        {
+		            Debug.LogWarning("Same key pressed twice in a row by player, resetting combo");
+		            comboManager.ResetCombo();
+		        }
+		    }
 		
 		    if (!isComboKey)
 		    {
@@ -320,7 +373,6 @@ public partial class Key : MonoBehaviour
 		        {
 		            Debug.LogWarning("Out-of-order combo key by player, resetting combo");
 		            comboManager.ResetCombo();
-		            return;
 		        }
 		    }
 		
@@ -359,10 +411,15 @@ public partial class Key : MonoBehaviour
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) 
-						ComboEffect?.Invoke(this, triggerKey);
+					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) ComboEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
+
+					// Note: This changes the gameplay dynamic a little which might be worth testing:
+					// The idea is that if a key is triggered by another key, it doesn't trigger the global cooldown.
+					// This allows for more interesting combos and chain reactions.
+					// if (!triggeredByKey) KeyManager.Instance.StartGlobalCooldown();
+					// else StartLocalCooldown(cooldown);
 					SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
 					OnActivated?.Invoke(hitEnemy, triggerKey);
 					return;
@@ -376,6 +433,11 @@ public partial class Key : MonoBehaviour
 				ComboHighlight.gameObject.SetActive(false);
 				return;
 			}
+
+			StartLocalCooldown(cooldown);
+			SetColour(hitEnemy ? Color.green : Color.cyan, 0.25f);
+			OnActivated?.Invoke(hitEnemy, triggerKey);
+			return;
 		}
 
 		if (IsMash)

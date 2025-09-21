@@ -1,8 +1,10 @@
-﻿using DG.Tweening;
+﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Object = UnityEngine.Object;
 
-public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler // IPointer events
+public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler // IPointer events
 {
 	Key currentKey;
 
@@ -11,12 +13,17 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		get => KeyManager.Instance.Tooltip;
 		set => KeyManager.Instance.Tooltip = value;
 	}
+	
+	public event Action<Key> OnCursorEnter;
+	public event Action<Key> OnCursorExit;
+	public event Action<Key, PointerEventData.InputButton> OnClick;
 
 	public void OnPointerEnter(PointerEventData eventData)
 	{
 		//Logger.Log($"Key {this} hovered.");
 
 		currentKey = GetPointerKey(eventData);
+		OnCursorEnter?.Invoke(currentKey);
 
 		if (DOTween.IsTweening("KeyHover")) return;
 		Sequence sequence = DOTween.Sequence();
@@ -29,7 +36,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 			sequence.AppendCallback
 			(() =>
 			{
-				currentKey.comboHighlight.SetActive(true);
+				currentKey.ComboHighlight.SetActive(true);
 				var anim = currentKey.ComboHighlight.GetComponent<Animation>();
 				anim.Play();
 			});
@@ -37,14 +44,13 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 
 		// Otherwise just do the hover pop tween
 		sequence.Append(currentKey.transform.DOScale(Vector3.one * 1.1f, 0.25f).SetEase(Ease.OutBack));
-
 		sequence.OnKill
 		(() =>
 		{
 			if (currentKey.ComboEffect || currentKey.KeyModifier)
 			{
 				// Only disable if it's not the next key in the combo, otherwise it will flicker off when hovering over it
-				if (comboManager.NextKey != currentKey) currentKey.comboHighlight.SetActive(false);
+				if (ComboManager.Instance.NextKey != currentKey) currentKey.ComboHighlight.SetActive(false);
 			}
 
 			currentKey.transform.DOScale(Vector3.one, 0.1f).SetEase(Ease.OutBack);
@@ -60,6 +66,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		//Logger.Log($"Key {this} unhovered.");
 
 		DOTween.Kill("KeyHover");
+		OnCursorExit?.Invoke(currentKey);
 		currentKey = null;
 
 		HideTooltip();
@@ -73,7 +80,8 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 		{
 			case PointerEventData.InputButton.Left:
 				//Logger.Log($"Key {this} clicked.");
-				currentKey?.Activate();
+				currentKey.Activate();
+				currentKey.ComboHighlight.SetActive(false); // mostly for 'Loose' key modifier.
 				break;
 
 			case PointerEventData.InputButton.Right:
@@ -89,6 +97,8 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 				ShowTooltip();
 				break;
 		}
+		
+		OnClick?.Invoke(currentKey, eventData.button);
 	}
 
 	void ShowTooltip()
@@ -117,7 +127,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 			tooltip.SetText("Empty Key", "This key has no effect assigned.");
 			tooltip.SetOpacity(0.85f); // TODO: adjust opacity based on if the tooltip is hovering over other UI elements or keys
 		}
-		else { CreateTooltip(); }
+		else CreateTooltip();
 	}
 
 	void HideTooltip()
@@ -129,7 +139,7 @@ public partial class Key : IPointerEnterHandler, IPointerExitHandler, IPointerCl
 	{
 		GameObject canvas = GameObject.FindWithTag("Canvas");
 		var prefab = Resources.Load<Tooltip>("PREFABS/Tooltip");
-		tooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
+		tooltip ??= Object.Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
 
 		if (currentKey.KeyModifier)
 		{

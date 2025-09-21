@@ -50,19 +50,19 @@ public partial class KeyManager
 	}
 
 	#region Adjacent/Surrounding Keys
-	/// <param name="keycode"> The key to look from. </param>
+	/// <param name="key"></param>
 	/// <param name="direction"> Direction to look for an adjacent key. </param>
 	/// <returns>
 	///     The adjacent key in the specified direction, or null if none exists. If direction is All, returns 'self' (the provided keycode) and
 	///     populates adjacentKeys with all found adjacent keys.
 	/// </returns>
-	public List<Key> GetAdjacentKey(KeyCode keycode, FDirection direction)
+	public List<Key> GetAdjacentKey(Key key, FDirection direction)
 	{
-		(bool found, int row, int col) = FindKey(keycode);
-
+		(bool found, int row, int col) = FindKey(key);
 		if (!found) return null;
 
-		if (direction == (FDirection.Up | FDirection.Down | FDirection.Left | FDirection.Right)) { return AllAdjacentKeys(keycode); }
+		if (direction == (FDirection.Up | FDirection.Down | FDirection.Left | FDirection.Right)) 
+			return AllAdjacentKeys();
 
 		var foundKeys = new List<Key>();
 
@@ -92,14 +92,12 @@ public partial class KeyManager
 
 		return foundKeys.Count > 0 ? foundKeys : null;
 
-		List<Key> AllAdjacentKeys(KeyCode keyCode)
+		List<Key> AllAdjacentKeys()
 		{
 			var directions = new[] { FDirection.Up, FDirection.Down, FDirection.Left, FDirection.Right };
-			return directions.SelectMany(dir => GetAdjacentKey(keyCode, dir) ?? new List<Key>()).ToList();
+			return directions.SelectMany(dir => GetAdjacentKey(key, dir) ?? new List<Key>()).ToList();
 		}
 	}
-
-	public List<Key> GetAdjacentKey(Key key, FDirection direction) => GetAdjacentKey(key.ToKeyCode(), direction);
 
 	/// <summary>
 	/// Returns the adjacent key in the specified direction, including diagonals.
@@ -107,9 +105,9 @@ public partial class KeyManager
 	/// <param name="keycode">The key to look from.</param>
 	/// <param name="direction">The direction to look for an adjacent key (supports diagonals).</param>
 	/// <returns>The adjacent key in the specified direction, or null if none exists.</returns>
-	public Key GetAdjacentKey(KeyCode keycode, DDirection direction)
+	public Key GetAdjacentKey(Key key, DDirection direction)
 	{
-		(bool found, int row, int col) = FindKey(keycode);
+		(bool found, int row, int col) = FindKey(key);
 		if (!found) return null;
 
 		var offsets = new Dictionary<DDirection, (int dr, int dc)>
@@ -131,8 +129,6 @@ public partial class KeyManager
 
 		return null;
 	}
-
-	public Key GetSingleAdjacentKey(Key key, DDirection direction) => GetAdjacentKey(key.ToKeyCode(), direction);
 
 	/// <param name="keycode"></param>
 	/// <param name="includeSelf"> Whether to include the specified key in the returned list. </param>
@@ -243,7 +239,7 @@ public partial class KeyManager
 
 	public List<Key> GetWallKeys(Key centerKey, FDirection direction, int range)
 	{
-		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
+		(bool found, int row, int col) = FindKey(centerKey);
 		if (!found) return null;
 
 		List<Key> wallKeys = new ();
@@ -292,7 +288,7 @@ public partial class KeyManager
 
 	public (List<Key> centerLane, List<Key> upperLane, List<Key> lowerLane) GetRailgunKeys(Key centerKey, Direction direction)
 	{
-		(bool found, int row, int col) = FindKey(centerKey.ToKeyCode());
+		(bool found, int row, int col) = FindKey(centerKey);
 		if (!found) return (null, null, null);
 
 		List<Key> centerLane = new ();

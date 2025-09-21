@@ -332,7 +332,7 @@ public class FrenzyManager : MonoBehaviour
 
 		//TODO: very temporary way of doing this
 		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(0).GetComponent<TMPro.TextMeshProUGUI>();
-		string text = $"{frenzy}\npts" + (Frenzied ? $"\n({FrenzyMultiplier}x)" : string.Empty) + (Time.timeScale >= 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
+		string text = $"{frenzy}\npts" + (Frenzied ? $"\n({FrenzyMultiplier}x)" : string.Empty) + (Time.timeScale > 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
 		scoreText.text = text;
 	}
 

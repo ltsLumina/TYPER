@@ -44,6 +44,7 @@ public class ComboManager : MonoBehaviour
 	[SerializeField, UsedImplicitly] SerializedDictionary<string, int> comboFrequency = new ();
 
 	readonly List<Dictionary<Key, (int, bool)>> combos = new ();
+	public bool DoesComboExist(List<Key> keys) => combos.Any(c => c.Keys.SequenceEqual(keys));
 
 	public bool InProgress => nextComboIndex != -1;
 	public int NextComboIndex => nextComboIndex;
@@ -75,7 +76,7 @@ public class ComboManager : MonoBehaviour
 		}
 
 		// if the combo already exists, do not create the combo
-		if (combos.Any(c => c.Keys.SequenceEqual(comboKeys)))
+		if (DoesComboExist(comboKeys))
 		{
 			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}");
 			return;

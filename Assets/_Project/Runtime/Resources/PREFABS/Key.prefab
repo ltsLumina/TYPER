@@ -918,6 +918,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3463164596212677223}
   - component: {fileID: 2709114917377182935}
+  - component: {fileID: 44002616108034735}
+  - component: {fileID: 5834063331556429221}
   - component: {fileID: 251285257252138855}
   m_Layer: 3
   m_Name: Key
@@ -984,6 +986,37 @@ MonoBehaviour:
   row: 0
   indexInRow: 0
   indexKeyboard: 0
+--- !u!114 &44002616108034735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5872402500852165590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b7e878e66b04cf6bc1e1d32e6f29723, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KeyUI
+--- !u!114 &5834063331556429221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5872402500852165590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fbcbfddf0ca2ae48a6050b995f9edf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorManager
+  cursor: {fileID: 2800000, guid: 532f2ac632dee27459564dae6294942e, type: 3}
+  help: {fileID: 2800000, guid: fff3c6c2ae86f0c448cfd99a83fd9104, type: 3}
+  loading: {fileID: 2800000, guid: 05e8e711c90979b43a1c1d09d0f4f86b, type: 3}
+  link: {fileID: 2800000, guid: 42fa4e56ac40fb046922e8ca5f76d1ef, type: 3}
+  move: {fileID: 2800000, guid: 37fe82e17e5d52d4bbfa47f50906086f, type: 3}
+  unavailable: {fileID: 2800000, guid: 3edc47d8d07443641aafb72bd934e69e, type: 3}
+  arrow: {fileID: 2800000, guid: e71c6940cdc29de4aa3e69229cbbbbe4, type: 3}
 --- !u!61 &251285257252138855
 BoxCollider2D:
   m_ObjectHideFlags: 0

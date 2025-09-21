@@ -38,7 +38,7 @@ public class CE_Pulse : ComboEffect
 
 	IEnumerator PulseCoroutine(Key centerKey, int maxLayers, float delayBetweenLayers)
 	{
-		(bool found, int _, int _) = KeyManager.Instance.FindKey(centerKey.ToKeyCode());
+		(bool found, int _, int _) = KeyManager.Instance.FindKey(centerKey);
 		if (!found)
 		{
 			pulseCoroutine = null;

@@ -17,6 +17,8 @@ MonoBehaviour:
     - 
     - 8c9cfa26abfee488c85f1582747f6a02
     - 4bef4d7720d6c514880a615b8da9e43d
+    - 93e7608aa2e6cc146938fbd56504feba
+    - 9ac00852c3eedfc4eb672f27bc605590
     values:
     - goDatasByGlobalId:
         keys: []
@@ -46,7 +48,7 @@ MonoBehaviour:
         - iColor: 1
           icon: d_eyeDropper.sml
       goDatasByInstanceId:
-        keys: 40a7000000a80000caa7000052a7000044a700000ea80000
+        keys: f2bb0000b2bc00007cbc000004bc0000f6bb0000c0bc0000
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -62,7 +64,6 @@ MonoBehaviour:
           icon: d_eyeDropper.sml
     - goDatasByGlobalId:
         keys:
-        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1867613533-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-244901402-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1761268032-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1171200206-0
@@ -71,9 +72,21 @@ MonoBehaviour:
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-46667972-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-211954289-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-752903497-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-2108563614-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-519420028-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-619394800-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-475446629-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1668828043-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1432403868-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1626218769-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-108446-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-757591496-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-921692176-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1500980126-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-658344758-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-243755237-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1661704583-0
         values:
-        - iColor: 0
-          icon: 
         - iColor: 1
           icon: d_eyeDropper.sml
         - iColor: 1
@@ -90,8 +103,36 @@ MonoBehaviour:
           icon: Canvas Icon
         - iColor: 0
           icon: EventSystem Icon
+        - iColor: 0
+          icon: Folder Icon
+        - iColor: 0
+          icon: Camera Icon
+        - iColor: 0
+          icon: Light Icon
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 4
+          icon: Folder Icon
+        - iColor: 7
+          icon: Folder Icon
+        - iColor: 3
+          icon: Folder Icon
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
       goDatasByInstanceId:
-        keys: a4a3000010a300009aa300007aa3000060a3000026a3000002a3000006a3000056a30000
+        keys: 82a20000f8a100007ea2000062a2000048a200000ca20000e2a10000e6a100003ea20000d4b9000034b90000c8b90000a6b900008cb9000048b900001eb9000022b9000082b90000b0bb000010bb0000a4bb000082bb000068bb000024bb0000faba0000feba00005ebb00007cea0000f2e9000078ea00005cea000042ea000006ea0000dce90000e0e9000038ea00008eea000014ea000022ea00000eea0000e2b4faff0ab4faffd8b0faffdcdffaffc058fbff6caffaffdcadfaff28ea0000eae900003ee3faff1893faff709cfaff
         values:
         - iColor: 0
           icon: 
@@ -111,3 +152,101 @@ MonoBehaviour:
           icon: Canvas Icon
         - iColor: 0
           icon: EventSystem Icon
+        - iColor: 0
+          icon: 
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: Canvas Icon
+        - iColor: 0
+          icon: EventSystem Icon
+        - iColor: 0
+          icon: 
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: Canvas Icon
+        - iColor: 0
+          icon: EventSystem Icon
+        - iColor: 0
+          icon: 
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 1
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: Canvas Icon
+        - iColor: 0
+          icon: EventSystem Icon
+        - iColor: 0
+          icon: Folder Icon
+        - iColor: 0
+          icon: Camera Icon
+        - iColor: 0
+          icon: Light Icon
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 4
+          icon: Folder Icon
+        - iColor: 7
+          icon: Folder Icon
+        - iColor: 3
+          icon: Folder Icon
+        - iColor: 0
+          icon: 
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: PreMatCube
+    - goDatasByGlobalId:
+        keys: []
+        values: []
+      goDatasByInstanceId:
+        keys: 
+        values: []
+    - goDatasByGlobalId:
+        keys: []
+        values: []
+      goDatasByInstanceId:
+        keys: 
+        values: []

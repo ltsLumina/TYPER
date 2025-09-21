@@ -33,6 +33,9 @@ public partial class Key // Properties
 	///    Indicates whether this key is the last key in a combo.
 	/// </summary>
 	public bool LastKeyInCombo { get; set; }
+
+	public float RemainingCooldown => remainingCooldown;
+	public bool OnCooldown => remainingCooldown > 0f;
 }
 
 public partial class Key // Components

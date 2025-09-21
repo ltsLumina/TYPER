@@ -44,7 +44,8 @@ public abstract class Effect : ScriptableObject
 	void OnValidate()
 	{
 		effectName = name;
-		if (description == "Effect Description" || string.IsNullOrWhiteSpace(description)) Logger.LogWarning($"Effect '{name}' has no description. Please provide a description for better clarity.");
+		if (description == "Effect Description" || string.IsNullOrWhiteSpace(description)) 
+			Logger.LogWarning($"Effect '{name}' has no description. Please provide a description for better clarity.");
 	}
 
 	// Must remember to clear cache on domain reloads

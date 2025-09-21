@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4118118381074844584
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3081340533207149884}
+  - component: {fileID: 2524652871806068203}
+  - component: {fileID: 1670153400138327743}
+  m_Layer: 0
+  m_Name: Key & Combo Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3081340533207149884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4118118381074844584}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2524652871806068203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4118118381074844584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0549ab59d55cd94a8905c14be8afea0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KeyController
+  keyPrefab: {fileID: 2709114917377182935, guid: 93e7608aa2e6cc146938fbd56504feba, type: 3}
+  overrideKeys: 
+  currentKeys: 
+  keyboardLayout: 0
+  keySet: 0
+  randomizeComboEffects: 0
+  excludedComboEffects:
+  - {fileID: 11400000, guid: b873aafe77743fa439a0e214e64508a7, type: 2}
+  - {fileID: 11400000, guid: cdfb642be102d9845a66b1fd9f3d3c95, type: 2}
+  - {fileID: 11400000, guid: 29c4dc98dfa56934f96b8ed8ae0f7f56, type: 2}
+  - {fileID: 11400000, guid: 0051946f6a986654dbce72fcc9a7b41a, type: 2}
+  presetComboEffects:
+    serializedKvps:
+    - Key: F
+      Value: Shockwave X
+      index: 0
+      isKeyRepeated: 0
+    - Key: B
+      Value: Pulse X
+      index: 1
+      isKeyRepeated: 0
+    - Key: Y
+      Value: Shockwave X
+      index: 2
+      isKeyRepeated: 0
+    - Key: E
+      Value: Railgun X
+      index: 3
+      isKeyRepeated: 0
+    dividerPos: 0.33
+  keyOffset: 1.1
+  rowOffsets:
+  - 0
+  - -0.1
+  - -0.2
+  globalCooldown: 1.5
+  currentCooldown: 0
+--- !u!114 &1670153400138327743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4118118381074844584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 416c9df35e1a46f78de427e5ef22a1a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ComboController
+  currentCombo: 
+  comboLength: 3
+  recentComboKey: {fileID: 0}
+  recentComboIndex: 0
+  nextComboKey: {fileID: 0}
+  nextComboIndex: 0
+  loops: 0
+  currentComboKeys: []
+  completedComboStrings: []
+  totalCombosCompleted: 0
+  comboFrequency:
+    serializedKvps: []
+    dividerPos: 0.33

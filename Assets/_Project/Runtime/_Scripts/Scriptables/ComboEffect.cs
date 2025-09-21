@@ -156,4 +156,6 @@ public abstract class ComboEffect : Effect
 		// Update the level for the asset so it persists
 		Asset.level = (Level) clampedIndex;
 	}
+
+	public void GainLevel() => SetLevel((Level) ((int) level + 1));
 }

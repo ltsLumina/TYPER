@@ -16,6 +16,9 @@ public class MenuManager : MonoBehaviour
 	ComboManager comboManager;
 	Canvas canvas;
 
+	Sound wooshSFX;
+	Sound beepSFX;
+
 	public static MenuManager Instance { get; private set; }
 
 	void Awake()
@@ -27,7 +30,7 @@ public class MenuManager : MonoBehaviour
 		buttonGroup = (RectTransform) transform.GetChild(0);
 	}
 
-	public bool IntroSequenceCompleted { get; private set; }
+	bool IntroSequenceCompleted { get; set; }
 
 	void Start()
 	{
@@ -73,7 +76,6 @@ public class MenuManager : MonoBehaviour
 		StartCoroutine(IntroSequence());
 
 		return;
-
 		IEnumerator IntroSequence()
 		{
 			// disable all keys at start
@@ -84,7 +86,7 @@ public class MenuManager : MonoBehaviour
 			// Dramatic effect
 			yield return new WaitForSeconds(2f);
 
-			var wooshSFX = new Sound(SFX.introWoosh);
+			wooshSFX = new (SFX.introWoosh);
 			wooshSFX.SetOutput(Output.SFX);
 			wooshSFX.SetVolume(0.5f);
 			wooshSFX.Play();
@@ -99,7 +101,6 @@ public class MenuManager : MonoBehaviour
 			#region Swap positions of title keys with random keys
 			// Center the title "TYPER" in the middle of the middle row
 			string title = GameManager.TYPER;
-			comboManager.CreateCombo(title.ToKeys());
 
 			// Doesn't use the 'interactable' parameter since we want to animate the markers separately
 			HighlightKeys(title);
@@ -114,11 +115,11 @@ public class MenuManager : MonoBehaviour
 				titleKey.Enable();
 				titleKey.SetModifier(Key.Modifiers.Combo);
 
-				var sfx = new Sound(SFX.beep);
-				sfx.SetOutput(Output.SFX);
-				sfx.SetRandomPitch(new (0.95f, 1.05f));
-				sfx.SetVolume(0.5f);
-				sfx.Play();
+				beepSFX = new (SFX.beep);
+				beepSFX.SetOutput(Output.SFX);
+				beepSFX.SetRandomPitch(new (0.95f, 1.05f));
+				beepSFX.SetVolume(0.5f);
+				beepSFX.Play();
 
 				yield return new WaitForSeconds(0.1f);
 			}
@@ -152,7 +153,7 @@ public class MenuManager : MonoBehaviour
 				           buttonGroup.gameObject.SetActive(true);
 
 				           buttonGroup.anchoredPosition = new (500, 0);
-				           buttonGroup.DOAnchorPosX(0, 1f).SetEase(Ease.OutCubic);
+				           buttonGroup.DOAnchorPosX(0, 1f).SetEase(Ease.OutCubic).SetLink(gameObject);
 
 				           menuKeyPositions = keyManager.FlatKeys.ToDictionary(k => k, k => k.transform.position);
 			           });
@@ -212,6 +213,7 @@ public class MenuManager : MonoBehaviour
 			var sequence = DOTween.Sequence();
 			sequence.Append(wordKey.transform.DOMove(targetPosition, 0.25f).SetEase(Ease.InOutCubic));
 			sequence.Join(targetKey.transform.DOMove(wordPosition, 0.5f).SetEase(Ease.InOutCubic));
+			sequence.SetLink(gameObject);
 		}
 	}
 

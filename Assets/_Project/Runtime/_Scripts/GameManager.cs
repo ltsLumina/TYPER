@@ -13,6 +13,8 @@ public class GameManager : MonoBehaviour
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
 	[SerializeField] TransitionAnimator exitTransition;
+
+	Music music;
 	
 	public static GameManager Instance { get; private set; }
 
@@ -38,7 +40,7 @@ public class GameManager : MonoBehaviour
 		Cursor.visible = true;
 		Cursor.lockState = CursorLockMode.None;
 		
-		var music = new Music(Track.musicSFX);
+		music = new (Track.musicSFX);
 		music.SetOutput(Output.Music);
 		music.SetVolume(0.65f);
 		music.SetLoop(true);

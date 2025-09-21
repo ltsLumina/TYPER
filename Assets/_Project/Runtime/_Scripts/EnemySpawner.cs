@@ -1,10 +1,12 @@
 #region
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
 using UnityEngine;
 using VInspector;
+using Random = UnityEngine.Random;
 #endregion
 
 public class EnemySpawner : MonoBehaviour
@@ -26,6 +28,8 @@ public class EnemySpawner : MonoBehaviour
 
 	GameObject parent;
 	float[] lanes;
+
+	public static event Action<Enemy> OnEnemySpawned;
 
 	void Start()
 	{
@@ -78,5 +82,7 @@ public class EnemySpawner : MonoBehaviour
 		enemy.OnDeath += () => enemies.Remove(enemy);
 		enemies.Add(enemy);
 		enemy.Lane = laneIndex + 1;
+		
+		OnEnemySpawned?.Invoke(enemy);
 	}
 }

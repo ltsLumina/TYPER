@@ -165,17 +165,26 @@ public partial class KeyManager : MonoBehaviour
 		return null;
 	}
 
-	public (bool found, int row, int col) FindKey(KeyCode keycode)
+	(bool found, int row, int col) FindKey(KeyCode keyCode)
 	{
 		for (int r = 0; r < Keys.Count; r++)
 		{
 			for (int c = 0; c < Keys[r].Count; c++)
-				if (Keys[r][c].KeyCode == keycode)
+			{
+				if (Keys[r][c].KeyCode == keyCode)
 					return (true, r, c);
+			}
 		}
 
 		return (false, -1, -1);
 	}
+
+	/// <summary>
+	///    Finds the specified key on the keyboard and returns its row and column indices.
+	/// </summary>
+	/// <param name="key"> The KeyCode to search for. </param>
+	/// <returns> A tuple containing whether the key was found, and its row and column indices. </returns>
+	public (bool found, int row, int col) FindKey(Key key) => FindKey(key.ToKeyCode());
 
 	public Key GetKey(KeyCode keycode)
 	{
