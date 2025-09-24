@@ -7,8 +7,16 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+	public enum State
+	{
+		Menu,
+		Playing,
+		Paused,
+		Shop,
+		GameOver
+	}
+	
 	[SerializeField] int health = 10;
-	[SerializeField] int frenzy;
 
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
@@ -45,6 +53,13 @@ public class GameManager : MonoBehaviour
 		music.SetVolume(0.65f);
 		music.SetLoop(true);
 		music.Play();
+	}
+	
+	public void Heal(int amount)
+	{
+		Health += amount;
+		Debug.LogWarning($"Player healed {amount} health.\n" +
+		                 $"Current health: {Health}");
 	}
 
 	public void TakeDamage(int damage)

@@ -14,6 +14,12 @@ public partial class ShardManager : MonoBehaviour
 	[Tab("Shards")]
 	[Min(0), Tooltip("Current number of shards the player has. A shard is a currency used to purchase upgrades and items.")]
 	[SerializeField] int shards;
+	
+	[Button("Add 100 Shards"), UsedImplicitly, ButtonSize(20)]
+	void Add() => AddShards(100);
+	[Button("Spend 100 Shards"), UsedImplicitly, ButtonSize(20)]
+	void Spend() => SpendShards(100);
+	
 	[Tooltip("The required amount of shards to reach the quota. The quota is the minimum amount of shards required to enter the shop.")]
 	[Range(1, 10_000)]
 	[SerializeField] int quota = 1000;
@@ -56,9 +62,8 @@ public partial class ShardManager : MonoBehaviour
 
 	void Update()
 	{
-		if (Keyboard.current.digit5Key.wasPressedThisFrame) AddShards(100);
-		if (Keyboard.current.digit6Key.wasPressedThisFrame) SpendShards(100);
-		if (Keyboard.current.digit7Key.wasPressedThisFrame) AddShards(500);
+		if (Keyboard.current.digit5Key.wasPressedThisFrame) SpendShards(100);
+		if (Keyboard.current.digit6Key.wasPressedThisFrame) AddShards(100);
 
 		if (QuotaReached && Math.Abs(quotaSlider.fillAmount - 1) < 0.1f) 
 			quotaSlider.color = Color.green;
@@ -76,7 +81,8 @@ public partial class ShardManager : MonoBehaviour
 		
 		quotaSlider.DOFillAmount(QuotaProgress, 1.5f).SetEase(Ease.OutCubic);
 		LerpShardText(shardText, shards);
-		quotaText.text = $"+{Mathf.Abs(shardsNeededForQuota)} / {quota}"; // show positive if over quota
+
+		SetQuotaText();
 	}
 
 	public bool SpendShards(int amount)
@@ -90,7 +96,8 @@ public partial class ShardManager : MonoBehaviour
 
 			quotaSlider.DOFillAmount(QuotaProgress, 1.5f).SetEase(Ease.OutCubic);
 			LerpShardText(shardText, shards);
-			quotaText.text = $"{shardsNeededForQuota} / {quota}";
+
+			SetQuotaText();
 			return true;
 		}
 
@@ -109,6 +116,18 @@ public partial class ShardManager : MonoBehaviour
 			        text.text = x.ToString();
 		        }, targetValue, duration)
 		       .SetEase(Ease.OutCubic);
+	}
+
+	void SetQuotaText()
+	{
+		string quotaDisplay;
+
+		// Show + if over quota, or "Quota reached!" if exactly at quota
+		// If not at quota, just show the normal "X / quota"
+		if (QuotaReached) quotaDisplay = shards > quota ? $"+{Mathf.Abs(shards) - quota}" : "Quota reached!";
+		else quotaDisplay = $"{Mathf.Abs(shards)} / {quota}";
+
+		quotaText.text = quotaDisplay;
 	}
 }
 

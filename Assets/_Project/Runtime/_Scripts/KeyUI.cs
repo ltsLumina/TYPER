@@ -2,16 +2,15 @@
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using Object = UnityEngine.Object;
 
-public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler // IPointer events
+public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler/*, IDropHandler*/ // IPointer events
 {
 	Key currentKey;
 
-	static Tooltip tooltip
+	static KeyTooltip KeyTooltip
 	{
-		get => KeyManager.Instance.Tooltip;
-		set => KeyManager.Instance.Tooltip = value;
+		get => KeyManager.Instance.KeyTooltip;
+		set => KeyManager.Instance.KeyTooltip = value;
 	}
 	
 	public event Action<Key> OnCursorEnter;
@@ -88,7 +87,7 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 				//Logger.Log($"Key {this} right-clicked.");
 
 				// Toggle off if already active
-				if (tooltip && tooltip.gameObject.activeInHierarchy)
+				if (KeyTooltip && KeyTooltip.gameObject.activeInHierarchy)
 				{
 					HideTooltip();
 					return;
@@ -103,60 +102,54 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 
 	void ShowTooltip()
 	{
-		if (tooltip)
+		if (KeyTooltip)
 		{
-			tooltip.gameObject.SetActive(true);
-			tooltip.transform.position = Input.mousePosition;
+			KeyTooltip.gameObject.SetActive(true);
+			KeyTooltip.transform.position = Input.mousePosition;
 
 			if (currentKey?.KeyModifier)
 			{
 				(string title, string description) = (currentKey.KeyModifier.EffectName, currentKey.KeyModifier.Description);
-				tooltip.SetText(title, description);
-				tooltip.SetOpacity(0.85f);
+				KeyTooltip.SetText(title, description);
+				KeyTooltip.SetOpacity(0.85f);
 				return;
 			}
 
 			if (currentKey?.ComboEffect)
 			{
-				(string title, string description) = (currentKey.ComboEffect.EffectName, currentKey.ComboEffect.Description);
-				tooltip.SetText(title, description);
-				tooltip.SetOpacity(0.85f);
+				(string title, string description) = ($"{currentKey.ComboEffect.EffectName} {currentKey.ComboEffect.Level}", currentKey.ComboEffect.Description);
+				KeyTooltip.SetText(title, description);
+				KeyTooltip.SetOpacity(0.85f);
 				return;
 			}
 
-			tooltip.SetText("Empty Key", "This key has no effect assigned.");
-			tooltip.SetOpacity(0.85f); // TODO: adjust opacity based on if the tooltip is hovering over other UI elements or keys
+			KeyTooltip.SetText("Empty Key", "This key has no effect assigned.");
+			KeyTooltip.SetOpacity(0.85f); // TODO: adjust opacity based on if the tooltip is hovering over other UI elements or keys
 		}
 		else CreateTooltip();
 	}
 
 	void HideTooltip()
 	{
-		if (tooltip != null) tooltip.gameObject.SetActive(false);
+		if (KeyTooltip != null) KeyTooltip.gameObject.SetActive(false);
 	}
 
 	void CreateTooltip()
 	{
 		GameObject canvas = GameObject.FindWithTag("Canvas");
-		var prefab = Resources.Load<Tooltip>("PREFABS/Tooltip");
-		tooltip ??= Object.Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
+		var prefab = Resources.Load<KeyTooltip>("PREFABS/Key Tooltip");
+		KeyTooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
 
 		if (currentKey.KeyModifier)
 		{
 			(string title, string description) = (currentKey.KeyModifier.EffectName, currentKey.KeyModifier.Description);
-			tooltip.SetText(title, description);
+			KeyTooltip.SetText(title, description);
 		}
 		else if (currentKey.ComboEffect)
 		{
-			(string title, string description) = (currentKey.ComboEffect.EffectName, currentKey.ComboEffect.Description);
-			tooltip.SetText(title, description);
+			(string title, string description) = ($"{currentKey.ComboEffect.EffectName} {currentKey.ComboEffect.Level}", currentKey.ComboEffect.Description);
+			KeyTooltip.SetText(title, description);
 		}
-	}
-
-	GameObject GetPointerGameObject(PointerEventData pointerEventData)
-	{
-		var currentObject = pointerEventData.pointerCurrentRaycast.gameObject;
-		return currentObject;
 	}
 
 	Key GetPointerKey(PointerEventData pointerEventData)
@@ -164,4 +157,17 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 		var currentObject = pointerEventData.pointerCurrentRaycast.gameObject;
 		return currentObject?.GetComponent<Key>();
 	}
+
+	// public void OnDrop(PointerEventData data)
+	// {
+	// 	// if the dragged object is an InventoryItem, log it
+	// 	var draggedObject = data.pointerDrag;
+	//
+	// 	if (draggedObject != null && draggedObject.TryGetComponent<InventoryItem>(out var item))
+	// 	{
+	// 		Debug.Log($"Dropped {draggedObject.name} onto {gameObject.name}");
+	// 		
+	// 		GetComponent<Key>().ComboEffect = item.Effect;
+	// 	}
+	// }
 }

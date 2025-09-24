@@ -11,17 +11,21 @@ using UnityEngine.UI;
 /// </summary>
 public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-	[SerializeField] Image icon;
 	//[SerializeField] TMP_Text itemNameText;
+	[SerializeField] Image icon;
 	[SerializeField] TMP_Text costText;
 	
 	Sequence hoverSequence;
 	Sequence selectedSequence;
 	Sequence purchaseSequence;
 	Sequence deselectSequence;
-	
+
+	void Awake() => tooltip = null;
+
 	public void OnPointerEnter(PointerEventData eventData)
 	{
+		ShowTooltip();
+		
 		if (IsPlaying(purchaseSequence)) return;
 		
 		hoverSequence = DOTween.Sequence();
@@ -31,6 +35,8 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 
 	public void OnPointerExit(PointerEventData eventData)
 	{
+		HideTooltip();
+		
 		DOTween.Kill("enter");
 		
 		if (IsPlaying(purchaseSequence)) return;
@@ -95,8 +101,59 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 				throw new ArgumentOutOfRangeException();
 		}
 	}
+	
+	public ShopItem Item { get; set; }
 
 	bool IsPlaying(Sequence sequence) => sequence != null && sequence.IsActive() && sequence.IsPlaying();
+
+	#region Tooltip
+	static ShopItemTooltip tooltip; // static because there should only ever be one tooltip (of this type) visible at a time
+
+	void ShowTooltip()
+	{
+		if (tooltip)
+		{
+			tooltip.gameObject.SetActive(true);
+			tooltip.transform.position = Input.mousePosition;
+
+			switch (Item)
+			{
+				case ComboItem combo: {
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
+					                                            $"Keys: {combo.Keys}" + "\n" + 
+					                                            "Click to select. " + "\n" +
+					                                            "Click again to confirm purchase.");
+					tooltip.SetText(title, description);
+					break;
+				}
+
+				case ModifierItem modifier: {
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
+					                                            $"Key: {modifier.Key}" + "\n" +
+					                                            "Click to select. " + "\n" +
+					                                            "Click again to confirm purchase.");
+					tooltip.SetText(title, description);
+					break;
+				}
+			}
+		}
+		else CreateTooltip();
+	}
+
+	void HideTooltip()
+	{
+		if (tooltip != null) tooltip.gameObject.SetActive(false);
+	}
+
+	void CreateTooltip()
+	{
+		GameObject canvas = GameObject.FindWithTag("Canvas");
+		var prefab = Resources.Load<ShopItemTooltip>("PREFABS/Shop Item Tooltip");
+		tooltip ??= Instantiate(prefab, Input.mousePosition, Quaternion.identity, canvas.transform);
+
+		ShowTooltip();
+	}
+	#endregion
 }
 
 public partial class ShopItemUI // properties

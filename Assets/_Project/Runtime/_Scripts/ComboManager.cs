@@ -78,7 +78,8 @@ public class ComboManager : MonoBehaviour
 		// if the combo already exists, do not create the combo
 		if (DoesComboExist(comboKeys))
 		{
-			Debug.LogError($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}");
+			Debug.LogWarning($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}" 
+			                 + "\n" + "The existing combo will be upgraded instead, through a different class/method.");
 			return;
 		}
 

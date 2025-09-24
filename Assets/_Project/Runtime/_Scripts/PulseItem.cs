@@ -1,17 +1,26 @@
 ﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "Pulse Item", menuName = "Shop/Pulse Item")]
-public class PulseItem : EffectItem
+public class PulseItem : ComboItem
 {
-	public override void Grant(ComboEffect effect)
+	public void Grant()
 	{
-		// find random key that doesn't already have pulse and add pulse to it
-		KeyCode.U.ToKey().ComboEffect = effect;
+		var lastKey = keys.ToKeys()[^1];
+		var comboKeys = keys.ToKeys();
 		
-		throw new System.NotImplementedException("need to code this lol");
+		ComboManager.Instance.CreateCombo(comboKeys);
+		
+		if (lastKey.ComboEffect == item) // already has it, upgrade instead
+		{
+			Upgrade(item);
+		}
+		else // assign new effect
+		{
+			lastKey.ComboEffect = item;
+		}
 	}
 
-	public override void Upgrade(ComboEffect effect)
+	void Upgrade(ComboEffect effect)
 	{
 		effect.GainLevel();
 	}

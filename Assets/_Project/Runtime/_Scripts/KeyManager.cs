@@ -109,7 +109,7 @@ public partial class KeyManager : MonoBehaviour
 		}
 	}
 
-	public Tooltip Tooltip { get; set; }
+	public KeyTooltip KeyTooltip { get; set; }
 
 	#region Get Key Functions
 	List<KeyCode> GetKeySetByLayout()
@@ -230,8 +230,8 @@ public partial class KeyManager : MonoBehaviour
 
 		#region Modifiers
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
-		List<Key> qweCombo = "QWE".ToKeys();
-		comboManager.CreateCombo(qweCombo);
+		//List<Key> qweCombo = "QWE".ToKeys();
+		//comboManager.CreateCombo(qweCombo);
 
 		List<Key> asdfCombo = "ASDF".ToKeys();
 		comboManager.CreateCombo(asdfCombo);
@@ -311,7 +311,7 @@ public partial class KeyManager : MonoBehaviour
 			{
 				key.ComboEffect = Effect.GetEffect<ComboEffect>(effectType);
 				key.ComboEffect.SetLevel(Enum.TryParse(level, out Level lvl) ? lvl : Level.I, true);
-				Logger.Log($"Assigned preset combo effect '{effectName}' to key '{kvp.Key}' at level {key.ComboEffect.Level}.", this, "KeyManager");
+				//Logger.Log($"Assigned preset combo effect '{effectName}' to key '{kvp.Key}' at level {key.ComboEffect.Level}.", this, "KeyManager");
 			}
 			else if (key == null) Logger.LogWarning($"Key '{kvp.Key}' not found. Check if the key name is valid.", this, "KeyManager");
 			else Logger.LogWarning($"Failed to assign preset combo effect '{prefixed}' to key '{kvp.Key}'. Check if the key and effect type are valid.", this, "KeyManager");

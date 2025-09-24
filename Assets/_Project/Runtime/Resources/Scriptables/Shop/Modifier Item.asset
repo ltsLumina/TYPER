@@ -9,17 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 014595100e004fc9ac4f3456282f729e, type: 3}
-  m_Name: Pulse Item
-  m_EditorClassIdentifier: Assembly-CSharp::ComboItem
-  itemName: (QWE) Chomper
-  cost: 0
-  icon: {fileID: 2800000, guid: 9cbb07cca3115403a9ee5ee3e734e27c, type: 3}
+  m_Script: {fileID: 11500000, guid: a1aa900abf7b40f2ba44eb9654740834, type: 3}
+  m_Name: Modifier Item
+  m_EditorClassIdentifier: Assembly-CSharp::ModifierItem
+  itemName: (V) Off-Global Cooldown
+  cost: 100
+  icon: {fileID: 2800000, guid: 8a547588e5fea481a97e1deb94c9612c, type: 3}
   onPurchase:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 11400000}
-        m_TargetAssemblyTypeName: ComboItem, Assembly-CSharp
+        m_TargetAssemblyTypeName: ModifierItem, Assembly-CSharp
         m_MethodName: Grant
         m_Mode: 1
         m_Arguments:
@@ -31,3 +31,5 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   rarity: 0
+  key: V
+  modifier: 0

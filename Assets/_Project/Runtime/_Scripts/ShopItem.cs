@@ -27,9 +27,20 @@ public abstract class PotionItem : ShopItem
 
 public abstract class EffectItem : ShopItem
 {
-	public ComboEffect item;
 	public Rarity rarity;
+}
 
-	public abstract void Grant(ComboEffect effect);
-	public abstract void Upgrade(ComboEffect effect);
+public class ComboItem : EffectItem
+{
+	protected string keys = "???";
+	protected ComboEffect item = null;
+
+	public string Keys => keys;
+	public ComboEffect Item => item;
+
+	void OnEnable()
+	{
+		itemName = item ? item.EffectName : "Undefined Combo Item";
+		Debug.Assert(item != null, $"ComboItem '{itemName}' has no ComboEffect assigned!");
+	}
 }
