@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using DG.Tweening;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Modifier Item", menuName = "Shop/Modifier Item")]
@@ -24,6 +25,9 @@ public class ModifierItem : EffectItem
 			key = key.Last().ToString();
 		}
 		
-		key.ToKeys().SetModifier(Enum.Parse<Key.Modifiers>(modifier.ToString()));
+		key.ToKey().SetModifier(Enum.Parse<Key.Modifiers>(modifier.ToString()));
+
+		KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.ToKey().transform.position);
+		key.ToKey().transform.DOPunchScale(Vector3.one * 0.25f, 0.35f, 10, 1).SetEase(Ease.OutBack);
 	}
 }

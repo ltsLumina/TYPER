@@ -8,17 +8,17 @@ public class KeyCursor : MonoBehaviour
 {
     [Tooltip("The default cursor texture. Set by default in the project settings.")]
     [SerializeField] Texture2D cursor;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Shown when hovering a key that can be pressed.")]
     [SerializeField] Texture2D help;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Shown when a key is on cooldown.")]
     [SerializeField] Texture2D loading;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Shown when a key has a combo effect or modifier applied.")]
     [SerializeField] Texture2D link;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Shown when moving a key (drag and drop).")]
     [SerializeField] Texture2D move;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Shown when a key is inactive.")]
     [SerializeField] Texture2D unavailable;
-    [Tooltip("Shown when... TBD")]
+    [Tooltip("Not currently used.")]
     [SerializeField] Texture2D arrow; // 'cursor_up.png'
 
     KeyUI keyUI;

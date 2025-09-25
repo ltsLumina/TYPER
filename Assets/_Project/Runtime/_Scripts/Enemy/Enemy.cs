@@ -37,7 +37,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 	void OnDisable() => OnDeath -= Reset;
 
-	void Reset()
+	public void Reset()
 	{
 		health = 1;
 		speed = 5f;
@@ -250,6 +250,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 				// add score. Frenzy is calculated as 10 points per health at spawn time
 				FrenzyManager.Instance.AddFrenzy(frenzyValue);
+				ShardManager.Instance.AddShards(50 * Random.Range(0, 11));
 
 				// VFX
 				DeathVFX();

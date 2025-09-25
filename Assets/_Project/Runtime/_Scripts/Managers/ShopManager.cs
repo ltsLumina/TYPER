@@ -78,8 +78,9 @@ public partial class ShopManager : MonoBehaviour
 
 	void Update()
 	{
-		enterShopText.gameObject.SetActive(shardManager.QuotaReached);
-		enterShopText.text = shardManager.QuotaReached && !inShop ? "Press 7 to Enter Shop" : "Press 8 to Exit Shop";
+		if (inShop) enterShopText.text = "Press 8 to exit shop";
+		else if (shardManager.QuotaReached) enterShopText.text = "Press 7 to enter shop";
+		else enterShopText.text = "Reach shard quota to enter shop";
 		
 		if (Input.GetKeyDown(KeyCode.Alpha7)) EnterShop();
 		if (Input.GetKeyDown(KeyCode.Alpha8)) ExitShop();
@@ -99,6 +100,15 @@ public partial class ShopManager : MonoBehaviour
 		} 
 		
 		inShop = true;
+
+		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+		enemySpawner.PauseSpawner();
+
+		foreach (Enemy enemySpawnerEnemy in enemySpawner.enemies)
+		{
+			enemySpawnerEnemy.Reset();
+			ObjectPoolManager.ReturnToPool(enemySpawnerEnemy.gameObject);
+		}
 		
 		preShopState = (Helpers.CameraMain.fieldOfView, KeyManager.Instance.Keyboard.transform.localPosition.x);
 		
@@ -116,6 +126,9 @@ public partial class ShopManager : MonoBehaviour
 	public void ExitShop()
 	{
 		inShop = false;
+
+		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+		enemySpawner.PlaySpawner();
 
 		Helpers.CameraMain.DOFieldOfView(preShopState.fov, 0.5f);
 		var keyboard = KeyManager.Instance.Keyboard;

@@ -32,11 +32,8 @@ public abstract class EffectItem : ShopItem
 
 public class ComboItem : EffectItem
 {
-	protected string keys = "???";
-	protected ComboEffect item = null;
-
-	public string Keys => keys;
-	public ComboEffect Item => item;
+	public string keys = "???";
+	public ComboEffect item;
 
 	void OnEnable()
 	{

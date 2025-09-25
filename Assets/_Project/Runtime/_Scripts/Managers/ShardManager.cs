@@ -57,7 +57,7 @@ public partial class ShardManager : MonoBehaviour
 		// Initial UI update
 		quotaSlider.fillAmount = QuotaProgress;
 		shardText.text = shards.ToString();
-		quotaText.text = $"{shardsNeededForQuota} / {quota}";
+		SetQuotaText();
 	}
 
 	void Update()

@@ -120,11 +120,11 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 			{
 				case ComboItem combo: {
 					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
-					                                            $"Keys: {combo.Keys}" + "\n" + 
+					                                            $"Keys: {combo.keys}" + "\n" + 
 					                                            "Click to select. " + "\n" +
 					                                            "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
-					break;
+					return;
 				}
 
 				case ModifierItem modifier: {
@@ -133,9 +133,12 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 					                                            "Click to select. " + "\n" +
 					                                            "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
-					break;
+					return;
 				}
 			}
+
+			tooltip.SetText("null", "not implemented yet");
+			tooltip.SetOpacity(0.85f); // TODO: adjust opacity based on if the tooltip is hovering over other UI elements or keys
 		}
 		else CreateTooltip();
 	}

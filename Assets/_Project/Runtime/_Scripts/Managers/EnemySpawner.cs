@@ -13,12 +13,12 @@ public class EnemySpawner : MonoBehaviour
 {
 	[Header("Enemy List")]
 	[SerializeField] ObjectPool enemyPool;
-	[SerializeField] List<Enemy> enemies = new ();
+	[SerializeField] public List<Enemy> enemies = new ();
 
 	[Header("Enemy Spawner Settings")]
 	[SerializeField] Enemy enemyPrefab;
 	[SerializeField] float initialDelay;
-	[UsedImplicitly, ReadOnly]
+	[UsedImplicitly] [ReadOnly]
 	[SerializeField] string currentWave;
 	[Tooltip("Waves defined as <elapsed time, repeat rate>")]
 	[SerializeField] SerializedDictionary<int, float> waves = new ()
@@ -29,13 +29,20 @@ public class EnemySpawner : MonoBehaviour
 	GameObject parent;
 	float[] lanes;
 
+	Coroutine spawnRoutine;
+
 	public static event Action<Enemy> OnEnemySpawned;
+
+	public bool IsPaused { get; private set; }
+
+	public void PauseSpawner() => IsPaused = true;
+	public void PlaySpawner() => IsPaused = false;
 
 	void Start()
 	{
 		lanes = KeyManager.Instance.Lanes;
 		parent = new ("--- Enemies ---");
-		StartCoroutine(SpawnRoutine());
+		spawnRoutine = StartCoroutine(SpawnRoutine());
 	}
 
 	IEnumerator SpawnRoutine()
@@ -45,6 +52,7 @@ public class EnemySpawner : MonoBehaviour
 
 		while (true)
 		{
+			while (IsPaused) yield return null;
 			float repeatRate = GetRepeatRate(elapsed);
 			SpawnEnemy();
 			yield return new WaitForSeconds(repeatRate);
@@ -53,14 +61,15 @@ public class EnemySpawner : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Gets the repeat rate based on the elapsed time and the defined waves.
+	///     Gets the repeat rate based on the elapsed time and the defined waves.
 	/// </summary>
 	/// <param name="elapsed"> The elapsed time since the start of the game.</param>
 	/// <returns> The repeat rate in seconds.</returns>
 	float GetRepeatRate(float elapsed)
 	{
 		float rate = 1f;
-		foreach (var wave in waves)
+
+		foreach (KeyValuePair<int, float> wave in waves)
 		{
 			if (elapsed >= wave.Key)
 			{
@@ -69,7 +78,7 @@ public class EnemySpawner : MonoBehaviour
 			}
 			else break;
 		}
-		
+
 		return rate;
 	}
 
@@ -82,7 +91,7 @@ public class EnemySpawner : MonoBehaviour
 		enemy.OnDeath += () => enemies.Remove(enemy);
 		enemies.Add(enemy);
 		enemy.Lane = laneIndex + 1;
-		
+
 		OnEnemySpawned?.Invoke(enemy);
 	}
 }

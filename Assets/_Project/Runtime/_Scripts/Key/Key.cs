@@ -576,7 +576,8 @@ public static class KeyExtensions
 		str = str.ToUpper();
 
 		List<KeyCode> keycodes = new ();
-		try { keycodes = str.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString())).ToList(); } catch (ArgumentException e) { Debug.LogError($"Invalid character in string '{str}': {e.Message}. " + "\nThere may be duplicate or unsupported characters."); }
+		try { keycodes = str.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString())).ToList(); } 
+		catch (ArgumentException e) { Debug.LogError($"Invalid character in string '{str}': {e.Message}. " + "\nThere may be duplicate or unsupported characters."); }
 
 		return keycodes;
 	}
@@ -585,4 +586,8 @@ public static class KeyExtensions
 	public static List<Key> ToKeys(this List<KeyCode> keycodes) => keycodes.Select(k => KeyManager.Instance.GetKey(k)).Where(k => k != null).ToList();
 
 	public static List<Key> ToKeys(this string str) => str.ToKeyCodes().ToKeys();
+
+	public static Key ToKey(this string str) => str.ToKeyCodes().ToKeys().FirstOrDefault();
+
+	public static Key ToKey(this char chr) => chr.ToString().ToKey();
 }

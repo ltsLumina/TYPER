@@ -1,8 +1,11 @@
 #region
+using System;
 using System.Collections;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 #endregion
 
 public class GameManager : MonoBehaviour
@@ -54,7 +57,28 @@ public class GameManager : MonoBehaviour
 		music.SetLoop(true);
 		music.Play();
 	}
-	
+
+	void Update()
+	{
+		var volume = FindAnyObjectByType<Volume>();
+		
+		// Note: ONLY FOR ASSIGNMENT HAND-IN
+		if (Input.GetKeyDown(KeyCode.Alpha0))
+		{
+			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments))
+			{
+				colorAdjustments.saturation.value = -100;
+			}
+		}
+		else if (Input.GetKeyDown(KeyCode.Alpha9))
+		{
+			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments))
+			{
+				colorAdjustments.saturation.value = 0;
+			}
+		}
+	}
+
 	public void Heal(int amount)
 	{
 		Health += amount;
