@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using Lumina.Essentials.Attributes;
 using MelenitasDev.SoundsGood;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -24,7 +25,8 @@ public class FrenzyManager : MonoBehaviour
 	[Tab("Frenzy Settings")]
 	[Tooltip("Frenzy threshold to enter a permanent Frenzy mode.")]
 	[SerializeField] int frenzyThreshold = 500;
-	[Tooltip("Frenzy multiplies XP gain by this amount.")]
+	[Tooltip("Frenzy multiplies Shards gain by this amount.")]
+	[Range(1, 2.5f)]
 	[SerializeField] float frenzyMultiplier = 1.2f;
 
 	[Header("Effect Ramping")]
@@ -36,6 +38,7 @@ public class FrenzyManager : MonoBehaviour
 	[Tab("Settings")]
 	[SerializeField] Volume volume;
 	[SerializeField] Image frenzySlider;
+	[SerializeField] TMP_Text frenzyPtsText;
 
 	Bloom bloom;
 	ChromaticAberration chromaticAberration;
@@ -128,12 +131,15 @@ public class FrenzyManager : MonoBehaviour
 		if (Frenzy >= frenzyThreshold) yield break;
 
 		Frenzied = false;
+		
+		// increase the frenzy threshold slightly each time Frenzy ends, up to a maximum of 2000
+		frenzyThreshold = Mathf.Min(1000, frenzyThreshold + 100);
 
 		speedMultiplier = oldValues.speedMultiplier;
 		baseLerpMultiplier = oldValues.baseLerpMultiplier;
 	}
 
-	/// <summary> A multiplier for XP gains. </summary>
+	/// <summary> A multiplier for Shards gains. </summary>
 	public float FrenzyMultiplier => frenzyMultiplier;
 	#endregion
 
@@ -145,6 +151,8 @@ public class FrenzyManager : MonoBehaviour
 
 	void Start()
 	{
+		frenzyPtsText.text = "0" + "\n" + "pts";
+		
 		volume.profile.TryGet(out bloom);
 		volume.profile.TryGet(out chromaticAberration);
 		volume.profile.TryGet(out lensDistortion);
@@ -213,8 +221,8 @@ public class FrenzyManager : MonoBehaviour
 		
 		// Slightly increase timescale when in Frenzy, up to a max of 2x at 60 seconds of Frenzy time.
 		// Begins scaling after 1 minute to avoid making the game too fast quickly.
-		// The check for > 0.9f prevents slowing down time if hit stop is active.
-		if (Frenzied && Time.timeScale > 0.9f) Time.timeScale = 1f + Mathf.Clamp01((totalFrenzyTime - 30f) / 60f);
+		bool hitstopInactive = Time.timeScale > 0.9f;
+		if (Frenzied && hitstopInactive) Time.timeScale = 1f + Mathf.Clamp01((totalFrenzyTime - 30f) / 60f);
 
 		if (Frenzied)
 		{
@@ -322,17 +330,18 @@ public class FrenzyManager : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Add frenzy points. If in Frenzy mode, XP is multiplied by the Frenzy multiplier.
+	/// Add frenzy points. If in Frenzy mode, Shards are multiplied by the Frenzy multiplier.
 	/// </summary>
 	/// <param name="points"> The points of frenzy points to add. </param>
 	public void AddFrenzy(int points)
 	{
-		int pointsWithMult = Mathf.CeilToInt(points * FrenzyMultiplier);
-		frenzy += Frenzied ? pointsWithMult : points;
+		frenzy += points;
 
 		//TODO: very temporary way of doing this
 		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(1).GetComponent<TMPro.TextMeshProUGUI>();
-		string text = $"{frenzy}\npts" + (Frenzied ? $"\n({FrenzyMultiplier}x)" : string.Empty) + (Time.timeScale > 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
+		string text = $"{frenzy}\npts" 
+		              + (Frenzied ? $"\n({FrenzyMultiplier}x Shards)" : string.Empty) + "\n" 
+		              + (Time.timeScale > 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
 		scoreText.text = text;
 	}
 

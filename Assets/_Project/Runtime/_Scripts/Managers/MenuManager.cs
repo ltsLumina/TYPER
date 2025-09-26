@@ -11,7 +11,8 @@ using UnityEngine;
 public class MenuManager : MonoBehaviour
 {
 	RectTransform buttonGroup;
-
+	
+	GameManager gameManager;
 	KeyManager keyManager;
 	ComboManager comboManager;
 	Canvas canvas;
@@ -37,6 +38,7 @@ public class MenuManager : MonoBehaviour
 		Cursor.visible = false;
 		Cursor.lockState = CursorLockMode.Locked;
 
+		gameManager = GameManager.Instance;
 		keyManager = KeyManager.Instance;
 		comboManager = ComboManager.Instance;
 
@@ -50,7 +52,8 @@ public class MenuManager : MonoBehaviour
 				switch (comboString)
 				{
 					case "PLAY":
-						GameManager.Instance.ExitTransition.gameObject.SetActive(true);
+						gameManager.StartGame(); 
+						gameManager.Music.Stop(0.5f);
 						break;
 
 					case "MENU":
@@ -65,6 +68,8 @@ public class MenuManager : MonoBehaviour
 				}
 			}
 		};
+		
+		keyManager.SetInputMode(KeyManager.InputMode.OnlyCombos);
 
 		// Disable the canvas at start. Its shown at the end of the intro sequence
 		buttonGroup.gameObject.SetActive(false);
@@ -81,7 +86,7 @@ public class MenuManager : MonoBehaviour
 			// disable all keys at start
 			foreach (Key key in keyManager.FlatKeys) key.Disable(false);
 
-			GameManager.Instance.EnterTransition.gameObject.SetActive(true);
+			gameManager.EnterTransition.gameObject.SetActive(true);
 
 			// Dramatic effect
 			yield return new WaitForSeconds(2f);

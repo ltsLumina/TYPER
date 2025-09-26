@@ -10,5 +10,18 @@ public abstract class Tooltip : MonoBehaviour
 	[Range(0, 1)]
 	[SerializeField] protected float opacity = 0.85f;
 
-	public abstract void SetText(string newTitle, string newDescription);
+	public virtual void Start() => SetOpacity(opacity);
+	
+	public virtual void SetText(string newTitle, string newDescription)
+	{
+		title.text = newTitle;
+		description.text = newDescription;
+	}
+
+	public virtual void SetOpacity(float opacity)
+	{
+		var color = background.color;
+		color.a = opacity;
+		background.color = color;
+	}
 }

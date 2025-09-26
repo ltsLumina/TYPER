@@ -14,10 +14,22 @@ public abstract class ShopItem : ScriptableObject
 	}
 	
 	public string itemName;
+	public string description;
 	public int cost;
 	public Texture2D icon;
 	[Space(10)]
 	public UnityEvent onPurchase;
+
+	void OnValidate()
+	{
+		// validate that name is suffixed with the parent type of the item (e.g., "Potion" for PotionItem)
+		if (this is PotionItem && !name.EndsWith("Potion"))
+			Debug.LogWarning($"PotionItem '{name}' should have a name ending with 'Potion'.", this);
+		if (this is ComboItem && !name.EndsWith("Item"))
+			Debug.LogWarning($"EffectItem '{name}' should have a name ending with 'Item'.", this);
+		if (this is ModifierItem && !name.EndsWith("Modifier"))
+			Debug.LogWarning($"ModifierItem '{name}' should have a name ending with 'Modifier'.", this);
+	}
 }
 
 public abstract class PotionItem : ShopItem

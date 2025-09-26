@@ -11,7 +11,6 @@ using UnityEngine.UI;
 /// </summary>
 public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-	//[SerializeField] TMP_Text itemNameText;
 	[SerializeField] Image icon;
 	[SerializeField] TMP_Text costText;
 	
@@ -72,7 +71,13 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 							purchaseSequence.AppendInterval(0.25f);
 							purchaseSequence.Join(transform.DOScale(Vector3.zero, 0.5f).SetEase(Ease.InBack));
 							purchaseSequence.SetLink(gameObject);
-							purchaseSequence.OnComplete(() => Destroy(gameObject));
+							purchaseSequence.OnComplete
+							(() =>
+							{
+								var group = GetComponent<CanvasGroup>();
+								group.alpha = 0;
+								group.blocksRaycasts = false;
+							});
 						}
 						else
 						{
@@ -101,6 +106,16 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 				throw new ArgumentOutOfRangeException();
 		}
 	}
+
+	public void Deselect()
+	{
+		deselectSequence = DOTween.Sequence();
+		deselectSequence.Append(transform.DOScale(Vector3.one, 0.15f).SetEase(Ease.OutBack));
+		deselectSequence.Join(transform.DOMoveY(transform.position.y - 10f, 0.1f).SetEase(Ease.OutQuad));
+		deselectSequence.SetLink(gameObject);
+		
+		confirmations = 0;
+	}
 	
 	public ShopItem Item { get; set; }
 
@@ -116,11 +131,17 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 			tooltip.gameObject.SetActive(true);
 			tooltip.transform.position = Input.mousePosition;
 
+			// if on the right half of the screen, subtract 500 from the X position to keep it on screen
+			if (Input.mousePosition.x > Screen.width / 2f)
+				tooltip.transform.position = new (Input.mousePosition.x - 350f, Input.mousePosition.y, 0);
+			// vice versa
+
 			switch (Item)
 			{
 				case ComboItem combo: {
 					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
 					                                            $"Keys: {combo.keys}" + "\n" + 
+					                                             "----------------------" + "\n" +
 					                                            "Click to select. " + "\n" +
 					                                            "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
@@ -130,6 +151,17 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 				case ModifierItem modifier: {
 					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
 					                                            $"Key: {modifier.Key}" + "\n" +
+					                                            "----------------------" + "\n" +
+					                                            "Click to select. " + "\n" +
+					                                            "Click again to confirm purchase.");
+					tooltip.SetText(title, description);
+					return;
+				}
+				
+				case PotionItem potion: {
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
+					                                            $"Effect: {potion.description}" + "\n" +
+					                                            "----------------------" + "\n" +
 					                                            "Click to select. " + "\n" +
 					                                            "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
@@ -137,7 +169,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 				}
 			}
 
-			tooltip.SetText("null", "not implemented yet");
+			tooltip.SetText("null", "something went wrong");
 			tooltip.SetOpacity(0.85f); // TODO: adjust opacity based on if the tooltip is hovering over other UI elements or keys
 		}
 		else CreateTooltip();
@@ -166,11 +198,6 @@ public partial class ShopItemUI // properties
 		get => icon;
 		set => icon = value;
 	}
-	// public TMP_Text ItemNameText
-	// {
-	// 	get => itemNameText;
-	// 	set => itemNameText = value;
-	// }
 	public TMP_Text CostText
 	{
 		get => costText;

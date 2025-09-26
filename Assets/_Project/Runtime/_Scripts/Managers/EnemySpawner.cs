@@ -29,8 +29,6 @@ public class EnemySpawner : MonoBehaviour
 	GameObject parent;
 	float[] lanes;
 
-	Coroutine spawnRoutine;
-
 	public static event Action<Enemy> OnEnemySpawned;
 
 	public bool IsPaused { get; private set; }
@@ -41,8 +39,7 @@ public class EnemySpawner : MonoBehaviour
 	void Start()
 	{
 		lanes = KeyManager.Instance.Lanes;
-		parent = new ("--- Enemies ---");
-		spawnRoutine = StartCoroutine(SpawnRoutine());
+		StartCoroutine(SpawnRoutine());
 	}
 
 	IEnumerator SpawnRoutine()
@@ -82,12 +79,12 @@ public class EnemySpawner : MonoBehaviour
 		return rate;
 	}
 
-	void SpawnEnemy()
+	void SpawnEnemy() // TODO: slowly span tougher and tougher enemies?
 	{
 		int laneIndex = Random.Range(0, lanes.Length);
 		float lanePos = lanes[laneIndex];
-		var spawnPosition = new Vector3(8f, lanePos, 0f);
-		var enemy = enemyPool.GetPooledObject<Enemy>(true, spawnPosition, Quaternion.identity, parent.transform);
+		var spawnPosition = new Vector3(10f, lanePos, 0f);
+		var enemy = enemyPool.GetPooledObject<Enemy>(true, spawnPosition, Quaternion.identity, enemyPool.transform);
 		enemy.OnDeath += () => enemies.Remove(enemy);
 		enemies.Add(enemy);
 		enemy.Lane = laneIndex + 1;

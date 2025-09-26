@@ -279,6 +279,9 @@ public partial class Key : MonoBehaviour
 	/// <returns> True if an enemy was hit, false otherwise. </returns>
 	public void Activate(float cooldownOverride = -1f, Key triggerKey = null) // false by default
 	{
+		if (KeyManager.Instance.CurrentInputMode == KeyManager.InputMode.Disabled) return;
+		if (!comboManager.IsKeyPartOfCombo(this) && KeyManager.Instance.CurrentInputMode == KeyManager.InputMode.OnlyCombos) return;
+		
 		bool triggeredByKey = triggerKey != null;
 		
 		#region Stack Overflow Protection - only allow MAX_ACTIVATIONS_PER_FRAME activations per frame if triggered by another key

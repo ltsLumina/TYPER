@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1aa900abf7b40f2ba44eb9654740834, type: 3}
-  m_Name: Modifier Item
+  m_Name: oGCD Modifier
   m_EditorClassIdentifier: Assembly-CSharp::ModifierItem
-  itemName: (V) Off-Global Cooldown
+  itemName: Off-Global Cooldown
+  description: Makes a key activate off the global cooldown.
   cost: 100
   icon: {fileID: 2800000, guid: 8a547588e5fea481a97e1deb94c9612c, type: 3}
   onPurchase:

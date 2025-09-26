@@ -27,15 +27,21 @@ public partial class KeyManager : MonoBehaviour
 		Alphanumeric,
 	}
 
-	[Header("References")]
-	[SerializeField] Key keyPrefab;
+	public enum InputMode
+	{
+		Enabled,
+		Disabled,
+		OnlyCombos,
+	}
 
-	[Header("Keyboard Settings")]
+	[Tab("Keyboard")]
+	[SerializeField] InputMode currentInputMode = InputMode.Enabled;
 	[Tooltip("List of keys to instantiate on the keyboard. If empty, defaults to all alphabetic keys.")]
-	[SerializeField] List<KeyCode> overrideKeys = new ();
-	[SerializeField] List<KeyCode> currentKeys = new ();
 	[SerializeField] KeyboardLayout keyboardLayout = KeyboardLayout.QWERTY;
 	[SerializeField] KeySet keySet = KeySet.Alphabetic;
+	[SerializeField] List<KeyCode> currentKeys = new ();
+	
+	[Tab("Debug")]
 	[SerializeField] bool randomizeComboEffects = true;
 	[ShowIf(nameof(randomizeComboEffects), true)]
 	[SerializeField] List<ComboEffect> excludedComboEffects = new ();
@@ -44,14 +50,17 @@ public partial class KeyManager : MonoBehaviour
 	[SerializeField] SerializedDictionary<string, string> presetComboEffects = new ();
 	[EndIf]
 
-	[Header("Key Settings")]
+	[Tab("Key Settings")]
 	[Tooltip("Determines the spacing between each key object")]
 	[SerializeField] float keyOffset = 1.0f;
 	[SerializeField] List<float> rowOffsets = new () { 0f, -0.2f, -0.4f };
 
 	[Header("Global Cooldown Settings")]
-	[SerializeField] float globalCooldown = 1f;
-	[SerializeField, ReadOnly] float currentCooldown;
+	[SerializeField] float globalCooldown = 1.5f;
+
+	[Tab("References")]
+	[Header("References")]
+	[SerializeField] Key keyPrefab;
 
 	ComboManager comboManager;
 
@@ -59,138 +68,7 @@ public partial class KeyManager : MonoBehaviour
 	GameObject wordHighway;
 	Key keyObj;
 
-	public static KeyManager Instance { get; private set; }
-
-	/// <summary>
-	///     The parent object containing all key objects.
-	/// </summary>
-	public GameObject Keyboard { get; private set; }
-
-	public KeyCode KeyPressed { get; private set; }
-
-	public float GlobalCooldown => globalCooldown;
-	public float CurrentCooldown => currentCooldown;
-	public bool OnCooldown => currentCooldown > 0;
-
-	/// <summary>
-	///     2D List of keys organized by rows and columns.
-	///     <remarks> Keys[0] = QWERTY row, Keys[1] = ASDFG row, Keys[2] = ZXCVB row. </remarks>
-	/// </summary>
-	public List<List<Key>> Keys { get; } = new ();
-
-	/// <summary>
-	///     Flat list (1D) of all keys for easy iteration.
-	///     <remarks> This is automatically populated when the keyboard is initialized. </remarks>
-	/// </summary>
-	public List<Key> FlatKeys { get; private set; } = new ();
-
-	/// <summary>
-	///    Y positions of each lane (row) on the keyboard.
-	/// </summary>
-	public float[] Lanes { get; } = new float[3];
-
-	/// <summary>
-	/// A flat list (1D) of all current KeyCodes based on the selected layout and key set.
-	///     <remarks> By default, this contains all alphabetic keyboard keys.</remarks>
-	/// </summary>
-	List<KeyCode> CurrentKeys
-	{
-		get
-		{
-			if (currentKeys.Count > 0) return currentKeys;
-
-			// if override keys are set, use those
-			if (overrideKeys.Count > 0) return overrideKeys;
-
-			// Uses the selected layout and key set to determine valid keys. E.g., QWERTY + Alphabetic = A-Z keys.
-			currentKeys = GetKeySetByLayout();
-
-			return currentKeys;
-		}
-	}
-
-	public KeyTooltip KeyTooltip { get; set; }
-
 	#region Get Key Functions
-	List<KeyCode> GetKeySetByLayout()
-	{
-		switch (keySet)
-		{
-			case KeySet.Alphabetic:
-				switch (keyboardLayout)
-				{
-					case KeyboardLayout.QWERTY:
-						return KeyboardData.Layouts.QWERTY.Alphabetic;
-
-					case KeyboardLayout.AZERTY:
-						return KeyboardData.Layouts.AZERTY.Alphabetic;
-
-					case KeyboardLayout.DVORAK:
-						return new (); // Placeholder
-				}
-
-				break;
-
-			case KeySet.Numeric:
-				switch (keyboardLayout)
-				{
-					case KeyboardLayout.QWERTY:
-						return KeyboardData.Layouts.QWERTY.Numeric;
-
-					case KeyboardLayout.AZERTY:
-						return KeyboardData.Layouts.AZERTY.Numeric;
-
-					case KeyboardLayout.DVORAK: // Placeholder
-						return new ();          // Placeholder
-				}
-
-				break;
-
-			case KeySet.Alphanumeric:
-				switch (keyboardLayout)
-				{
-					case KeyboardLayout.QWERTY:
-						return KeyboardData.Layouts.QWERTY.Alphanumeric;
-
-					case KeyboardLayout.AZERTY:
-						return KeyboardData.Layouts.AZERTY.Alphanumeric;
-
-					case KeyboardLayout.DVORAK: // Placeholder
-						return new ();          // Placeholder
-				}
-
-				break;
-		}
-
-		return null;
-	}
-
-	(bool found, int row, int col) FindKey(KeyCode keyCode)
-	{
-		for (int r = 0; r < Keys.Count; r++)
-		{
-			for (int c = 0; c < Keys[r].Count; c++)
-			{
-				if (Keys[r][c].KeyCode == keyCode)
-					return (true, r, c);
-			}
-		}
-
-		return (false, -1, -1);
-	}
-
-	/// <summary>
-	///    Finds the specified key on the keyboard and returns its row and column indices.
-	/// </summary>
-	/// <param name="key"> The KeyCode to search for. </param>
-	/// <returns> A tuple containing whether the key was found, and its row and column indices. </returns>
-	public (bool found, int row, int col) FindKey(Key key) => FindKey(key.ToKeyCode());
-
-	public Key GetKey(KeyCode keycode)
-	{
-		(bool found, int row, int col) = FindKey(keycode);
-		return found ? Keys[row][col] : null;
-	}
 	#endregion
 
 	void Awake()
@@ -317,18 +195,32 @@ public partial class KeyManager : MonoBehaviour
 			else Logger.LogWarning($"Failed to assign preset combo effect '{prefixed}' to key '{kvp.Key}'. Check if the key and effect type are valid.", this, "KeyManager");
 		}
 	}
+	
+	
+	public void SetInputMode(InputMode mode) => currentInputMode = mode;
 
 	void Update()
 	{
 		#region Input Handling
 		if (!Input.anyKeyDown) return;
 
+		if (currentInputMode == InputMode.Disabled)
+		{
+			Logger.LogWarning("Input is currently disabled.", this, "KeyManager");
+			return;
+		}
+
 		KeyCode pressedKey = CurrentKeys.FirstOrDefault(Input.GetKeyDown);
 		if (pressedKey == KeyCode.None) return;
+		
+		// check if the key is part of any combo
+		if (currentInputMode == InputMode.OnlyCombos && !comboManager.IsKeyPartOfCombo(pressedKey.ToKey()))
+		{
+			Logger.LogWarning($"Key '{pressedKey}' is not part of any active combo. Input mode is set to 'Only Combos'.", this, "KeyManager");
+			return;
+		}
 
-		KeyPressed = pressedKey;
-
-		keyObj = FlatKeys.FirstOrDefault(k => k.KeyCode == KeyPressed);
+		keyObj = FlatKeys.FirstOrDefault(k => k.KeyCode == pressedKey);
 		if (keyObj != null) keyObj.Activate();
 		#endregion
 	}
@@ -346,7 +238,7 @@ public partial class KeyManager : MonoBehaviour
 
 		FlatKeys = GenerateKeys();
 
-		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (3.5f, -2f);
+		if (SceneManagerExtended.ActiveSceneName == "Game") Keyboard.transform.position = new (2f, -2f);
 
 		// Set initial position for intro animation off-screen
 		else Keyboard.transform.position = new (3.5f, 8f);
@@ -560,5 +452,108 @@ public partial class KeyManager : MonoBehaviour
 
 		wordHighway.transform.position = new (0, 3.5f);
 		wordHighway.transform.localScale = Vector3.one * 0.75f;
+	}
+}
+
+public partial class KeyManager // properties
+{
+	public static KeyManager Instance { get; private set; }
+	/// <summary>
+	///     The parent object containing all key objects.
+	/// </summary>
+	public InputMode CurrentInputMode => currentInputMode;
+	public GameObject Keyboard { get; private set; }
+	/// <summary>
+	///     2D List of keys organized by rows and columns.
+	///     <remarks> Keys[0] = QWERTY row, Keys[1] = ASDFG row, Keys[2] = ZXCVB row. </remarks>
+	/// </summary>
+	public List<List<Key>> Keys { get; } = new ();
+	/// <summary>
+	///     Flat list (1D) of all keys for easy iteration.
+	///     <remarks> This is automatically populated when the keyboard is initialized. </remarks>
+	/// </summary>
+	public List<Key> FlatKeys { get; private set; } = new ();
+	/// <summary>
+	///    Y positions of each lane (row) on the keyboard.
+	/// </summary>
+	public float[] Lanes { get; } = new float[3];
+	/// <summary>
+	/// A flat list (1D) of all current KeyCodes based on the selected layout and key set.
+	///     <remarks> By default, this contains all alphabetic keyboard keys.</remarks>
+	/// </summary>
+	List<KeyCode> CurrentKeys
+	{
+		get
+		{
+			if (currentKeys.Count > 0) return currentKeys;
+
+			// Uses the selected layout and key set to determine valid keys. E.g., QWERTY + Alphabetic = A-Z keys.
+			currentKeys = GetKeySetByLayout();
+
+			return currentKeys;
+		}
+	}
+	/// <summary>
+	///   Returns a list of KeyCodes based on the selected keyboard layout and key set.
+	/// </summary>
+	/// <returns></returns>
+	List<KeyCode> GetKeySetByLayout()
+	{
+		switch (keySet)
+		{
+			case KeySet.Alphabetic:
+				return keyboardLayout switch
+				{
+					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphabetic,
+					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphabetic,
+					KeyboardLayout.DVORAK => new (), // Placeholder
+					_ => new ()
+				};
+		
+			case KeySet.Numeric:
+				return keyboardLayout switch
+				{
+					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Numeric,
+					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Numeric,
+					KeyboardLayout.DVORAK => new (), // Placeholder
+					_ => new ()
+				};
+		
+			case KeySet.Alphanumeric:
+				return keyboardLayout switch
+				{
+					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphanumeric,
+					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphanumeric,
+					KeyboardLayout.DVORAK => new (), // Placeholder
+					_ => new ()
+				};
+		
+			default:
+				return new ();
+		}
+	}
+	(bool found, int row, int col) FindKey(KeyCode keyCode)
+	{
+		for (int r = 0; r < Keys.Count; r++)
+		{
+			for (int c = 0; c < Keys[r].Count; c++)
+			{
+				if (Keys[r][c].KeyCode == keyCode)
+					return (true, r, c);
+			}
+		}
+
+		return (false, -1, -1);
+	}
+	/// <summary>
+	///    Finds the specified key on the keyboard and returns its row and column indices.
+	/// </summary>
+	/// <param name="key"> The KeyCode to search for. </param>
+	/// <returns> A tuple containing whether the key was found, and its row and column indices. </returns>
+	public (bool found, int row, int col) FindKey(Key key) => FindKey(key.ToKeyCode());
+	public Key GetKey(KeyCode keycode)
+	{
+		(bool found, int row, int col) = FindKey(keycode);
+		return found ? Keys[row][col] : null;
 	}
 }

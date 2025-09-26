@@ -9,6 +9,7 @@ public class ModifierItem : EffectItem
 	public enum Modifiers
 	{
 		OffGlobalCooldown,
+		Mash,
 	}
 	
 	public string key;

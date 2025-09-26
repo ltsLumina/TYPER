@@ -9,42 +9,31 @@ using UnityEngine;
 using VInspector;
 #endregion
 
-public class ComboManager : MonoBehaviour
+public class ComboManager : Singleton<ComboManager>
 {
-	public static ComboManager Instance { get; private set; }
-
-	void Awake()
-	{
-		if (Instance != null && Instance != this) Destroy(this);
-		else Instance = this;
-	}
-
-	[Header("Combos")]
+	[Tab("Combo")]
 	[SerializeField, ReadOnly] string currentCombo;
-
-	[Header("Combo Settings")]
+	[Space(10)]
+	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
+	[Space(5)]
+	[Header("Debug")]
 	[Tooltip("The length of the combo. 1-based.")]
 	[SerializeField, ReadOnly] int comboLength = -1;
-
-	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] Key recentComboKey;
-
-	// ReSharper disable once NotAccessedField.Local
 	[SerializeField, ReadOnly] int recentComboIndex;
 	[SerializeField, ReadOnly] Key nextComboKey;
 	[SerializeField, ReadOnly] int nextComboIndex;
 	[SerializeField, ReadOnly] bool loops; // TODO: implement looping combos
-	[Space(10)]
-	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
-	[Space(10)]
-	[Header("Statistics")]
+	
+	[Tab("Statistics")]
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
 	[Space(5), UsedImplicitly]
 	[SerializeField, ReadOnly] int totalCombosCompleted;
 	[SerializeField, UsedImplicitly] SerializedDictionary<string, int> comboFrequency = new ();
-
+	
 	readonly List<Dictionary<Key, (int, bool)>> combos = new ();
 	public bool DoesComboExist(List<Key> keys) => combos.Any(c => c.Keys.SequenceEqual(keys));
+	public bool IsKeyPartOfCombo(Key key) => combos.Any(c => c.ContainsKey(key));
 
 	public bool InProgress => nextComboIndex != -1;
 	public int NextComboIndex => nextComboIndex;

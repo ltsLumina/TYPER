@@ -90,7 +90,8 @@ Shader "TransitionsPlus/Spiral"
                 float2 cellCoords = floor(i.uv * CELL_DIVISIONS);
             
                 int CELL_DIVISIONS_MINUS_1 = CELL_DIVISIONS;
-                if (CELL_DIVISIONS % 2) {
+                uint two = 2;
+                if (CELL_DIVISIONS % two) {
                     CELL_DIVISIONS_MINUS_1--;
                 }
 

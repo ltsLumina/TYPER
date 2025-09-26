@@ -34,7 +34,6 @@ public class Enemy : MonoBehaviour, IDamageable
 	void Awake() => spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
 	void OnEnable() => OnDeath += Reset;
-
 	void OnDisable() => OnDeath -= Reset;
 
 	public void Reset()
@@ -142,7 +141,6 @@ public class Enemy : MonoBehaviour, IDamageable
 
 		if (other.CompareTag("Finish"))
 		{
-			Debug.LogWarning("An enemy has reached the end!");
 			TakeDamage(999);
 
 			GameManager.Instance.TakeDamage(damage);
@@ -250,7 +248,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
 				// add score. Frenzy is calculated as 10 points per health at spawn time
 				FrenzyManager.Instance.AddFrenzy(frenzyValue);
-				ShardManager.Instance.AddShards(50 * Random.Range(0, 11));
+				ShardManager.Instance.AddShards(50 + Random.Range(0, 11));
 
 				// VFX
 				DeathVFX();

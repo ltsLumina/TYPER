@@ -100,6 +100,8 @@ public partial class ShopManager : MonoBehaviour
 		} 
 		
 		inShop = true;
+		
+		KeyManager.Instance.SetInputMode(KeyManager.InputMode.Disabled);
 
 		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
 		enemySpawner.PauseSpawner();
@@ -117,15 +119,19 @@ public partial class ShopManager : MonoBehaviour
 		keyboard.transform.DOLocalMoveX(-3f, 0.5f);
 		
 		shopText.gameObject.SetActive(true);
-		inventoryItemContainer.DOFade(0.5f, 0.5f);
 		shopItemContainer.DOFade(1, 0.5f);
+		shopItemContainer.blocksRaycasts = true;
 		
 		OnEnterShop?.Invoke();
 	}
 
 	public void ExitShop()
 	{
+		if (!inShop) return; // can't exit if not in shop
+		
 		inShop = false;
+
+		KeyManager.Instance.SetInputMode(KeyManager.InputMode.Enabled);
 
 		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
 		enemySpawner.PlaySpawner();
@@ -153,6 +159,8 @@ public partial class ShopManager : MonoBehaviour
 	// left click -> pops up a little -> then confirm purchase if click again
 	public void SelectItem(ShopItemUI itemUI)
 	{
+		if (SelectedItemUI != itemUI) SelectedItemUI?.Deselect();
+		
 		selectedItemIndex = itemUI.transform.GetSiblingIndex();
 		selectedItem = stock[selectedItemIndex];
 		selectedItemCost = selectedItem.cost;
@@ -175,9 +183,7 @@ public partial class ShopManager : MonoBehaviour
 			selectedItem.onPurchase?.Invoke();
 			Debug.Log($"Purchased {selectedItem.itemName} for {selectedItemCost} shards.");
 			
-			// remove item from stock and UI
-			stock.RemoveAt(selectedItemIndex);
-			// The item destroys itself in its onPurchase event, so no need to destroy it here.
+			// The item itself "removes" itself from the shop by disabling its UI element.
 			
 			selectedItem = null;
 			selectedItemIndex = -1;

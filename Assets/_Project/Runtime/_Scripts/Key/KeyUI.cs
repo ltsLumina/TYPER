@@ -7,11 +7,7 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 {
 	Key currentKey;
 
-	static KeyTooltip KeyTooltip
-	{
-		get => KeyManager.Instance.KeyTooltip;
-		set => KeyManager.Instance.KeyTooltip = value;
-	}
+	static KeyTooltip KeyTooltip { get; set; }
 	
 	public event Action<Key> OnCursorEnter;
 	public event Action<Key> OnCursorExit;

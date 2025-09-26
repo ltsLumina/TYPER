@@ -1,6 +1,7 @@
 #region
 using System;
 using System.Collections;
+using JetBrains.Annotations;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;
@@ -8,7 +9,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 #endregion
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : SingletonPersistent<GameManager>
 {
 	public enum State
 	{
@@ -18,72 +19,83 @@ public class GameManager : MonoBehaviour
 		Shop,
 		GameOver
 	}
-	
+
+	[UsedImplicitly]
+	[SerializeField] State currentState;
 	[SerializeField] int health = 10;
 
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
 	[SerializeField] TransitionAnimator exitTransition;
-
-	Music music;
 	
-	public static GameManager Instance { get; private set; }
-
-	public static string TYPER => "TYPER";
-
-	public int Health
+	void Start() // Only runs once when the game starts because it's a SingletonPersistent
 	{
-		get => health;
-		private set => health = Mathf.Clamp(health, 0, value);
-	}
-
-	public TransitionAnimator EnterTransition => enterTransition;
-	public TransitionAnimator ExitTransition => exitTransition;
-
-	void Awake()
-	{
-		if (Instance != null && Instance != this) Destroy(this);
-		else Instance = this;
-	}
-
-	void Start()
-	{
-		Cursor.visible = true;
-		Cursor.lockState = CursorLockMode.None;
+		Music = new (Track.musicSFX);
+		Music.SetOutput(Output.Music);
+		Music.SetVolume(0.5f);
+		Music.SetLoop(true);
+		Music.Play();
 		
-		music = new (Track.musicSFX);
-		music.SetOutput(Output.Music);
-		music.SetVolume(0.65f);
-		music.SetLoop(true);
-		music.Play();
+		currentState = State.Menu;
 	}
 
 	void Update()
 	{
+		#region assignment
 		var volume = FindAnyObjectByType<Volume>();
-		
+
 		// Note: ONLY FOR ASSIGNMENT HAND-IN
 		if (Input.GetKeyDown(KeyCode.Alpha0))
 		{
-			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments))
-			{
-				colorAdjustments.saturation.value = -100;
-			}
+			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments)) { colorAdjustments.saturation.value = -100; }
 		}
 		else if (Input.GetKeyDown(KeyCode.Alpha9))
 		{
-			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments))
-			{
-				colorAdjustments.saturation.value = 0;
-			}
+			if (volume.profile.TryGet(out ColorAdjustments colorAdjustments)) { colorAdjustments.saturation.value = 0; }
+		}
+		#endregion
+	}
+
+	public void StartGame() => StartCoroutine(StartGameRoutine());
+	IEnumerator StartGameRoutine()
+	{
+		ExitTransition.gameObject.SetActive(true);
+
+		yield return new WaitForSeconds(1f);
+
+		Music.Play();
+	}
+
+	public void SetState(State newState)
+	{
+		currentState = newState;
+		
+		switch (newState)
+		{
+			case State.Menu:
+				break;
+
+			case State.Playing:
+				break;
+
+			case State.Paused:
+				break;
+
+			case State.Shop:
+				break;
+
+			case State.GameOver:
+				break;
+
+			default:
+				throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
 		}
 	}
 
 	public void Heal(int amount)
 	{
 		Health += amount;
-		Debug.LogWarning($"Player healed {amount} health.\n" +
-		                 $"Current health: {Health}");
+		Debug.LogWarning($"Player healed {amount} health.\n" + $"Current health: {Health}");
 	}
 
 	public void TakeDamage(int damage)
@@ -99,8 +111,7 @@ public class GameManager : MonoBehaviour
 			Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
 			Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
 		}
-		else { Debug.LogWarning($"Player took {damage} damage.\n" +
-		                        $"Remaining health: {Health}"); }
+		else { Debug.LogWarning($"Player took {damage} damage.\n" + $"Remaining health: {Health}"); }
 	}
 
 	Coroutine hitStopCoroutine;
@@ -133,4 +144,17 @@ public class GameManager : MonoBehaviour
 
 		hitStopCoroutine = null;
 	}
+}
+
+public partial class GameManager // Properties
+{
+	public static string TYPER => "TYPER";
+	public Music Music { get; private set; }
+	public int Health
+	{
+		get => health;
+		private set => health = Mathf.Clamp(health, 0, value);
+	}
+	public TransitionAnimator EnterTransition => enterTransition;
+	public TransitionAnimator ExitTransition => exitTransition;
 }

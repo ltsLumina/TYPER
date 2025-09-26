@@ -42,6 +42,8 @@ public partial class ShardManager : MonoBehaviour
 	[Tooltip("Shards needed to reach quota. Negative if over quota."), UsedImplicitly]
 	[SerializeField, ReadOnly] int shardsNeededForQuota;
 
+	FrenzyManager frenzyManager;
+	
 	public static ShardManager Instance { get; private set; }
 
 	void Awake()
@@ -53,6 +55,8 @@ public partial class ShardManager : MonoBehaviour
 	void Start()
 	{
 		Debug.Assert(excessMultiplier >= 1f, "Excess multiplier must be at least 1.");
+		
+		frenzyManager = FrenzyManager.Instance;
 		
 		// Initial UI update
 		quotaSlider.fillAmount = QuotaProgress;
@@ -72,16 +76,16 @@ public partial class ShardManager : MonoBehaviour
 
 	public void AddShards(int amount)
 	{
-		int bonus = QuotaReached ? Mathf.RoundToInt(amount * (excessMultiplier - 1f)) : 0;
+		int quotaBonus = QuotaReached ? Mathf.RoundToInt(amount * (excessMultiplier - 1f)) : 0;
+		int frenzyBonus = frenzyManager.Frenzied ? Mathf.RoundToInt(amount * (frenzyManager.FrenzyMultiplier - 1f)) : 0;
 		
-		shards += amount + bonus;
+		shards += amount + quotaBonus + frenzyBonus;
 		Debug.Log($"Added {amount} shards. Total shards: {shards}");
 
 		shardsNeededForQuota = quota - shards;
 		
 		quotaSlider.DOFillAmount(QuotaProgress, 1.5f).SetEase(Ease.OutCubic);
 		LerpShardText(shardText, shards);
-
 		SetQuotaText();
 	}
 
@@ -96,7 +100,6 @@ public partial class ShardManager : MonoBehaviour
 
 			quotaSlider.DOFillAmount(QuotaProgress, 1.5f).SetEase(Ease.OutCubic);
 			LerpShardText(shardText, shards);
-
 			SetQuotaText();
 			return true;
 		}

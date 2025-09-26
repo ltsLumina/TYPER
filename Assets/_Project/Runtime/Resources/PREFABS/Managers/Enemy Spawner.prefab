@@ -47,7 +47,7 @@ MonoBehaviour:
   enemyPool: {fileID: 0}
   enemies: []
   enemyPrefab: {fileID: 606796928252319825, guid: 2c752dc60bb96424bb32fbe9171ff30c, type: 3}
-  initialDelay: 1
+  initialDelay: 0.5
   currentWave: 
   waves:
     serializedKvps:

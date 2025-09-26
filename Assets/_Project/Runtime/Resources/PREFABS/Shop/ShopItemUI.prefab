@@ -146,6 +146,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4734842581089474613}
   - component: {fileID: 7828879600819994328}
+  - component: {fileID: 7641110646851891774}
   m_Layer: 5
   m_Name: ShopItemUI
   m_TagString: Untagged
@@ -188,6 +189,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShopItemUI
   icon: {fileID: 4637400429076171687}
   costText: {fileID: 5561884034220920865}
+--- !u!225 &7641110646851891774
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6651323663672178567}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &7036004716857655283
 GameObject:
   m_ObjectHideFlags: 0
