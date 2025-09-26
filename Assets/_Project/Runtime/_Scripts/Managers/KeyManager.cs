@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
 using UnityEngine;
 using VInspector;
@@ -34,13 +33,21 @@ public partial class KeyManager : MonoBehaviour
 		OnlyCombos,
 	}
 
+	public enum InputModeReason
+	{
+		None,
+		Paused,
+		Shop,
+		GameOver,
+	}
+
 	[Tab("Keyboard")]
 	[SerializeField] InputMode currentInputMode = InputMode.Enabled;
 	[Tooltip("List of keys to instantiate on the keyboard. If empty, defaults to all alphabetic keys.")]
 	[SerializeField] KeyboardLayout keyboardLayout = KeyboardLayout.QWERTY;
 	[SerializeField] KeySet keySet = KeySet.Alphabetic;
 	[SerializeField] List<KeyCode> currentKeys = new ();
-	
+
 	[Tab("Debug")]
 	[SerializeField] bool randomizeComboEffects = true;
 	[ShowIf(nameof(randomizeComboEffects), true)]
@@ -49,7 +56,6 @@ public partial class KeyManager : MonoBehaviour
 	[ShowIf(nameof(randomizeComboEffects), false)]
 	[SerializeField] SerializedDictionary<string, string> presetComboEffects = new ();
 	[EndIf]
-
 	[Tab("Key Settings")]
 	[Tooltip("Determines the spacing between each key object")]
 	[SerializeField] float keyOffset = 1.0f;
@@ -67,9 +73,6 @@ public partial class KeyManager : MonoBehaviour
 	Key highwayKey;
 	GameObject wordHighway;
 	Key keyObj;
-
-	#region Get Key Functions
-	#endregion
 
 	void Awake()
 	{
@@ -108,6 +111,7 @@ public partial class KeyManager : MonoBehaviour
 
 		#region Modifiers
 		if (SceneManagerExtended.ActiveSceneName != "Game") return;
+
 		//List<Key> qweCombo = "QWE".ToKeys();
 		//comboManager.CreateCombo(qweCombo);
 
@@ -122,9 +126,6 @@ public partial class KeyManager : MonoBehaviour
 
 		List<Key> oGCD_Keys = "PLM".ToKeys();
 		oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
-
-		//const float cooldown = 10f;
-		//KeyCode.V.ToKey().SetModifier(Key.Modifiers.OffGlobalCooldown, true, cooldown);
 
 		// set G key to be a mash key
 		Key mashKey = GetKey(KeyCode.G);
@@ -150,9 +151,9 @@ public partial class KeyManager : MonoBehaviour
 	void RandomizeComboEffects(List<Key> keys, params Type[] exclude)
 	{
 		// remove excluded effects from the list
-		ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.Combos);
+		ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.COMBOS);
 		effects = effects.Where(e => !exclude.Contains(e.GetType())).ToArray();
-		
+
 		foreach (var key in keys)
 		{
 			if (!key.LastKeyInCombo) continue; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
@@ -168,10 +169,11 @@ public partial class KeyManager : MonoBehaviour
 		{
 			// split the value by comma to separate effect from desired level (if any)
 			string[] parts = kvp.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
 			// part 0 is the effect name, part 1 is the level (if any)
 			string effectName = parts[0].Trim();
 			string level = parts.Length > 1 ? parts[1].Trim() : null;
-			
+
 			// add the prefix if it's not already there
 			string prefixed = effectName.StartsWith("CE_") ? effectName : "CE_" + effectName;
 
@@ -189,15 +191,37 @@ public partial class KeyManager : MonoBehaviour
 			{
 				key.ComboEffect = Effect.GetEffect<ComboEffect>(effectType);
 				key.ComboEffect.SetLevel(Enum.TryParse(level, out Level lvl) ? lvl : Level.I, true);
+
 				//Logger.Log($"Assigned preset combo effect '{effectName}' to key '{kvp.Key}' at level {key.ComboEffect.Level}.", this, "KeyManager");
 			}
 			else if (key == null) Logger.LogWarning($"Key '{kvp.Key}' not found. Check if the key name is valid.", this, "KeyManager");
 			else Logger.LogWarning($"Failed to assign preset combo effect '{prefixed}' to key '{kvp.Key}'. Check if the key and effect type are valid.", this, "KeyManager");
 		}
 	}
-	
-	
-	public void SetInputMode(InputMode mode) => currentInputMode = mode;
+
+	public void SetInputMode(InputMode mode, InputModeReason reason = InputModeReason.None)
+	{
+		currentInputMode = mode;
+
+		switch (mode)
+		{
+			case InputMode.Enabled:
+				foreach (Key key in FlatKeys) key.Enable(false);
+				break;
+
+			case InputMode.Disabled:
+				foreach (Key key in FlatKeys) key.Disable(false);
+				break;
+
+			case InputMode.OnlyCombos:
+				break;
+
+			default:
+				throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+		}
+
+		if (reason != InputModeReason.None) { Logger.LogWarning($"Input mode set to '{mode}'. " + $"\nReason: '{reason}'."); }
+	}
 
 	void Update()
 	{
@@ -212,7 +236,7 @@ public partial class KeyManager : MonoBehaviour
 
 		KeyCode pressedKey = CurrentKeys.FirstOrDefault(Input.GetKeyDown);
 		if (pressedKey == KeyCode.None) return;
-		
+
 		// check if the key is part of any combo
 		if (currentInputMode == InputMode.OnlyCombos && !comboManager.IsKeyPartOfCombo(pressedKey.ToKey()))
 		{
@@ -503,31 +527,25 @@ public partial class KeyManager // properties
 		{
 			case KeySet.Alphabetic:
 				return keyboardLayout switch
-				{
-					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphabetic,
-					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphabetic,
-					KeyboardLayout.DVORAK => new (), // Placeholder
-					_ => new ()
-				};
-		
+				{ KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphabetic,
+				  KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphabetic,
+				  KeyboardLayout.DVORAK => new (), // Placeholder
+				  _                     => new () };
+
 			case KeySet.Numeric:
 				return keyboardLayout switch
-				{
-					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Numeric,
-					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Numeric,
-					KeyboardLayout.DVORAK => new (), // Placeholder
-					_ => new ()
-				};
-		
+				{ KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Numeric,
+				  KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Numeric,
+				  KeyboardLayout.DVORAK => new (), // Placeholder
+				  _                     => new () };
+
 			case KeySet.Alphanumeric:
 				return keyboardLayout switch
-				{
-					KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphanumeric,
-					KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphanumeric,
-					KeyboardLayout.DVORAK => new (), // Placeholder
-					_ => new ()
-				};
-		
+				{ KeyboardLayout.QWERTY => KeyboardData.Layouts.QWERTY.Alphanumeric,
+				  KeyboardLayout.AZERTY => KeyboardData.Layouts.AZERTY.Alphanumeric,
+				  KeyboardLayout.DVORAK => new (), // Placeholder
+				  _                     => new () };
+
 			default:
 				return new ();
 		}
@@ -538,8 +556,7 @@ public partial class KeyManager // properties
 		{
 			for (int c = 0; c < Keys[r].Count; c++)
 			{
-				if (Keys[r][c].KeyCode == keyCode)
-					return (true, r, c);
+				if (Keys[r][c].KeyCode == keyCode) return (true, r, c);
 			}
 		}
 

@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "Shard Potion", menuName = "Shop/Shard Potion")]
 public class ShardPotion : PotionItem

@@ -4,7 +4,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
-using Random = UnityEngine.Random;
 #endregion
 
 public partial class Key // Properties

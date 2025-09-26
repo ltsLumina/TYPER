@@ -3,21 +3,25 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler/*, IDropHandler*/ // IPointer events
+public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler /*, IDropHandler*/ // IPointer events
 {
 	Key currentKey;
 
 	static KeyTooltip KeyTooltip { get; set; }
-	
+
 	public event Action<Key> OnCursorEnter;
 	public event Action<Key> OnCursorExit;
 	public event Action<Key, PointerEventData.InputButton> OnClick;
+
+	void Awake() => KeyTooltip = null;
 
 	public void OnPointerEnter(PointerEventData eventData)
 	{
 		//Logger.Log($"Key {this} hovered.");
 
 		currentKey = GetPointerKey(eventData);
+		if (currentKey.IsRemoved) return; // don't interact with removed keys, but keep interacting with disabled keys
+
 		OnCursorEnter?.Invoke(currentKey);
 
 		if (DOTween.IsTweening("KeyHover")) return;
@@ -39,6 +43,7 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 
 		// Otherwise just do the hover pop tween
 		sequence.Append(currentKey.transform.DOScale(Vector3.one * 1.1f, 0.25f).SetEase(Ease.OutBack));
+
 		sequence.OnKill
 		(() =>
 		{
@@ -74,14 +79,13 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 		switch (eventData.button)
 		{
 			case PointerEventData.InputButton.Left:
-				//Logger.Log($"Key {this} clicked.");
+				if (!currentKey.IsActive) return;
+
 				currentKey.Activate();
 				currentKey.ComboHighlight.SetActive(false); // mostly for 'Loose' key modifier.
 				break;
 
 			case PointerEventData.InputButton.Right:
-				//Logger.Log($"Key {this} right-clicked.");
-
 				// Toggle off if already active
 				if (KeyTooltip && KeyTooltip.gameObject.activeInHierarchy)
 				{
@@ -92,7 +96,7 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 				ShowTooltip();
 				break;
 		}
-		
+
 		OnClick?.Invoke(currentKey, eventData.button);
 	}
 

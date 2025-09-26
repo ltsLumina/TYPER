@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using DG.Tweening;
 using JetBrains.Annotations;
 using Lumina.Essentials.Attributes;
@@ -14,12 +13,12 @@ public partial class ShardManager : MonoBehaviour
 	[Tab("Shards")]
 	[Min(0), Tooltip("Current number of shards the player has. A shard is a currency used to purchase upgrades and items.")]
 	[SerializeField] int shards;
-	
+
 	[Button("Add 100 Shards"), UsedImplicitly, ButtonSize(20)]
 	void Add() => AddShards(100);
 	[Button("Spend 100 Shards"), UsedImplicitly, ButtonSize(20)]
 	void Spend() => SpendShards(100);
-	
+
 	[Tooltip("The required amount of shards to reach the quota. The quota is the minimum amount of shards required to enter the shop.")]
 	[Range(1, 10_000)]
 	[SerializeField] int quota = 1000;
@@ -28,13 +27,13 @@ public partial class ShardManager : MonoBehaviour
 	[SerializeField] float excessMultiplier = 1.25f;
 
 	[Space(10)]
-	
 	[Tab("References")]
 	[SerializeField] Image quotaSlider;
 	[SerializeField] TMP_Text shardText;
 	[SerializeField] TMP_Text quotaText;
-	
-	[Tab("Settings"), Header("Debug")]
+
+	[Tab("Settings")]
+	[Header("Debug")]
 	[Tooltip("Whether to enforce the shard quota. If true, players cannot earn more shards once they reach the quota. (Debug purposes only)")]
 	[SerializeField] bool enforceQuota;
 	[Tooltip("Whether the player has reached or exceeded the shard quota."), UsedImplicitly]
@@ -43,7 +42,7 @@ public partial class ShardManager : MonoBehaviour
 	[SerializeField, ReadOnly] int shardsNeededForQuota;
 
 	FrenzyManager frenzyManager;
-	
+
 	public static ShardManager Instance { get; private set; }
 
 	void Awake()
@@ -55,9 +54,9 @@ public partial class ShardManager : MonoBehaviour
 	void Start()
 	{
 		Debug.Assert(excessMultiplier >= 1f, "Excess multiplier must be at least 1.");
-		
+
 		frenzyManager = FrenzyManager.Instance;
-		
+
 		// Initial UI update
 		quotaSlider.fillAmount = QuotaProgress;
 		shardText.text = shards.ToString();
@@ -69,8 +68,7 @@ public partial class ShardManager : MonoBehaviour
 		if (Keyboard.current.digit5Key.wasPressedThisFrame) SpendShards(100);
 		if (Keyboard.current.digit6Key.wasPressedThisFrame) AddShards(100);
 
-		if (QuotaReached && Math.Abs(quotaSlider.fillAmount - 1) < 0.1f) 
-			quotaSlider.color = Color.green;
+		if (QuotaReached && Math.Abs(quotaSlider.fillAmount - 1) < 0.1f) quotaSlider.color = Color.green;
 		else quotaSlider.color = new (0.43f, 1f, 0.9f);
 	}
 
@@ -78,12 +76,12 @@ public partial class ShardManager : MonoBehaviour
 	{
 		int quotaBonus = QuotaReached ? Mathf.RoundToInt(amount * (excessMultiplier - 1f)) : 0;
 		int frenzyBonus = frenzyManager.Frenzied ? Mathf.RoundToInt(amount * (frenzyManager.FrenzyMultiplier - 1f)) : 0;
-		
+
 		shards += amount + quotaBonus + frenzyBonus;
 		Debug.Log($"Added {amount} shards. Total shards: {shards}");
 
 		shardsNeededForQuota = quota - shards;
-		
+
 		quotaSlider.DOFillAmount(QuotaProgress, 1.5f).SetEase(Ease.OutCubic);
 		LerpShardText(shardText, shards);
 		SetQuotaText();
@@ -138,7 +136,7 @@ public partial class ShardManager // Properties
 {
 	public int Shards => shards;
 	public int Quota => quota;
-	
+
 	public float ExcessMultiplier => excessMultiplier;
 	public int ShardsNeededForQuota => shardsNeededForQuota = quota - shards;
 

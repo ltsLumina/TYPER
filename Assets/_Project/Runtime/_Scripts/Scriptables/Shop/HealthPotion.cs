@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "Health Potion", menuName = "Shop/Health Potion")]
 public class HealthPotion : PotionItem
@@ -10,8 +9,8 @@ public class HealthPotion : PotionItem
 
 	void OnEnable()
 	{
-		description = $"Restores {healAmount} Health.";
 		itemName = "Health Potion";
+		description = $"Restores {healAmount} Health.";
 	}
 
 	public override void UsePotion() => GameManager.Instance.Heal(healAmount);

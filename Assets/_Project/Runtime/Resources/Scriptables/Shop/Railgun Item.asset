@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 438431d04b974ab3a1348f565c55eaf7, type: 3}
-  m_Name: Pulse Item
+  m_Name: Railgun Item
   m_EditorClassIdentifier: Assembly-CSharp::ComboItem
-  itemName: Pulse
-  description: "Grants the combo effect 'Pulse' to the last key in the combo 'QWE'.
+  itemName: Railgun
+  description: "Grants the combo effect 'Railgun' to the last key in the combo 'QWE'.
     \nIf the last key already has this effect, it upgrades the effect instead."
   cost: 100
-  icon: {fileID: 2800000, guid: 9cbb07cca3115403a9ee5ee3e734e27c, type: 3}
-  rarity: 1
+  icon: {fileID: 2800000, guid: 83ff7c8e4e4c444d887896e6c779b310, type: 3}
+  rarity: 2
   onPurchase:
     m_PersistentCalls:
       m_Calls: []
   keys: QWE
-  combo: {fileID: 11400000, guid: e63d7e1fa8feaa64c88d75d3da17113b, type: 2}
+  combo: {fileID: 11400000, guid: 465d73acbb4fb6146aababb8ca5ab5d4, type: 2}

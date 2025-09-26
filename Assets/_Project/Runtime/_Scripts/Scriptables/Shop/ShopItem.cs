@@ -2,34 +2,50 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public abstract class ShopItem : ScriptableObject
+public abstract partial class ShopItem : ScriptableObject
 {
 	public enum Rarity
 	{
-		Common,
-		Uncommon,
-		Rare,
-		Epic,
-		Legendary
+		Common,   // 60%
+		Uncommon, // 25%
+		Rare,     // 10%
+		Epic,     // 4%
+		Legendary // 1%
 	}
-	
-	public string itemName;
-	public string description;
-	public int cost;
-	public Texture2D icon;
-	[Space(10)]
-	public UnityEvent onPurchase;
 
-	void OnValidate()
+	[SerializeField] protected string itemName;
+	[SerializeField] protected string description;
+	[SerializeField] protected int cost;
+	[SerializeField] protected Texture2D icon;
+	[SerializeField] protected Rarity rarity;
+	[Space(10)]
+	[SerializeField] protected UnityEvent onPurchase;
+
+	protected virtual void OnValidate()
 	{
 		// validate that name is suffixed with the parent type of the item (e.g., "Potion" for PotionItem)
-		if (this is PotionItem && !name.EndsWith("Potion"))
-			Debug.LogWarning($"PotionItem '{name}' should have a name ending with 'Potion'.", this);
-		if (this is ComboItem && !name.EndsWith("Item"))
-			Debug.LogWarning($"EffectItem '{name}' should have a name ending with 'Item'.", this);
-		if (this is ModifierItem && !name.EndsWith("Modifier"))
-			Debug.LogWarning($"ModifierItem '{name}' should have a name ending with 'Modifier'.", this);
+		if (this is PotionItem && !name.EndsWith("Potion")) Debug.LogWarning($"PotionItem '{name}' should have a name ending with 'Potion'.", this);
+		if (this is ComboItem && !name.EndsWith("Item")) Debug.LogWarning($"ComboItem '{name}' should have a name ending with 'Item'.", this);
+		if (this is ModifierItem && !name.EndsWith("Modifier")) Debug.LogWarning($"ModifierItem '{name}' should have a name ending with 'Modifier'.", this);
 	}
+
+	public float GetRarityChance() => rarity switch
+	{ Rarity.Common    => 0.50f,
+	  Rarity.Uncommon  => 0.30f,
+	  Rarity.Rare      => 0.16f,
+	  Rarity.Epic      => 0.08f,
+	  Rarity.Legendary => 0.02f,
+	  _                => throw new ArgumentOutOfRangeException(nameof(rarity), rarity, null) };
+}
+
+public abstract partial class ShopItem // Properties
+{
+	public string ItemName => itemName;
+	public string Description => description;
+	public int Cost => cost;
+	public Texture2D Icon => icon;
+	public Rarity ItemRarity => rarity;
+	public UnityEvent OnPurchase => onPurchase;
 }
 
 public abstract class PotionItem : ShopItem
@@ -39,17 +55,5 @@ public abstract class PotionItem : ShopItem
 
 public abstract class EffectItem : ShopItem
 {
-	public Rarity rarity;
-}
-
-public class ComboItem : EffectItem
-{
-	public string keys = "???";
-	public ComboEffect item;
-
-	void OnEnable()
-	{
-		itemName = item ? item.EffectName : "Undefined Combo Item";
-		Debug.Assert(item != null, $"ComboItem '{itemName}' has no ComboEffect assigned!");
-	}
+	public abstract void Grant();
 }

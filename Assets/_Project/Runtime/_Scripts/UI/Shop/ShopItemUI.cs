@@ -13,7 +13,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 {
 	[SerializeField] Image icon;
 	[SerializeField] TMP_Text costText;
-	
+
 	Sequence hoverSequence;
 	Sequence selectedSequence;
 	Sequence purchaseSequence;
@@ -24,9 +24,9 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 	public void OnPointerEnter(PointerEventData eventData)
 	{
 		ShowTooltip();
-		
+
 		if (IsPlaying(purchaseSequence)) return;
-		
+
 		hoverSequence = DOTween.Sequence();
 		hoverSequence.Append(transform.DOScale(Vector3.one * 1.1f, 0.25f).SetEase(Ease.OutBack));
 		hoverSequence.SetId("enter");
@@ -35,9 +35,9 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 	public void OnPointerExit(PointerEventData eventData)
 	{
 		HideTooltip();
-		
+
 		DOTween.Kill("enter");
-		
+
 		if (IsPlaying(purchaseSequence)) return;
 		transform.DOScale(Vector3.one, 0.1f).SetEase(Ease.OutBack).SetLink(gameObject);
 	}
@@ -47,7 +47,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 	public void OnPointerClick(PointerEventData eventData)
 	{
 		if (IsPlaying(purchaseSequence)) return;
-		
+
 		switch (eventData.button)
 		{
 			case PointerEventData.InputButton.Left:
@@ -71,6 +71,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 							purchaseSequence.AppendInterval(0.25f);
 							purchaseSequence.Join(transform.DOScale(Vector3.zero, 0.5f).SetEase(Ease.InBack));
 							purchaseSequence.SetLink(gameObject);
+
 							purchaseSequence.OnComplete
 							(() =>
 							{
@@ -93,6 +94,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 						confirmations = 0;
 						break;
 				}
+
 				break;
 
 			case PointerEventData.InputButton.Right:
@@ -113,10 +115,11 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 		deselectSequence.Append(transform.DOScale(Vector3.one, 0.15f).SetEase(Ease.OutBack));
 		deselectSequence.Join(transform.DOMoveY(transform.position.y - 10f, 0.1f).SetEase(Ease.OutQuad));
 		deselectSequence.SetLink(gameObject);
-		
+
 		confirmations = 0;
 	}
-	
+
+	/// <summary> The ShopItem this UI element represents </summary>
 	public ShopItem Item { get; set; }
 
 	bool IsPlaying(Sequence sequence) => sequence != null && sequence.IsActive() && sequence.IsPlaying();
@@ -132,38 +135,26 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 			tooltip.transform.position = Input.mousePosition;
 
 			// if on the right half of the screen, subtract 500 from the X position to keep it on screen
-			if (Input.mousePosition.x > Screen.width / 2f)
-				tooltip.transform.position = new (Input.mousePosition.x - 350f, Input.mousePosition.y, 0);
+			if (Input.mousePosition.x > Screen.width / 2f) tooltip.transform.position = new (Input.mousePosition.x - 350f, Input.mousePosition.y, 0);
+
 			// vice versa
 
 			switch (Item)
 			{
 				case ComboItem combo: {
-					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
-					                                            $"Keys: {combo.keys}" + "\n" + 
-					                                             "----------------------" + "\n" +
-					                                            "Click to select. " + "\n" +
-					                                            "Click again to confirm purchase.");
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + $"Keys: {combo.Keys}" + "\n" + "----------------------" + "\n" + "Click to select. " + "\n" + "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
 					return;
 				}
 
 				case ModifierItem modifier: {
-					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
-					                                            $"Key: {modifier.Key}" + "\n" +
-					                                            "----------------------" + "\n" +
-					                                            "Click to select. " + "\n" +
-					                                            "Click again to confirm purchase.");
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + $"Key: {modifier.Key}" + "\n" + "----------------------" + "\n" + "Click to select. " + "\n" + "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
 					return;
 				}
-				
+
 				case PotionItem potion: {
-					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + 
-					                                            $"Effect: {potion.description}" + "\n" +
-					                                            "----------------------" + "\n" +
-					                                            "Click to select. " + "\n" +
-					                                            "Click again to confirm purchase.");
+					(string title, string description) = (name, $"Cost: {costText.text} shards" + "\n" + $"Effect: {potion.Description}" + "\n" + "----------------------" + "\n" + "Click to select. " + "\n" + "Click again to confirm purchase.");
 					tooltip.SetText(title, description);
 					return;
 				}

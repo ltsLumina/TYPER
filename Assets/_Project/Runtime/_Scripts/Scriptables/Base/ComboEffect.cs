@@ -45,7 +45,7 @@ public abstract class ComboEffect : Effect
 	public Level Level => level;
 
 	ComboEffect cachedAsset;
-	
+
 	/// <summary>
 	/// A reference to 
 	/// </summary>
@@ -55,8 +55,8 @@ public abstract class ComboEffect : Effect
 		{
 			if (!cachedAsset)
 			{
-				cachedAsset = Resources.Load<ComboEffect>($"{ResourcePaths.Combos}/{name.Replace("(Clone)", string.Empty)}");
-				if (!cachedAsset) Logger.LogError($"ComboEffect asset not found in \"{ResourcePaths.Combos}/{name}\"!", this);
+				cachedAsset = Resources.Load<ComboEffect>($"{ResourcePaths.COMBOS}/{name.Replace("(Clone)", string.Empty)}");
+				if (!cachedAsset) Logger.LogError($"ComboEffect asset not found in \"{ResourcePaths.COMBOS}/{name}\"!", this);
 			}
 
 			return cachedAsset;
@@ -100,7 +100,8 @@ public abstract class ComboEffect : Effect
 	/// </summary>
 	/// <typeparam name="T"> The type of LevelSettings to retrieve. </typeparam>
 	/// <returns> The LevelSettings for the current level. </returns>
-	protected T GetLevelSettings<T>() where T : LevelSettings
+	protected T GetLevelSettings<T>()
+			where T : LevelSettings
 	{
 		int levelIndex = Mathf.Clamp((int) Asset.level, 0, Asset.levels.Count - 1);
 		var settings = (T) Asset.levels[levelIndex];
@@ -117,7 +118,8 @@ public abstract class ComboEffect : Effect
 	///     one.
 	/// </remarks>
 	/// <returns> The LevelSettings for the specified level. </returns>
-	protected T GetLevelSettings<T>(int overrideLevel) where T : LevelSettings
+	protected T GetLevelSettings<T>(int overrideLevel)
+			where T : LevelSettings
 	{
 		int levelIndex = Mathf.Clamp(overrideLevel, 0, Asset.levels.Count - 1);
 		var settings = (T) Asset.levels[levelIndex];
@@ -145,7 +147,7 @@ public abstract class ComboEffect : Effect
 					Logger.LogWarning($"Level \"XI\" is out of range. Clamped to Level {(Level) clampedIndex}.", this, $"{name}");
 					return;
 				}
-			
+
 				Logger.LogWarning($"Level \"{newLevel}\" is out of range. Clamped to Level {(Level) clampedIndex}.", this, $"{name}");
 			}
 		}

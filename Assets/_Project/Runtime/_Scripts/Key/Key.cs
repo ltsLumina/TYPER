@@ -55,6 +55,7 @@ public partial class Key : MonoBehaviour
 	[Tab("Settings")]
 	[Header("Settings")]
 	[SerializeField] bool isActive = true;
+	[SerializeField] bool isRemoved;
 
 	[Header("Debug Info")]
 	[Header("Indexes")]
@@ -74,18 +75,41 @@ public partial class Key : MonoBehaviour
 	Enemy currentEnemy;
 	ComboManager comboManager;
 
+	public bool IsValid => isActive && !isRemoved;
+
+	#region Active
 	public bool IsActive => isActive;
 	public void Disable(bool setColour = true)
 	{
 		isActive = false;
 		SetColour(setColour ? Color.grey : SpriteRenderer.color);
 	}
-
 	public void Enable(bool setColour = true)
 	{
 		isActive = true;
 		SetColour(setColour ? Color.white : SpriteRenderer.color);
 	}
+	#endregion
+
+	#region Removed
+	/// <summary>
+	/// A 'removed' key is one that the player has lost and can no longer use.
+	/// It is disabled and cannot be re-enabled until regained.
+	/// This is different from a disabled key, which can be re-enabled at any time.
+	/// Removed keys are typically the result of taking damage.
+	/// </summary>
+	public bool IsRemoved => isRemoved;
+	public void Remove()
+	{
+		isRemoved = true;
+		Disable();
+	}
+	public void Regain()
+	{
+		isRemoved = false;
+		Enable();
+	}
+	#endregion
 
 	void Awake()
 	{
@@ -279,11 +303,8 @@ public partial class Key : MonoBehaviour
 	/// <returns> True if an enemy was hit, false otherwise. </returns>
 	public void Activate(float cooldownOverride = -1f, Key triggerKey = null) // false by default
 	{
-		if (KeyManager.Instance.CurrentInputMode == KeyManager.InputMode.Disabled) return;
-		if (!comboManager.IsKeyPartOfCombo(this) && KeyManager.Instance.CurrentInputMode == KeyManager.InputMode.OnlyCombos) return;
-		
 		bool triggeredByKey = triggerKey != null;
-		
+
 		#region Stack Overflow Protection - only allow MAX_ACTIVATIONS_PER_FRAME activations per frame if triggered by another key
 		if (triggeredByKey)
 		{
@@ -301,7 +322,7 @@ public partial class Key : MonoBehaviour
 					const string msg3 = "\n" + "<color=Orange>Activation aborted to prevent <i>potential</i> stack overflow.</color>";
 					string msg = msg1 + msg2 + msg3;
 					Logger.LogError(msg, this, "Overflow Protection");
-				
+
 #endif
 					activationInfo.triggerKeys.Clear();
 					activationInfo.activations = 0;
@@ -323,6 +344,7 @@ public partial class Key : MonoBehaviour
 			}
 
 			StartCoroutine(StackOverflowProtection());
+
 			IEnumerator StackOverflowProtection()
 			{
 				yield return null;
@@ -349,44 +371,43 @@ public partial class Key : MonoBehaviour
 
 		if (comboManager.InProgress)
 		{
-		    bool isComboKey = comboManager.CurrentComboKeys.Contains(this);
-		    bool isNextComboKey = comboIndex == comboManager.NextComboIndex;
-		    bool isSameKeyTwice = comboManager.RecentKey == this;
-		    
-		    if (isSameKeyTwice)
-		    {
-		        if (!triggeredByKey)
-		        {
-		            Debug.LogWarning("Same key pressed twice in a row by player, resetting combo");
-		            comboManager.ResetCombo();
-		        }
-		    }
-		
-		    if (!isComboKey)
-		    {
-		        if (!triggeredByKey)
-		        {
-		            Debug.LogWarning("Wrong key pressed by player, resetting combo");
-		            comboManager.ResetCombo();
-		        }
-		    }
-		    else if (!isNextComboKey)
-		    {
-		        if (!triggeredByKey)
-		        {
-		            Debug.LogWarning("Out-of-order combo key by player, resetting combo");
-		            comboManager.ResetCombo();
-		        }
-		    }
-		
-		    // Allow chain activation to start a new combo if this is the first key in a combo
-		    if (triggeredByKey && isComboKey && comboIndex == 0)
-		    {
-		        Debug.LogWarning("Key activation by another key, starting new combo");
-		        comboManager.BeginCombo(keyCode);
-		    }
-		}
+			bool isComboKey = comboManager.CurrentComboKeys.Contains(this);
+			bool isNextComboKey = comboIndex == comboManager.NextComboIndex;
+			bool isSameKeyTwice = comboManager.RecentKey == this;
 
+			if (isSameKeyTwice)
+			{
+				if (!triggeredByKey)
+				{
+					Debug.LogWarning("Same key pressed twice in a row by player, resetting combo");
+					comboManager.ResetCombo();
+				}
+			}
+
+			if (!isComboKey)
+			{
+				if (!triggeredByKey)
+				{
+					Debug.LogWarning("Wrong key pressed by player, resetting combo");
+					comboManager.ResetCombo();
+				}
+			}
+			else if (!isNextComboKey)
+			{
+				if (!triggeredByKey)
+				{
+					Debug.LogWarning("Out-of-order combo key by player, resetting combo");
+					comboManager.ResetCombo();
+				}
+			}
+
+			// Allow chain activation to start a new combo if this is the first key in a combo
+			if (triggeredByKey && isComboKey && comboIndex == 0)
+			{
+				Debug.LogWarning("Key activation by another key, starting new combo");
+				comboManager.BeginCombo(keyCode);
+			}
+		}
 
 		bool hitEnemy = DealDamage();
 
@@ -490,8 +511,8 @@ public partial class Key : MonoBehaviour
 		}
 		else
 		{
-			
 			KeyManager.Instance.StartGlobalCooldown();
+
 			// TODO Interesting idea:
 			// comboManager.OnCompleteCombo += _ => KeyManager.Instance.StartGlobalCooldown(0.25f); 
 			SetColour(hitEnemy ? Color.green : Color.crimson, 0.5f);
@@ -579,8 +600,7 @@ public static class KeyExtensions
 		str = str.ToUpper();
 
 		List<KeyCode> keycodes = new ();
-		try { keycodes = str.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString())).ToList(); } 
-		catch (ArgumentException e) { Debug.LogError($"Invalid character in string '{str}': {e.Message}. " + "\nThere may be duplicate or unsupported characters."); }
+		try { keycodes = str.Select(c => (KeyCode) Enum.Parse(typeof(KeyCode), c.ToString())).ToList(); } catch (ArgumentException e) { Debug.LogError($"Invalid character in string '{str}': {e.Message}. " + "\nThere may be duplicate or unsupported characters."); }
 
 		return keycodes;
 	}

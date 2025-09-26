@@ -11,21 +11,20 @@ public class ModifierItem : EffectItem
 		OffGlobalCooldown,
 		Mash,
 	}
-	
-	public string key;
-	public Modifiers modifier;
+
+	[SerializeField] string key;
+	[SerializeField] Modifiers modifier;
 
 	public string Key => key;
 
-	public void Grant()
+	public override void Grant()
 	{
 		if (key.Length != 1)
 		{
-			Logger.LogError($"Key string must be a single character. Got '{key}'" 
-			                + "\n" + "Using last character instead.", this, "ModifierItem.Grant");
+			Logger.LogError($"Key string must be a single character. Got '{key}'" + "\n" + "Using last character instead.", this, "ModifierItem.Grant");
 			key = key.Last().ToString();
 		}
-		
+
 		key.ToKey().SetModifier(Enum.Parse<Key.Modifiers>(modifier.ToString()));
 
 		KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.ToKey().transform.position);

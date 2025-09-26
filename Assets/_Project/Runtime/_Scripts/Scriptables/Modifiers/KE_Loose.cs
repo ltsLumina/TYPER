@@ -11,17 +11,17 @@ public class KE_Loose : KeyModifier
 	}
 	public override void OnEffectRemoved(Key key)
 	{
-		DOTween.Kill("Loose");
+		DOTween.Kill(key.transform);
 		key.transform.rotation = Quaternion.identity;
 	}
 
-	protected override void Invoke(Key key, (bool byKey, Key key) trigger) { ActivatedWhileLoose(key, trigger.byKey); }
+	protected override void Invoke(Key key, (bool byKey, Key key) trigger) => ActivatedWhileLoose(key, trigger.byKey);
 
 	static void ActivatedWhileLoose(Key key, bool triggeredByKey)
 	{
 		if (triggeredByKey) return;
 
-		DOTween.Kill("Loose"); // Stop the infinite shaking tween.
+		DOTween.Kill(key.transform); // Stop the infinite shaking tween.
 
 		key.Disable(false); // Disables the key while falling but doesn't change the colour.
 		key.RemoveModifier(Key.Modifiers.Loose);
@@ -41,7 +41,14 @@ public class KE_Loose : KeyModifier
 		    (() =>
 		    {
 			    key.Disable();
+
+			    // TODO: this is bad. refactor
 			    key.SpriteRenderer.gameObject.SetActive(false);
+			    key.ChainedMarker.gameObject.SetActive(false);
+			    key.FrozenMarker.gameObject.SetActive(false);
+			    key.ThornedMarker.gameObject.SetActive(false);
+			    key.ComboHighlight.gameObject.SetActive(false);
+
 			    key.transform.position = originalPos;
 			    key.transform.rotation = Quaternion.identity;
 			    key.transform.localScale = Vector3.one;

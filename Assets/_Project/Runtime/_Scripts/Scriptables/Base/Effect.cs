@@ -44,8 +44,7 @@ public abstract class Effect : ScriptableObject
 	void OnValidate()
 	{
 		effectName = name;
-		if (description == "Effect Description" || string.IsNullOrWhiteSpace(description)) 
-			Logger.LogWarning($"Effect '{name}' has no description. Please provide a description for better clarity.");
+		if (description == "Effect Description" || string.IsNullOrWhiteSpace(description)) Logger.LogWarning($"Effect '{name}' has no description. Please provide a description for better clarity.");
 	}
 
 	// Must remember to clear cache on domain reloads
@@ -65,11 +64,11 @@ public abstract class Effect : ScriptableObject
 			where T : Effect
 	{
 		string resourcePath = typeof(T) switch
-		{ { } t when t == typeof(ComboEffect) || t.IsSubclassOf(typeof(ComboEffect)) => ResourcePaths.Combos,
-		  _                                                                          => ResourcePaths.Modifiers };
+		{ { } t when t == typeof(ComboEffect) || t.IsSubclassOf(typeof(ComboEffect)) => ResourcePaths.COMBOS,
+		  _                                                                          => ResourcePaths.MODIFIERS };
 
 		// If _cachedEffects is null, which it will be on the first access, load all effects from the specified resource path and cache them.
-		Effect[] effects = _cachedEffects ??= Resources.LoadAll<Effect>(ResourcePaths.Combos).Concat(Resources.LoadAll<Effect>(ResourcePaths.Modifiers)).ToArray();
+		Effect[] effects = _cachedEffects ??= Resources.LoadAll<Effect>(ResourcePaths.COMBOS).Concat(Resources.LoadAll<Effect>(ResourcePaths.MODIFIERS)).ToArray();
 
 		foreach (Effect e in effects)
 		{
@@ -93,9 +92,9 @@ public abstract class Effect : ScriptableObject
 	public static T GetEffect<T>(Type type, bool instanced = false)
 			where T : Effect
 	{
-		string resourcePath = type == typeof(ComboEffect) || type.IsSubclassOf(typeof(ComboEffect)) ? ResourcePaths.Combos : ResourcePaths.Modifiers;
+		string resourcePath = type == typeof(ComboEffect) || type.IsSubclassOf(typeof(ComboEffect)) ? ResourcePaths.COMBOS : ResourcePaths.MODIFIERS;
 
-		Effect[] effects = _cachedEffects ??= Resources.LoadAll<Effect>(ResourcePaths.Combos).Concat(Resources.LoadAll<Effect>(ResourcePaths.Modifiers)).ToArray();
+		Effect[] effects = _cachedEffects ??= Resources.LoadAll<Effect>(ResourcePaths.COMBOS).Concat(Resources.LoadAll<Effect>(ResourcePaths.MODIFIERS)).ToArray();
 
 		foreach (Effect e in effects)
 		{
@@ -120,7 +119,11 @@ public abstract class Effect : ScriptableObject
 public struct ResourcePaths
 {
 	/// <remarks>  Does not include a trailing slash. </remarks>
-	public const string Modifiers = "Scriptables/Modifiers";
+	public const string MODIFIERS = "Scriptables/Modifiers";
 	/// <remarks>  Does not include a trailing slash. </remarks>
-	public const string Combos = "Scriptables/Combos";
+	public const string COMBOS = "Scriptables/Combos";
+	/// <remarks>  Does not include a trailing slash. </remarks>
+	public const string PREFABS = "PREFABS";
+	/// <remarks>  Does not include a trailing slash. </remarks>
+	public const string SHOP = "Scriptables/Shop";
 }

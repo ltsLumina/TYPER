@@ -18,13 +18,10 @@ public class EnemySpawner : MonoBehaviour
 	[Header("Enemy Spawner Settings")]
 	[SerializeField] Enemy enemyPrefab;
 	[SerializeField] float initialDelay;
-	[UsedImplicitly] [ReadOnly]
+	[UsedImplicitly, ReadOnly]
 	[SerializeField] string currentWave;
 	[Tooltip("Waves defined as <elapsed time, repeat rate>")]
-	[SerializeField] SerializedDictionary<int, float> waves = new ()
-	{ { 0, 0.5f },
-	  { 60, 0.3f },
-	  { 120, 0.2f } };
+	[SerializeField] SerializedDictionary<int, float> waves = new () { { 0, 0.5f }, { 60, 0.3f }, { 120, 0.2f } };
 
 	GameObject parent;
 	float[] lanes;
@@ -34,6 +31,7 @@ public class EnemySpawner : MonoBehaviour
 	public bool IsPaused { get; private set; }
 
 	public void PauseSpawner() => IsPaused = true;
+
 	public void PlaySpawner() => IsPaused = false;
 
 	void Start()

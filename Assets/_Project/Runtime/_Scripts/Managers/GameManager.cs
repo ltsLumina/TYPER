@@ -1,12 +1,16 @@
 #region
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
+using Lumina.Essentials.Sequencer;
 using MelenitasDev.SoundsGood;
 using TransitionsPlus;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using Random = UnityEngine.Random;
 #endregion
 
 public partial class GameManager : SingletonPersistent<GameManager>
@@ -27,7 +31,7 @@ public partial class GameManager : SingletonPersistent<GameManager>
 	[Header("Transitions")]
 	[SerializeField] TransitionAnimator enterTransition;
 	[SerializeField] TransitionAnimator exitTransition;
-	
+
 	void Start() // Only runs once when the game starts because it's a SingletonPersistent
 	{
 		Music = new (Track.musicSFX);
@@ -35,7 +39,7 @@ public partial class GameManager : SingletonPersistent<GameManager>
 		Music.SetVolume(0.5f);
 		Music.SetLoop(true);
 		Music.Play();
-		
+
 		currentState = State.Menu;
 	}
 
@@ -57,6 +61,7 @@ public partial class GameManager : SingletonPersistent<GameManager>
 	}
 
 	public void StartGame() => StartCoroutine(StartGameRoutine());
+
 	IEnumerator StartGameRoutine()
 	{
 		ExitTransition.gameObject.SetActive(true);
@@ -69,7 +74,7 @@ public partial class GameManager : SingletonPersistent<GameManager>
 	public void SetState(State newState)
 	{
 		currentState = newState;
-		
+
 		switch (newState)
 		{
 			case State.Menu:
@@ -100,18 +105,39 @@ public partial class GameManager : SingletonPersistent<GameManager>
 
 	public void TakeDamage(int damage)
 	{
-		Health -= damage;
+		var keys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
 
-		if (Health <= 0)
+		// 'damage' amount of keys
+		var dropKeys = keys.OrderBy(_ => Random.value).Take(damage).ToList();
+
+		foreach (Key key in dropKeys)
 		{
-			Debug.LogWarning("Game Over!");
-			Debug.Break();
-
-			// draw a cross with debug lines in red
-			Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
-			Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
+			key.AddModifier(Key.Modifiers.Loose);
+			key.KeyModifier.Invoke(key, null);
+			key.Remove();
 		}
-		else { Debug.LogWarning($"Player took {damage} damage.\n" + $"Remaining health: {Health}"); }
+
+		TriggerHitStop(0.75f, 0.1f);
+
+		var sequence = new Sequence(this);
+
+		sequence.WaitThenExecute
+		(0.75f, () =>
+		{
+			// Check if any keys remain after taking damage
+			List<Key> remainingKeys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
+
+			if (remainingKeys.Count == 0)
+			{
+				Debug.LogWarning("Game Over!");
+				Debug.Break();
+
+				// draw a cross with debug lines in red
+				Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
+				Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
+			}
+			else { Debug.LogWarning($"Player took {damage} damage.\n" + $"Remaining health: {Health}"); }
+		});
 	}
 
 	Coroutine hitStopCoroutine;
