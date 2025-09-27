@@ -117,8 +117,10 @@ public partial class GameManager : SingletonPersistent<GameManager>
 		
 		//DropKey();
 		
-		return;
+		return; // Temporary disable key dropping for testing purposes
+#pragma warning disable CS8321 // Local function is declared but never used
 		void DropKey()
+#pragma warning restore CS8321 // Local function is declared but never used
 		{
 			var keys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
 
