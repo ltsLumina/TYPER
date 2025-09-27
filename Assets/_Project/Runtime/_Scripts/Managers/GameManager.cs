@@ -105,39 +105,55 @@ public partial class GameManager : SingletonPersistent<GameManager>
 
 	public void TakeDamage(int damage)
 	{
-		var keys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
-
-		// 'damage' amount of keys
-		var dropKeys = keys.OrderBy(_ => Random.value).Take(damage).ToList();
-
-		foreach (Key key in dropKeys)
+		Health -= damage;
+		
+		if (Health <= 0)
 		{
-			key.AddModifier(Key.Modifiers.Loose);
-			key.KeyModifier.Invoke(key, null);
-			key.Remove();
+			Debug.LogWarning("Player has no health left. Game Over!");
+			// draw a cross with debug lines in red
+			Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
+			Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
 		}
-
-		TriggerHitStop(0.75f, 0.1f);
-
-		var sequence = new Sequence(this);
-
-		sequence.WaitThenExecute
-		(0.75f, () =>
+		
+		//DropKey();
+		
+		return;
+		void DropKey()
 		{
-			// Check if any keys remain after taking damage
-			List<Key> remainingKeys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
+			var keys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
 
-			if (remainingKeys.Count == 0)
+			// 'damage' amount of keys
+			var dropKeys = keys.OrderBy(_ => Random.value).Take(damage).ToList();
+
+			foreach (Key key in dropKeys)
 			{
-				Debug.LogWarning("Game Over!");
-				Debug.Break();
-
-				// draw a cross with debug lines in red
-				Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
-				Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
+				key.AddModifier(Key.Modifiers.Loose);
+				key.KeyModifier.Invoke(key, null);
+				key.Remove();
 			}
-			else { Debug.LogWarning($"Player took {damage} damage.\n" + $"Remaining health: {Health}"); }
-		});
+
+			TriggerHitStop(0.75f, 0.1f);
+
+			var sequence = new Sequence(this);
+
+			sequence.WaitThenExecute
+			(0.75f, () =>
+			{
+				// Check if any keys remain after taking damage
+				List<Key> remainingKeys = KeyManager.Instance.FlatKeys.Where(k => !k.IsRemoved).ToList();
+
+				if (remainingKeys.Count == 0)
+				{
+					Debug.LogWarning("Game Over!");
+					Debug.Break();
+
+					// draw a cross with debug lines in red
+					Debug.DrawLine(new (-5, -5, 0), new (5, 5, 0), Color.red, 10f);
+					Debug.DrawLine(new (-5, 5, 0), new (5, -5, 0), Color.red, 10f);
+				}
+				else { Debug.LogWarning($"Player took {damage} damage.\n" + $"Remaining health: {Health}"); }
+			});
+		}
 	}
 
 	Coroutine hitStopCoroutine;

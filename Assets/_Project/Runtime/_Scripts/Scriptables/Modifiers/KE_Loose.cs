@@ -41,13 +41,7 @@ public class KE_Loose : KeyModifier
 		    (() =>
 		    {
 			    key.Disable();
-
-			    // TODO: this is bad. refactor
-			    key.SpriteRenderer.gameObject.SetActive(false);
-			    key.ChainedMarker.gameObject.SetActive(false);
-			    key.FrozenMarker.gameObject.SetActive(false);
-			    key.ThornedMarker.gameObject.SetActive(false);
-			    key.ComboHighlight.gameObject.SetActive(false);
+			    key.gameObject.SetActive(false);
 
 			    key.transform.position = originalPos;
 			    key.transform.rotation = Quaternion.identity;
