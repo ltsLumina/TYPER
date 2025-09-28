@@ -18,8 +18,8 @@ MonoBehaviour:
   cost: 100
   icon: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
   rarity: 0
+  minActivationKeys: 3
   onPurchase:
     m_PersistentCalls:
       m_Calls: []
-  keys: QWE
-  combo: {fileID: 11400000, guid: 4b1e00316f43cb744becbee34b9f2fb5, type: 2}
+  effect: {fileID: 11400000, guid: 4b1e00316f43cb744becbee34b9f2fb5, type: 2}

@@ -597,6 +597,12 @@ public static class KeyExtensions
 	// to keycodes from string
 	public static List<KeyCode> ToKeyCodes(this string str)
 	{
+		if (string.IsNullOrWhiteSpace(str))
+		{
+			Logger.LogError("Cannot convert empty or whitespace string to KeyCodes.", null, "KeyExtensions");
+			return null;
+		}
+		
 		str = str.ToUpper();
 
 		List<KeyCode> keycodes = new ();

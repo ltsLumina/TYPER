@@ -1,5 +1,6 @@
 #region
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -7,6 +8,7 @@ using Lumina.Essentials.Attributes;
 using MelenitasDev.SoundsGood;
 using UnityEngine;
 using VInspector;
+using Random = UnityEngine.Random;
 #endregion
 
 public class ComboManager : Singleton<ComboManager>
@@ -24,6 +26,15 @@ public class ComboManager : Singleton<ComboManager>
 	[SerializeField, ReadOnly] Key nextComboKey;
 	[SerializeField, ReadOnly] int nextComboIndex;
 	[SerializeField, ReadOnly] bool loops; // TODO: implement looping combos
+
+	[Tab("Debug")]
+	[SerializeField] bool randomizeComboEffects = true;
+	[ShowIf(nameof(randomizeComboEffects), true)]
+	[SerializeField] List<ComboEffect> excludedComboEffects = new ();
+	[EndIf]
+	[ShowIf(nameof(randomizeComboEffects), false)]
+	[SerializeField] SerializedDictionary<string, string> presetComboEffects = new ();
+	[EndIf]
 	
 	[Tab("Statistics")]
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
@@ -50,6 +61,104 @@ public class ComboManager : Singleton<ComboManager>
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
 
+	#region Debug / Combo Effect Assignment
+	IEnumerator Start()
+	{
+		yield return new WaitUntil(() => KeyManager.Instance.IsInitialized);
+		
+		#region Modifiers
+		if (SceneManagerExtended.ActiveSceneName != "Game") yield break;
+
+		//List<Key> qweCombo = "QWE".ToKeys();
+		//CreateCombo(qweCombo);
+
+		// List<Key> asdfCombo = "ASDF".ToKeys();
+		// CreateCombo(asdfCombo);
+		//
+		// List<Key> rtyCombo = "RTY".ToKeys();
+		// CreateCombo(rtyCombo);
+		//
+		// List<Key> cvbCombo = "CVB".ToKeys();
+		// CreateCombo(cvbCombo);
+
+		// List<Key> oGCD_Keys = "PLM".ToKeys();
+		// oGCD_Keys.SetModifier(Key.Modifiers.OffGlobalCooldown);
+		//
+		// // set G key to be a mash key
+		// var mashKey = KeyCode.G.ToKey();
+		// mashKey.SetModifier(Key.Modifiers.Mash);
+		//
+		// // make H shake
+		// var shakeKey = KeyCode.H.ToKey();
+		// shakeKey.SetModifier(Key.Modifiers.Loose);
+		//
+		// // chain J key
+		// var chainKey = KeyCode.J.ToKey();
+		// chainKey.SetModifier(Key.Modifiers.Chained);
+		//
+		// // thorn K key
+		// var thornKey = KeyCode.K.ToKey();
+		// thornKey.SetModifier(Key.Modifiers.Thorned);
+		#endregion
+
+		if (randomizeComboEffects) RandomizeComboEffects(KeyManager.Instance.FlatKeys, excludedComboEffects.Select(e => e.GetType()).Distinct().ToArray());
+		else SelectPresetComboEffects();
+	}
+	
+	void RandomizeComboEffects(List<Key> keys, params Type[] exclude)
+	{
+		// remove excluded effects from the list
+		ComboEffect[] effects = Resources.LoadAll<ComboEffect>(ResourcePaths.COMBOS);
+		effects = effects.Where(e => !exclude.Contains(e.GetType())).ToArray();
+
+		foreach (var key in keys)
+		{
+			if (!key.LastKeyInCombo) continue; // Only the last key in a combo gets a special effect. Prevents issues like the RTY-incident.
+
+			// randomly select a combo effect, and call GetEffect
+			key.ComboEffect = effects.Length > 0 ? Effect.GetEffect<ComboEffect>(effects[Random.Range(0, effects.Length)].GetType()) : key.ComboEffect = Effect.GetEffect<CE_Railgun>();
+		}
+	}
+
+	void SelectPresetComboEffects()
+	{
+		if (presetComboEffects.Count == 0) return;
+		
+		foreach (var kvp in presetComboEffects)
+		{
+			// split the value by comma to separate effect from desired level (if any)
+			string[] parts = kvp.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+			// part 0 is the effect name, part 1 is the level (if any)
+			string effectName = parts[0].Trim();
+			string level = parts.Length > 1 ? parts[1].Trim() : null;
+
+			// add the prefix if it's not already there
+			string prefixed = effectName.StartsWith("CE_") ? effectName : "CE_" + effectName;
+
+			Key key = KeyManager.Instance.GetKey((KeyCode) Enum.Parse(typeof(KeyCode), kvp.Key));
+
+			if (!key.LastKeyInCombo)
+			{
+				Logger.LogWarning($"Key '{kvp.Key}' is not marked as the last key in a combo. Combo effects only apply to the last key in a combo.");
+				continue;
+			}
+
+			var effectType = Type.GetType(prefixed);
+
+			if (key != null && effectType != null && effectType.IsSubclassOf(typeof(Effect)))
+			{
+				key.ComboEffect = Effect.GetEffect<ComboEffect>(effectType);
+				key.ComboEffect.SetLevel(Enum.TryParse(level, out Level lvl) ? lvl : Level.I, true);
+
+				//Logger.Log($"Assigned preset combo effect '{effectName}' to key '{kvp.Key}' at level {key.ComboEffect.Level}.", this, "KeyManager");
+			}
+			else if (key == null) Logger.LogWarning($"Key '{kvp.Key}' not found. Check if the key name is valid.", this, "KeyManager");
+			else Logger.LogWarning($"Failed to assign preset combo effect '{prefixed}' to key '{kvp.Key}'. Check if the key and effect type are valid.", this, "KeyManager");
+		}
+	}
+	#endregion
+
 	/// <summary>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
@@ -60,7 +169,7 @@ public class ComboManager : Singleton<ComboManager>
 		// min length of 3 keys
 		if (comboKeys.Count < 3)
 		{
-			Debug.LogError("Combo must be at least 3 keys long.");
+			Logger.LogError("Combos must be at least 3 keys long." + "\n" + $"Provided combo length: {comboKeys.Count} ({string.Join(" -> ", comboKeys.Select(k => k.KeyCode))})");
 			return;
 		}
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -14,10 +15,12 @@ public abstract partial class ShopItem : ScriptableObject
 	}
 
 	[SerializeField] protected string itemName;
+	[Multiline(2)]
 	[SerializeField] protected string description;
 	[SerializeField] protected int cost;
 	[SerializeField] protected Texture2D icon;
 	[SerializeField] protected Rarity rarity;
+	[SerializeField] protected int minActivationKeys = 3;
 	[Space(10)]
 	[SerializeField] protected UnityEvent onPurchase;
 
@@ -45,6 +48,7 @@ public abstract partial class ShopItem // Properties
 	public int Cost => cost;
 	public Texture2D Icon => icon;
 	public Rarity ItemRarity => rarity;
+	public int MinActivationKeys => minActivationKeys;
 	public UnityEvent OnPurchase => onPurchase;
 }
 
@@ -55,5 +59,5 @@ public abstract class PotionItem : ShopItem
 
 public abstract class EffectItem : ShopItem
 {
-	public abstract void Grant();
+	public abstract void Grant(List<Key> keys, Key key);
 }

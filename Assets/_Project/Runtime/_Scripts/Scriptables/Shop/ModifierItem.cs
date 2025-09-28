@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using UnityEngine;
@@ -16,18 +17,13 @@ public class ModifierItem : EffectItem
 	[SerializeField] Modifiers modifier;
 
 	public string Key => key;
+	public Modifiers Modifier => modifier;
 
-	public override void Grant()
+	public override void Grant(List<Key> keys, Key key)
 	{
-		if (key.Length != 1)
-		{
-			Logger.LogError($"Key string must be a single character. Got '{key}'" + "\n" + "Using last character instead.", this, "ModifierItem.Grant");
-			key = key.Last().ToString();
-		}
+		key.SetModifier(Enum.Parse<Key.Modifiers>(modifier.ToString()));
 
-		key.ToKey().SetModifier(Enum.Parse<Key.Modifiers>(modifier.ToString()));
-
-		KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.ToKey().transform.position);
-		key.ToKey().transform.DOPunchScale(Vector3.one * 0.25f, 0.35f, 10, 1).SetEase(Ease.OutBack);
+		KeyManager.SpawnVFX(KeyManager.CommonVFX.Combo, key.transform.position);
+		key.transform.DOPunchScale(Vector3.one * 0.25f, 0.35f, 10, 1).SetEase(Ease.OutBack);
 	}
 }

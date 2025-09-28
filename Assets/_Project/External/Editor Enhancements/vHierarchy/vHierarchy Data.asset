@@ -21,6 +21,7 @@ MonoBehaviour:
     - 9ac00852c3eedfc4eb672f27bc605590
     - 0ef56f2f77644ca48b30d19ad735f6fc
     - bf15a4cae4cdd944685806edcff6ec4c
+    - 64fe7aaf814e4024aa265e1927491f4b
     values:
     - goDatasByGlobalId:
         keys: []
@@ -75,9 +76,15 @@ MonoBehaviour:
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1500980126-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-658344758-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-243755237-0
-        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1661704583-0
-        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1181863031-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-847578901-0
         - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-41550572-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1039462833-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1821321636-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1637064019-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1228484590-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-101856065-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1794507045-0
+        - GlobalObjectId_V1-2-4bef4d7720d6c514880a615b8da9e43d-1894818171-0
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -124,11 +131,23 @@ MonoBehaviour:
         - iColor: 0
           icon: d_eyeDropper.sml
         - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
           icon: PreMatCube
         - iColor: 0
           icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: PreMatQuad
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 0
+          icon: PreMatQuad
+        - iColor: 0
+          icon: 
+        - iColor: 0
+          icon: Folder Icon
       goDatasByInstanceId:
-        keys: 1aa80000cca8000094a800006ca8000028a8000000a8000008a8000062a80000d8a800003ca800004aa8000030a80000c8a80000a0a80000baa80000f8a7000070a800008aa80000b0a8000052a8000012a80000c0a8000046defdff4880ebff
+        keys: f8a40000b2a5000074a500004ca5000006a50000dca40000e4a4000042a50000bea500001aa5000028a500000ea50000aea5000086a50000a0a50000caa4000050a500006aa5000096a5000030a50000f0a40000a6a5000078a50000d4a400007a7afeffe034feff6881fdff3c7bfdffe03dfdffa639fdffd6abfbffe2aafbff
         values:
         - iColor: 1
           icon: d_eyeDropper.sml
@@ -178,6 +197,28 @@ MonoBehaviour:
           icon: PreMatCube
         - iColor: 0
           icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: d_eyeDropper.sml
+        - iColor: 0
+          icon: PreMatQuad
+        - iColor: 0
+          icon: PreMatCube
+        - iColor: 0
+          icon: PreMatQuad
+        - iColor: 0
+          icon: 
+        - iColor: 0
+          icon: Folder Icon
+    - goDatasByGlobalId:
+        keys: []
+        values: []
+      goDatasByInstanceId:
+        keys: 
+        values: []
     - goDatasByGlobalId:
         keys: []
         values: []

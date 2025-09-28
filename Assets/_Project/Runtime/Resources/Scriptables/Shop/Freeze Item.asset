@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 438431d04b974ab3a1348f565c55eaf7, type: 3}
   m_Name: Freeze Item
   m_EditorClassIdentifier: Assembly-CSharp::ComboItem
-  itemName: Freeze
+  itemName: Undefined Combo Item
   description: "Grants the combo effect 'Freeze' to the last key in the combo 'QWE'.
     \nIf the last key already has this effect, it upgrades the effect instead."
   cost: 100
   icon: {fileID: 2800000, guid: 53e206f355ec140eebdd262c38265b80, type: 3}
   rarity: 3
+  minActivationKeys: 3
   onPurchase:
     m_PersistentCalls:
       m_Calls: []
-  keys: QWE
-  combo: {fileID: 11400000, guid: cdfb642be102d9845a66b1fd9f3d3c95, type: 2}
+  effect: {fileID: 11400000, guid: cdfb642be102d9845a66b1fd9f3d3c95, type: 2}

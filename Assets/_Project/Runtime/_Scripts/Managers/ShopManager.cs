@@ -6,6 +6,7 @@ using Lumina.Essentials.Attributes;
 using Lumina.Essentials.Modules;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using VInspector;
 using Random = System.Random;
 
@@ -18,10 +19,13 @@ public partial class ShopManager : MonoBehaviour
 	[Tab("References")]
 	[SerializeField] TMP_Text enterShopText;
 	[SerializeField] TMP_Text shopText;
+	[SerializeField] Image shopFrame;
 	[SerializeField] CanvasGroup inventoryItemContainer;
 	[SerializeField] GameObject inventoryItemPrefab;
 	[SerializeField] CanvasGroup shopItemContainer;
 	[SerializeField] GameObject shopItemPrefab;
+	[SerializeField] PostPurchasePrompt postPurchasePrompt;
+	[SerializeField] Image shopOverlay;
 
 	[Tab("Settings")]
 	[Header("Debug")]
@@ -43,23 +47,14 @@ public partial class ShopManager : MonoBehaviour
 	void Start()
 	{
 		shardManager = ShardManager.Instance;
-
-		#region Inventory (deprecated)
+		
 		foreach (Transform child in inventoryItemContainer.transform) Destroy(child.gameObject);
-
-		#region add a random inventory item to the inventory UI for testing
-		var inventoryItemUI = Instantiate(inventoryItemPrefab, inventoryItemContainer.transform).GetComponent<InventoryItem>();
-		inventoryItemUI.transform.SetParent(inventoryItemContainer.transform);
-		inventoryItemUI.name = "Test Inventory Item (Chomper)";
-		inventoryItemUI.Effect = Resources.Load<ComboEffect>(ResourcePaths.COMBOS + "/Chomper");
-		#endregion
-		#endregion
 
 		ShuffleStock();
 
 		shopText.gameObject.SetActive(false);
 		shopItemContainer.alpha = 0;
-		inventoryItemContainer.alpha = 0;
+		//inventoryItemContainer.alpha = 0;
 	}
 
 	void Update()
@@ -75,7 +70,7 @@ public partial class ShopManager : MonoBehaviour
 	public static event Action OnEnterShop;
 	public static event Action OnExitShop;
 
-	(float fov, float keyboardX) preShopState;
+	(float fov, Vector2 keyboardPos) preShopState;
 
 	public void EnterShop()
 	{
@@ -102,20 +97,52 @@ public partial class ShopManager : MonoBehaviour
 			ObjectPoolManager.ReturnToPool(enemySpawnerEnemy.gameObject);
 		}
 
-		preShopState = (Helpers.CameraMain.fieldOfView, KeyManager.Instance.Keyboard.transform.localPosition.x);
+		preShopState = (Helpers.CameraMain.fieldOfView, KeyManager.Instance.Keyboard.transform.localPosition);
 
 		Helpers.CameraMain.DOFieldOfView(70, 0.5f);
 		var keyboard = KeyManager.Instance.Keyboard;
-		keyboard.transform.DOLocalMoveX(-3f, 0.5f);
+		keyboard.transform.DOLocalMove(new Vector2(3.75f, 1.5f), 0.5f);
 
 		shopText.gameObject.SetActive(true);
+		shopFrame.DOFade(1, 0.5f);
 		shopItemContainer.DOFade(1, 0.5f);
 		shopItemContainer.blocksRaycasts = true;
+		
+		inventoryItemContainer.DOFade(1, 0.5f);
+		inventoryItemContainer.blocksRaycasts = true;
 
 		OnEnterShop?.Invoke();
 	}
 
-	/// <summary>
+	public void ExitShop()
+	{
+		if (!inShop) return; // can't exit if not in shop
+
+		inShop = false;
+
+		KeyManager.Instance.SetInputMode(KeyManager.InputMode.Enabled);
+
+		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+		enemySpawner.PlaySpawner();
+
+		Helpers.CameraMain.DOFieldOfView(preShopState.fov, 0.5f);
+		var keyboard = KeyManager.Instance.Keyboard;
+		keyboard.transform.DOLocalMove(preShopState.keyboardPos, 0.5f);
+
+		shopText.gameObject.SetActive(false);
+		inventoryItemContainer.DOFade(0, 0.35f);
+		shopItemContainer.DOFade(0, 0.35f);
+		
+		shopFrame.DOFade(0, 0.5f);
+		shopItemContainer.blocksRaycasts = false;
+		inventoryItemContainer.blocksRaycasts = false;
+		
+		DeselectItem();
+
+		OnExitShop?.Invoke();
+	}
+
+		/// <summary>
 	/// Randomizes and reshuffles the stock of items available in the shop.
 	/// </summary>
 	void ShuffleStock()
@@ -156,12 +183,13 @@ public partial class ShopManager : MonoBehaviour
 			stock.Add(modifierItemsList[index]);
 		}
 
+		// TODO: vvv
 		// potions are always included last in the stock, and there's always at least one of each (shard and health potions)
-		stock.Add(potionsList.First(i => i is ShardPotion));
-		stock.Add(potionsList.First(i => i is HealthPotion));
+		//stock.Add(potionsList.First(i => i is ShardPotion));
+		//stock.Add(potionsList.First(i => i is HealthPotion));
 
 		// ensure there are 4 shop items and 2 potions
-		Debug.Assert(stock.Count == comboItems + modifierItems + potions, $"Stock count mismatch: {stock.Count} != {comboItems + modifierItems + potions}");
+		//Debug.Assert(stock.Count == comboItems + modifierItems + potions, $"Stock count mismatch: {stock.Count} != {comboItems + modifierItems + potions}");
 
 		// -- UI --
 
@@ -178,7 +206,6 @@ public partial class ShopManager : MonoBehaviour
 		}
 
 		return;
-
 		static ShopItem GetRandomByRarity(List<ShopItem> items, Random rng)
 		{
 			float roll = (float) rng.NextDouble();
@@ -193,31 +220,7 @@ public partial class ShopManager : MonoBehaviour
 			return items.Last(); // fallback
 		}
 	}
-
-	public void ExitShop()
-	{
-		if (!inShop) return; // can't exit if not in shop
-
-		inShop = false;
-
-		KeyManager.Instance.SetInputMode(KeyManager.InputMode.Enabled);
-
-		var enemySpawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
-		enemySpawner.PlaySpawner();
-
-		Helpers.CameraMain.DOFieldOfView(preShopState.fov, 0.5f);
-		var keyboard = KeyManager.Instance.Keyboard;
-		keyboard.transform.DOLocalMoveX(preShopState.keyboardX, 0.5f);
-
-		shopText.gameObject.SetActive(false);
-		inventoryItemContainer.DOFade(0, 0.35f);
-		shopItemContainer.DOFade(0, 0.35f);
-
-		DeselectItem();
-
-		OnExitShop?.Invoke();
-	}
-
+	
 	// Right click
 	public void InspectItem(ShopItemUI itemUI)
 	{
@@ -249,19 +252,23 @@ public partial class ShopManager : MonoBehaviour
 
 		if (shardManager.SpendShards(selectedItemCost))
 		{
-			switch (selectedItem)
-			{
-				case EffectItem effectItem:
-					effectItem.Grant();
-					break;
-
-				case PotionItem potionItem:
-					potionItem.UsePotion();
-					break;
-			}
-
-			selectedItem.OnPurchase?.Invoke();
+			// switch (selectedItem)
+			// {
+			// 	case EffectItem effectItem:
+			// 		effectItem.Grant();
+			// 		break;
+			//
+			// 	case PotionItem potionItem:
+			// 		potionItem.UsePotion();
+			// 		break;
+			// }
+			//
+			// selectedItem.OnPurchase?.Invoke();
+			
 			Debug.Log($"Purchased {selectedItem.ItemName} for {selectedItemCost} shards.");
+			postPurchasePrompt.Show(selectedItem.ItemName, selectedItem.MinActivationKeys);
+			var item = SelectedItemUI;
+			postPurchasePrompt.OnHide += keys => item.SetPayload(keys);
 
 			// The item itself "removes" itself from the shop by disabling its UI element.
 
@@ -285,7 +292,8 @@ public partial class ShopManager // Properties
 	{
 		get
 		{
-			if (selectedItemIndex >= 0 && selectedItemIndex < shopItemContainer.transform.childCount) return shopItemContainer.transform.GetChild(selectedItemIndex).GetComponent<ShopItemUI>();
+			if (selectedItemIndex >= 0 && selectedItemIndex < shopItemContainer.transform.childCount) 
+				return shopItemContainer.transform.GetChild(selectedItemIndex).GetComponent<ShopItemUI>();
 			return null;
 		}
 	}

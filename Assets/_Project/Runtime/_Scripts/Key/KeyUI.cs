@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler /*, IDropHandler*/ // IPointer events
+public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IDropHandler // IPointer events
 {
 	Key currentKey;
 
@@ -158,16 +158,18 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 		return currentObject?.GetComponent<Key>();
 	}
 
-	// public void OnDrop(PointerEventData data)
-	// {
-	// 	// if the dragged object is an InventoryItem, log it
-	// 	var draggedObject = data.pointerDrag;
-	//
-	// 	if (draggedObject != null && draggedObject.TryGetComponent<InventoryItem>(out var item))
-	// 	{
-	// 		Debug.Log($"Dropped {draggedObject.name} onto {gameObject.name}");
-	// 		
-	// 		GetComponent<Key>().ComboEffect = item.Effect;
-	// 	}
-	// }
+	public void OnDrop(PointerEventData data)
+	{
+		var draggedObject = data.pointerDrag;
+	
+		if (draggedObject != null && draggedObject.TryGetComponent(out ShopItemUI item))
+		{
+			Debug.Log($"Dropped {draggedObject.name} onto {gameObject.name}");
+
+			var foo = item.Item as EffectItem;
+			foo.Grant(item.Keys, GetComponent<Key>());
+			
+			Destroy(draggedObject);
+		}
+	}
 }
