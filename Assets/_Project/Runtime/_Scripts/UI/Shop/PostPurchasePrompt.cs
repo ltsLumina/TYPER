@@ -71,12 +71,12 @@ public class PostPurchasePrompt : MonoBehaviour
 		bool isEmpty = string.IsNullOrWhiteSpace(input);
 		bool isNotUnique = input.Length != new HashSet<char>(input).Count;
 		bool isTooShort = input.Length < minChars;
-		bool hasExistingCombo = false;
-		if (input.Length > 0) hasExistingCombo = ComboManager.Instance.DoesComboExist(input.ToKeys());
 		#endregion
 
 		#region WARNINGS
 		bool isLongerThanMin = input.Length > minChars;
+		bool hasExistingCombo = false;
+		if (input.Length > 0) hasExistingCombo = ComboManager.Instance.DoesComboExist(input.ToKeys());
 		#endregion
 
 		string message = string.Empty;
@@ -84,7 +84,11 @@ public class PostPurchasePrompt : MonoBehaviour
 		if (isEmpty) message = "Input cannot be empty.";
 		else if (isNotUnique) message = "Input must not contain duplicate characters.";
 		else if (isTooShort) message = $"Input must be at least {minChars} characters long.";
-		else if (hasExistingCombo) message = "Input sequence already exists as a combo.";
+		else if (hasExistingCombo)
+		{
+			message = "Upgrade current effect?";
+			infoWarningText.color = Color.yellow;
+		}
 		else if (isLongerThanMin)
 		{
 			message = "Input is longer than the minimum required length.";
@@ -93,8 +97,8 @@ public class PostPurchasePrompt : MonoBehaviour
 
 		infoWarningText.text = message;
 
-		inputState.hasErrors = isEmpty || isNotUnique || isTooShort || hasExistingCombo;
-		inputState.hasWarnings = isLongerThanMin;
+		inputState.hasErrors = isEmpty || isNotUnique || isTooShort;
+		inputState.hasWarnings = isLongerThanMin || hasExistingCombo;
 
 		infoWarningText.gameObject.SetActive(inputState.hasErrors || inputState.hasWarnings);
 		ActivationSequence = input;

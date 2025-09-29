@@ -9,7 +9,6 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using VInspector;
-using Random = System.Random;
 #endregion
 
 // game starts with nearly no post process effects, but when Frenzy mode is activated, the effects ramp up to a maximum intensity.
@@ -57,7 +56,7 @@ public class FrenzyManager : MonoBehaviour
 		get => frenzy;
 		private set => frenzy = Mathf.Clamp(value, 0, frenzyThreshold);
 	}
-	
+
 	public bool Frenzied
 	{
 		get => frenzied;
@@ -97,8 +96,7 @@ public class FrenzyManager : MonoBehaviour
 
 	IEnumerator FrenzyRoutine(float duration, bool instant = false)
 	{
-		(float speedMultiplier, float baseLerpMultiplier) 
-				oldValues = new (speedMultiplier, baseLerpMultiplier);
+		(float speedMultiplier, float baseLerpMultiplier) oldValues = new (speedMultiplier, baseLerpMultiplier);
 
 		Frenzied = true;
 
@@ -110,6 +108,7 @@ public class FrenzyManager : MonoBehaviour
 
 		float startFrenzy = Frenzy;
 		float elapsed = 0f;
+
 		while (elapsed < duration && Frenzied)
 		{
 			elapsed += Time.deltaTime;
@@ -119,7 +118,7 @@ public class FrenzyManager : MonoBehaviour
 			AddFrenzy(0); // update score text
 			yield return null;
 		}
-		
+
 		Frenzy = 0;
 		frenzyFillAmount = 0;
 		frenzySlider.fillAmount = 0;
@@ -131,7 +130,7 @@ public class FrenzyManager : MonoBehaviour
 		if (Frenzy >= frenzyThreshold) yield break;
 
 		Frenzied = false;
-		
+
 		// increase the frenzy threshold slightly each time Frenzy ends, up to a maximum of 2000
 		frenzyThreshold = Mathf.Min(1000, frenzyThreshold + 100);
 
@@ -152,7 +151,7 @@ public class FrenzyManager : MonoBehaviour
 	void Start()
 	{
 		frenzyPtsText.text = "0" + "\n" + "pts";
-		
+
 		volume.profile.TryGet(out bloom);
 		volume.profile.TryGet(out chromaticAberration);
 		volume.profile.TryGet(out lensDistortion);
@@ -209,16 +208,13 @@ public class FrenzyManager : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.Alpha3)) AddFrenzy(25);
 		if (Input.GetKeyDown(KeyCode.Alpha4)) AddFrenzy(frenzyThreshold);
 
-		if (Frenzy >= frenzyThreshold)
-		{
-			TriggerFrenzy(10, true);
-		}
+		if (Frenzy >= frenzyThreshold) { TriggerFrenzy(10, true); }
 		else
 		{
-			frenzyFillAmount = Mathf.Lerp(frenzyFillAmount, (float)Frenzy / frenzyThreshold, Time.deltaTime * 5f);
+			frenzyFillAmount = Mathf.Lerp(frenzyFillAmount, (float) Frenzy / frenzyThreshold, Time.deltaTime * 5f);
 			frenzySlider.fillAmount = frenzyFillAmount;
 		}
-		
+
 		// Slightly increase timescale when in Frenzy, up to a max of 2x at 60 seconds of Frenzy time.
 		// Begins scaling after 1 minute to avoid making the game too fast quickly.
 		bool hitstopInactive = Time.timeScale > 0.9f;
@@ -337,12 +333,8 @@ public class FrenzyManager : MonoBehaviour
 	{
 		frenzy += points;
 
-		//TODO: very temporary way of doing this
-		var scoreText = GameObject.FindWithTag("Canvas").transform.GetChild(1).GetComponent<TMPro.TextMeshProUGUI>();
-		string text = $"{frenzy}\npts" 
-		              + (Frenzied ? $"\n({FrenzyMultiplier}x Shards)" : string.Empty) + "\n" 
-		              + (Time.timeScale > 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
-		scoreText.text = text;
+		string text = $"{frenzy}\npts" + (Frenzied ? $"\n({FrenzyMultiplier}x Shards)" : string.Empty) + "\n" + (Time.timeScale > 1 ? $" ({Time.timeScale:F1}x speed)" : string.Empty);
+		frenzyPtsText.text = text;
 	}
 
 	enum Override

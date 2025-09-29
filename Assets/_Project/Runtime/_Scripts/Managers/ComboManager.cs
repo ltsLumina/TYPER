@@ -75,6 +75,8 @@ public class ComboManager : Singleton<ComboManager>
 	{
 		yield return new WaitUntil(() => KeyManager.Instance.IsInitialized);
 
+		nextComboIndex = -1;
+
 		#region Modifiers
 		if (SceneManagerExtended.ActiveSceneName != "Game") yield break;
 
