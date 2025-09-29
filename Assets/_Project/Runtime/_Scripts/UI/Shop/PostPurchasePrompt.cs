@@ -17,7 +17,7 @@ public class PostPurchasePrompt : MonoBehaviour
 	{
 		screenOverlay.gameObject.SetActive(false);
 		gameObject.SetActive(true);
-		
+
 		transform.localPosition = new Vector3(0, 1000, 0); // Start off-screen
 	}
 
@@ -27,39 +27,39 @@ public class PostPurchasePrompt : MonoBehaviour
 	{
 		gameObject.SetActive(true);
 		EventSystem.current.SetSelectedGameObject(inputField.gameObject.gameObject);
-		
+
 		this.minChars = minChars;
 
 		ActivationSequence = string.Empty;
 		inputField.text = string.Empty;
 		infoWarningText.text = string.Empty;
-		
+
 		screenOverlay.gameObject.SetActive(true);
 		screenOverlay.alpha = 0;
 		screenOverlay.DOFade(1, 0.5f).SetEase(Ease.OutCirc).SetLink(gameObject);
-		
+
 		purchasedItemText.text = $"Purchased {itemName}!";
 		minimumCharsText.text = $"{itemName} requires a minimum of {minChars} keys.";
 		infoWarningText.gameObject.SetActive(false);
-		
+
 		transform.localPosition = new Vector3(0, 1000, 0); // Move off-screen
 		transform.DOLocalMoveY(0, 0.5f).SetEase(Ease.OutCirc).SetLink(gameObject);
 	}
-	
+
 	public event Action<List<Key>> OnHide;
 
 	public void TryHide()
 	{
 		if (inputState.hasErrors) return; // warnings are allowed
-		
+
 		screenOverlay.DOFade(0, 0.5f).SetEase(Ease.OutCirc).SetLink(gameObject).OnComplete(() => screenOverlay.gameObject.SetActive(false));
-		
+
 		transform.DOLocalMoveY(1000, 0.5f).SetEase(Ease.InCirc).SetLink(gameObject);
 		OnHide?.Invoke(ActivationSequence.ToKeys());
 	}
 
 	string ActivationSequence { get; set; }
-	
+
 	(bool hasErrors, bool hasWarnings) inputState;
 
 	public void ValidateInputString(string input)
@@ -71,6 +71,8 @@ public class PostPurchasePrompt : MonoBehaviour
 		bool isEmpty = string.IsNullOrWhiteSpace(input);
 		bool isNotUnique = input.Length != new HashSet<char>(input).Count;
 		bool isTooShort = input.Length < minChars;
+		bool hasExistingCombo = false;
+		if (input.Length > 0) hasExistingCombo = ComboManager.Instance.DoesComboExist(input.ToKeys());
 		#endregion
 
 		#region WARNINGS
@@ -82,6 +84,7 @@ public class PostPurchasePrompt : MonoBehaviour
 		if (isEmpty) message = "Input cannot be empty.";
 		else if (isNotUnique) message = "Input must not contain duplicate characters.";
 		else if (isTooShort) message = $"Input must be at least {minChars} characters long.";
+		else if (hasExistingCombo) message = "Input sequence already exists as a combo.";
 		else if (isLongerThanMin)
 		{
 			message = "Input is longer than the minimum required length.";
@@ -90,7 +93,7 @@ public class PostPurchasePrompt : MonoBehaviour
 
 		infoWarningText.text = message;
 
-		inputState.hasErrors = isEmpty || isNotUnique || isTooShort;
+		inputState.hasErrors = isEmpty || isNotUnique || isTooShort || hasExistingCombo;
 		inputState.hasWarnings = isLongerThanMin;
 
 		infoWarningText.gameObject.SetActive(inputState.hasErrors || inputState.hasWarnings);

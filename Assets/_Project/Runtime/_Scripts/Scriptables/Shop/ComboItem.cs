@@ -18,7 +18,7 @@ public class ComboItem : EffectItem
 
 	public override void Grant(List<Key> keys, Key key)
 	{
-		ComboManager.Instance.CreateCombo(keys);
+		ComboManager.Instance.CreateCombo(keys, key);
 
 		if (key.ComboEffect == effect) Upgrade(effect);
 		else key.ComboEffect = effect;

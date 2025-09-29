@@ -29,7 +29,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 		if (IsPlaying(purchaseSequence)) return;
 
 		var originalScale = transform.localScale;
-		
+
 		hoverSequence = DOTween.Sequence();
 		hoverSequence.Append(transform.DOScale(originalScale * 1.1f, 0.25f).SetEase(Ease.OutBack));
 		hoverSequence.SetId("enter");
@@ -42,7 +42,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 		DOTween.Kill("enter");
 
 		if (IsPlaying(purchaseSequence)) return;
-		
+
 		var originalScale = transform.localScale / 1.1f;
 		transform.DOScale(originalScale, 0.1f).SetEase(Ease.OutBack).SetLink(gameObject);
 	}
@@ -77,26 +77,29 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 							purchaseSequence.AppendInterval(0.25f);
 							purchaseSequence.Join(transform.DOScale(Vector3.zero, 0.5f).SetEase(Ease.InBack));
 							purchaseSequence.SetLink(gameObject);
+
 							purchaseSequence.OnComplete
 							(() =>
 							{
+								Purchased = true;
+
 								// make duplicate and hide it to prevent layout group from shifting
 								var duplicate = Instantiate(gameObject, transform.parent);
 								duplicate.name = name + " (Purchased)";
 								duplicate.transform.SetSiblingIndex(transform.GetSiblingIndex());
 								duplicate.GetComponent<CanvasGroup>().alpha = 0f;
 								duplicate.GetComponent<CanvasGroup>().blocksRaycasts = false;
-								
+
 								var inventoryItemContainer = GameObject.Find("Inventory");
 								transform.SetParent(inventoryItemContainer.transform);
 								transform.localScale = Vector3.zero;
 								transform.rotation = Quaternion.identity;
-								
+
 								transform.DOScale(Vector3.one * 0.5f, 0.5f).SetEase(Ease.OutBack).SetLink(gameObject);
 							});
-							
+
 							Deselect();
-							
+
 							canDrag = true;
 						}
 						else
@@ -199,17 +202,17 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 		ShowTooltip();
 	}
 	#endregion
-	
+
 	bool canDrag;
 	Vector3 originalPosition;
 	public void OnDrag(PointerEventData eventData)
 	{
 		if (!canDrag) return;
-		
+
 		transform.position = Input.mousePosition;
 		Transform root = transform.root;
 		transform.SetParent(root, true);
-		
+
 		// lerp scale when moved horizontally from original position
 		float distance = Vector3.Distance(transform.position, originalPosition);
 		float scale = Mathf.Clamp(0.5f - (distance / Screen.width), 0.35f, 1f);
@@ -219,9 +222,9 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 	public void OnBeginDrag(PointerEventData eventData)
 	{
 		if (!canDrag) return;
-		
+
 		transform.localScale = Vector3.one * 0.5f;
-		
+
 		GetComponent<CanvasGroup>().blocksRaycasts = false;
 		originalPosition = transform.position;
 		transform.localScale = Vector3.one * 0.5f;
@@ -230,7 +233,7 @@ public partial class ShopItemUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 	public void OnEndDrag(PointerEventData eventData)
 	{
 		if (!canDrag) return;
-		
+
 		GetComponent<CanvasGroup>().blocksRaycasts = true;
 		transform.position = originalPosition;
 		transform.localScale = Vector3.one * 0.5f;
@@ -253,4 +256,5 @@ public partial class ShopItemUI // properties
 		get => costText;
 		set => costText = value;
 	}
+	public bool Purchased { get; private set; }
 }

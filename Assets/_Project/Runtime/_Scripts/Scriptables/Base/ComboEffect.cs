@@ -67,14 +67,12 @@ public abstract class ComboEffect : Effect
 	void OnEnable()
 	{
 		// Reset level to default in case it was changed at runtime
-		Asset.level = Level.I;
 		level = Level.I;
 	}
 
 	void OnDestroy()
 	{
 		// Reset level to default in case it was changed at runtime
-		Asset.level = Level.I;
 		level = Level.I;
 	}
 
@@ -103,8 +101,8 @@ public abstract class ComboEffect : Effect
 	protected T GetLevelSettings<T>()
 			where T : LevelSettings
 	{
-		int levelIndex = Mathf.Clamp((int) Asset.level, 0, Asset.levels.Count - 1);
-		var settings = (T) Asset.levels[levelIndex];
+		int levelIndex = Mathf.Clamp((int) level, 0, levels.Count - 1);
+		var settings = (T) levels[levelIndex];
 		return settings;
 	}
 
@@ -121,8 +119,8 @@ public abstract class ComboEffect : Effect
 	protected T GetLevelSettings<T>(int overrideLevel)
 			where T : LevelSettings
 	{
-		int levelIndex = Mathf.Clamp(overrideLevel, 0, Asset.levels.Count - 1);
-		var settings = (T) Asset.levels[levelIndex];
+		int levelIndex = Mathf.Clamp(overrideLevel, 0, levels.Count - 1);
+		var settings = (T) levels[levelIndex];
 		return settings;
 	}
 	#endregion
@@ -154,9 +152,6 @@ public abstract class ComboEffect : Effect
 
 		// Set the level for this instance
 		level = (Level) clampedIndex;
-
-		// Update the level for the asset so it persists
-		Asset.level = (Level) clampedIndex;
 	}
 
 	public void GainLevel() => SetLevel((Level) ((int) level + 1));

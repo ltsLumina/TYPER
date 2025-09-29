@@ -435,7 +435,7 @@ public partial class Key : MonoBehaviour
 				if (comboIndex == comboManager.ComboLength - 1)
 				{
 					// Condition that fixes the infamous "RTY-bug". idk why this works, probably a race condition?
-					if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) ComboEffect?.Invoke(this, triggerKey);
+					//if (comboIndex == comboManager.ComboLength - 1 && comboManager.RecentKey == this) ComboEffect?.Invoke(this, triggerKey);
 
 					StartLocalCooldown(cooldown);
 
@@ -602,7 +602,7 @@ public static class KeyExtensions
 			Logger.LogError("Cannot convert empty or whitespace string to KeyCodes.", null, "KeyExtensions");
 			return null;
 		}
-		
+
 		str = str.ToUpper();
 
 		List<KeyCode> keycodes = new ();

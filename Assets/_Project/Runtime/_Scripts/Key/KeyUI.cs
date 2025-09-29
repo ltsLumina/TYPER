@@ -161,14 +161,14 @@ public class KeyUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, I
 	public void OnDrop(PointerEventData data)
 	{
 		var draggedObject = data.pointerDrag;
-	
-		if (draggedObject != null && draggedObject.TryGetComponent(out ShopItemUI item))
+
+		if (draggedObject != null && draggedObject.TryGetComponent(out ShopItemUI item) && item.Purchased)
 		{
 			Debug.Log($"Dropped {draggedObject.name} onto {gameObject.name}");
 
 			var foo = item.Item as EffectItem;
-			foo.Grant(item.Keys, GetComponent<Key>());
-			
+			foo!.Grant(item.Keys, GetComponent<Key>());
+
 			Destroy(draggedObject);
 		}
 	}

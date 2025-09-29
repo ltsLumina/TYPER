@@ -17,6 +17,8 @@ public class ComboManager : Singleton<ComboManager>
 	[SerializeField, ReadOnly] string currentCombo;
 	[Space(10)]
 	[SerializeField, ReadOnly] List<Key> currentComboKeys = new ();
+	[SerializeField] Key effectKey;
+	[SerializeField] SerializedDictionary<string, Key> effectKeys = new ();
 	[Space(5)]
 	[Header("Debug")]
 	[Tooltip("The length of the combo. 1-based.")]
@@ -35,15 +37,16 @@ public class ComboManager : Singleton<ComboManager>
 	[ShowIf(nameof(randomizeComboEffects), false)]
 	[SerializeField] SerializedDictionary<string, string> presetComboEffects = new ();
 	[EndIf]
-	
 	[Tab("Statistics")]
 	[SerializeField, ReadOnly] List<string> completedComboStrings = new ();
 	[Space(5), UsedImplicitly]
 	[SerializeField, ReadOnly] int totalCombosCompleted;
 	[SerializeField, UsedImplicitly] SerializedDictionary<string, int> comboFrequency = new ();
-	
+
 	readonly List<Dictionary<Key, (int, bool)>> combos = new ();
+
 	public bool DoesComboExist(List<Key> keys) => combos.Any(c => c.Keys.SequenceEqual(keys));
+
 	public bool IsKeyPartOfCombo(Key key) => combos.Any(c => c.ContainsKey(key));
 
 	public bool InProgress => nextComboIndex != -1;
@@ -58,6 +61,12 @@ public class ComboManager : Singleton<ComboManager>
 		set => loops = value;
 	}
 
+	public Key EffectKey
+	{
+		get => effectKey;
+		set => effectKey = value;
+	}
+
 	public Key RecentKey => recentComboKey;
 	public Key NextKey => nextComboKey;
 
@@ -65,7 +74,7 @@ public class ComboManager : Singleton<ComboManager>
 	IEnumerator Start()
 	{
 		yield return new WaitUntil(() => KeyManager.Instance.IsInitialized);
-		
+
 		#region Modifiers
 		if (SceneManagerExtended.ActiveSceneName != "Game") yield break;
 
@@ -104,7 +113,7 @@ public class ComboManager : Singleton<ComboManager>
 		if (randomizeComboEffects) RandomizeComboEffects(KeyManager.Instance.FlatKeys, excludedComboEffects.Select(e => e.GetType()).Distinct().ToArray());
 		else SelectPresetComboEffects();
 	}
-	
+
 	void RandomizeComboEffects(List<Key> keys, params Type[] exclude)
 	{
 		// remove excluded effects from the list
@@ -123,7 +132,7 @@ public class ComboManager : Singleton<ComboManager>
 	void SelectPresetComboEffects()
 	{
 		if (presetComboEffects.Count == 0) return;
-		
+
 		foreach (var kvp in presetComboEffects)
 		{
 			// split the value by comma to separate effect from desired level (if any)
@@ -163,8 +172,8 @@ public class ComboManager : Singleton<ComboManager>
 	/// Creates a new combo from the given list of keys.
 	/// </summary>
 	/// <param name="comboKeys"></param>
-	/// <param name="loops"> Whether the combo should loop back to the start after completion.</param>
-	public void CreateCombo(List<Key> comboKeys, bool loops = false)
+	/// <param name="effectKey"></param>
+	public void CreateCombo(List<Key> comboKeys, Key effectKey)
 	{
 		// min length of 3 keys
 		if (comboKeys.Count < 3)
@@ -176,20 +185,22 @@ public class ComboManager : Singleton<ComboManager>
 		// if the combo already exists, do not create the combo
 		if (DoesComboExist(comboKeys))
 		{
-			Debug.LogWarning($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}" 
-			                 + "\n" + "The existing combo will be upgraded instead, through a different class/method.");
+			Debug.LogWarning($"Combo already exists: {string.Join(" -> ", comboKeys.Select(k => k.KeyCode))}" + "\n" + "The existing combo will be upgraded instead, through a different class/method.");
 			return;
 		}
 
 		// if any key is already in a combo, do not create the combo
 		if (comboKeys.Any(k => k.IsCombo))
 		{
-			Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.IsCombo).Select(k => k.KeyCode))}");
-			return;
+			//Debug.LogError($"Cannot create combo. One or more keys are already in a combo: {string.Join(" -> ", comboKeys.Where(k => k.IsCombo).Select(k => k.KeyCode))}");
+			//return;
 		}
 
 		Key lastKey = comboKeys.Last();
 		lastKey.LastKeyInCombo = true;
+
+		var comboString = string.Join(" -> ", comboKeys.Select(k => k.KeyCode));
+		effectKeys.TryAdd(comboString, effectKey);
 
 		foreach (Key key in comboKeys)
 		{
@@ -254,6 +265,8 @@ public class ComboManager : Singleton<ComboManager>
 			nextComboKey = currentComboKeys[1];
 			nextComboIndex = 1; // Set to 1 since we've just matched the first key and now expect the second key
 
+			effectKey = effectKeys[currentCombo];
+
 			// Show the indicator for the next key in the combo
 			ShowComboHighlight(currentComboKeys[nextComboIndex]);
 
@@ -315,6 +328,8 @@ public class ComboManager : Singleton<ComboManager>
 		// string comboString = string.Join(" -> ", currentComboKeys.Select(k => k.KeyboardLetter));
 		// Debug.Log($"Combo completed: {comboString} (Loops: {loops})");
 
+		effectKey?.ComboEffect?.Invoke(effectKey, null);
+
 		var sfx = new Sound(SFX.powerupSFX);
 		sfx.SetOutput(Output.SFX);
 		sfx.SetRandomPitch(new (0.9f, 1.05f));
@@ -323,8 +338,7 @@ public class ComboManager : Singleton<ComboManager>
 
 		CompletedCombos.Enqueue(currentComboKeys.ToList());
 		totalCombosCompleted++;
-		if (!comboFrequency.TryAdd(currentCombo, 1))
-			comboFrequency[currentCombo]++;
+		if (!comboFrequency.TryAdd(currentCombo, 1)) comboFrequency[currentCombo]++;
 
 		if (CompletedCombos.Count > 5)
 		{

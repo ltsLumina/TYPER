@@ -11,7 +11,7 @@ using UnityEngine;
 public class MenuManager : MonoBehaviour
 {
 	RectTransform buttonGroup;
-	
+
 	GameManager gameManager;
 	KeyManager keyManager;
 	ComboManager comboManager;
@@ -52,7 +52,7 @@ public class MenuManager : MonoBehaviour
 				switch (comboString)
 				{
 					case "PLAY":
-						gameManager.StartGame(); 
+						gameManager.StartGame();
 						gameManager.Music.Stop(0.5f);
 						break;
 
@@ -68,7 +68,7 @@ public class MenuManager : MonoBehaviour
 				}
 			}
 		};
-		
+
 		keyManager.SetInputMode(KeyManager.InputMode.OnlyCombos);
 
 		// Disable the canvas at start. Its shown at the end of the intro sequence
@@ -81,6 +81,7 @@ public class MenuManager : MonoBehaviour
 		StartCoroutine(IntroSequence());
 
 		return;
+
 		IEnumerator IntroSequence()
 		{
 			// disable all keys at start
@@ -235,7 +236,7 @@ public class MenuManager : MonoBehaviour
 
 		MoveWordToCenterRow(word);
 
-		comboManager.CreateCombo(keysToHighlight);
+		comboManager.CreateCombo(keysToHighlight, keysToHighlight.Last());
 
 		// combo markers on highlighted keys
 		foreach (Key highlightKey in keysToHighlight) highlightKey.SetModifier(Key.Modifiers.Combo);
